@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { MENU, groupIdFromPath } from "../lib/menu";
-import { ChatIcon, Chevron, LogoMark, SearchIcon } from "./icons";
+import { ChatIcon, Chevron, FacebookIcon, InstagramIcon, LogoMark, NaverCafeIcon, SearchIcon, YoutubeIcon } from "./icons";
 
 type Props = {
   children: React.ReactNode;
@@ -16,18 +16,10 @@ const slogan = "추억과 그리움이 머무는 자리, 안양공원묘지";
 function SocialBar({ light = false }: { light?: boolean }) {
   return (
     <div className={`sns-bar ${light ? "light" : ""}`}>
-      <a href="#" aria-label="페이스북">
-        f
-      </a>
-      <a href="#" aria-label="인스타그램">
-        ◎
-      </a>
-      <a href="#" aria-label="유튜브">
-        ▶
-      </a>
-      <a href="#" aria-label="네이버카페">
-        N
-      </a>
+      <a href="#" aria-label="페이스북"><FacebookIcon /></a>
+      <a href="#" aria-label="인스타그램"><InstagramIcon /></a>
+      <a href="#" aria-label="유튜브"><YoutubeIcon /></a>
+      <a href="#" aria-label="네이버카페"><NaverCafeIcon /></a>
     </div>
   );
 }
