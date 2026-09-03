@@ -633,6 +633,42 @@ h3,
   font-size: 14px;
 }
 
+.admin-form {
+  border-left: 3px solid var(--sage);
+}
+
+.admin-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sage-deep);
+  background: rgba(95, 112, 89, .08);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.admin-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+.btn-danger {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #a93226;
+}
+
+.btn-sm {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
 .ok {
   color: var(--sage-deep);
   font-size: 14px;

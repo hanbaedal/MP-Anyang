@@ -1,13 +1,97 @@
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { notFound, redirect } from "next/navigation";
 import { getPage, slugsOf } from "../../../../lib/content";
-import { createBoardPost, createInquiry, getBoard, getFaqs, getGallery, getInquiry, getNotices, toId } from "../../../../lib/store";
+import {
+  createBoardPost, createFaq, createGalleryItem, createInquiry, createNotice,
+  deleteBoardPost, deleteFaq, deleteGalleryItem, deleteInquiry, deleteNotice,
+  getBoard, getFaqs, getGallery, getInquiry, getNotices,
+  toId, updateFaq, updateNotice,
+} from "../../../../lib/store";
 import { readSession } from "../../../../lib/auth";
 
 type Params = { section: string; slug: string };
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
+
+/* ── Server Actions ── */
+
+async function addNotice(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await createNotice({
+    title: String(formData.get("title") || ""),
+    content: String(formData.get("content") || ""),
+    author: user.name,
+  });
+  revalidatePath("/support/notices");
+  redirect("/support/notices");
+}
+
+async function removeNotice(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await deleteNotice(String(formData.get("id")));
+  revalidatePath("/support/notices");
+  redirect("/support/notices");
+}
+
+async function editNotice(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await updateNotice(String(formData.get("id")), {
+    title: String(formData.get("title") || ""),
+    content: String(formData.get("content") || ""),
+  });
+  revalidatePath("/support/notices");
+  redirect("/support/notices");
+}
+
+async function addFaq(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await createFaq({
+    question: String(formData.get("question") || ""),
+    answer: String(formData.get("answer") || ""),
+  });
+  revalidatePath("/support/faq");
+  redirect("/support/faq");
+}
+
+async function removeFaq(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await deleteFaq(String(formData.get("id")));
+  revalidatePath("/support/faq");
+  redirect("/support/faq");
+}
+
+async function addGalleryAction(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await createGalleryItem({
+    title: String(formData.get("title") || ""),
+    imageUrl: String(formData.get("imageUrl") || ""),
+  });
+  revalidatePath("/support/gallery");
+  redirect("/support/gallery");
+}
+
+async function removeGallery(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await deleteGalleryItem(String(formData.get("id")));
+  revalidatePath("/support/gallery");
+  redirect("/support/gallery");
+}
 
 async function submitBoard(formData: FormData) {
   "use server";
@@ -19,6 +103,17 @@ async function submitBoard(formData: FormData) {
     author: user.name,
     userId: user.id,
   });
+  revalidatePath("/support/board");
+  redirect("/support/board");
+}
+
+async function removeBoard(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await deleteBoardPost(String(formData.get("id")));
+  revalidatePath("/support/board");
+  redirect("/support/board");
 }
 
 async function submitInquiry(formData: FormData) {
@@ -31,120 +126,194 @@ async function submitInquiry(formData: FormData) {
     message: String(formData.get("message") || ""),
     userId: user?.id,
   });
+  revalidatePath("/support/inquiry");
+  redirect("/support/inquiry");
 }
+
+async function removeInquiry(formData: FormData) {
+  "use server";
+  const user = await readSession();
+  if (!user || user.role !== "admin") return;
+  await deleteInquiry(String(formData.get("id")));
+  revalidatePath("/support/inquiry");
+  redirect("/support/inquiry");
+}
+
+/* ── Page Component ── */
 
 export default async function SectionPage({ params }: { params: Promise<Params> }) {
   const { section, slug } = await params;
+  const user = await readSession();
+  const isAdmin = user?.role === "admin";
 
+  /* ── 공지사항 ── */
   if (section === "support" && slug === "notices") {
     const notices = await getNotices();
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>공지사항</h1>
+
+        {isAdmin && (
+          <form action={addNotice} className="panel form-grid admin-form">
+            <p className="admin-badge">관리자</p>
+            <label>제목<input name="title" required /></label>
+            <label>내용<textarea name="content" required /></label>
+            <button className="btn btn-primary" type="submit">공지 등록</button>
+          </form>
+        )}
+
         <div className="list">
           {notices.map((item) => (
             <div key={toId(item._id)} className="list-item">
               <h3>{String(item.title)}</h3>
-              <div className="meta">{new Date(String(item.createdAt)).toLocaleDateString("ko-KR")} · {String(item.author)}</div>
+              <div className="meta">
+                {new Date(String(item.createdAt)).toLocaleDateString("ko-KR")}
+                {item.author ? ` · ${String(item.author)}` : ""}
+              </div>
               <p>{String(item.content)}</p>
+              {isAdmin && (
+                <div className="admin-actions">
+                  <form action={removeNotice}>
+                    <input type="hidden" name="id" value={toId(item._id)} />
+                    <button className="btn btn-danger btn-sm" type="submit">삭제</button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
+          {notices.length === 0 && <p className="alert">등록된 공지사항이 없습니다.</p>}
         </div>
       </article>
     );
   }
 
+  /* ── FAQ ── */
   if (section === "support" && slug === "faq") {
     const faqs = await getFaqs();
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>자주묻는 질문</h1>
+
+        {isAdmin && (
+          <form action={addFaq} className="panel form-grid admin-form">
+            <p className="admin-badge">관리자</p>
+            <label>질문<input name="question" required /></label>
+            <label>답변<textarea name="answer" required /></label>
+            <button className="btn btn-primary" type="submit">FAQ 등록</button>
+          </form>
+        )}
+
         <div className="list">
           {faqs.map((item) => (
             <div key={toId(item._id)} className="list-item">
               <h3>Q. {String(item.question)}</h3>
               <p>A. {String(item.answer)}</p>
+              {isAdmin && (
+                <div className="admin-actions">
+                  <form action={removeFaq}>
+                    <input type="hidden" name="id" value={toId(item._id)} />
+                    <button className="btn btn-danger btn-sm" type="submit">삭제</button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
+          {faqs.length === 0 && <p className="alert">등록된 FAQ가 없습니다.</p>}
         </div>
       </article>
     );
   }
 
+  /* ── 갤러리 ── */
   if (section === "support" && slug === "gallery") {
     const gallery = await getGallery();
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>갤러리</h1>
+
+        {isAdmin && (
+          <form action={addGalleryAction} className="panel form-grid admin-form">
+            <p className="admin-badge">관리자</p>
+            <label>제목<input name="title" required /></label>
+            <label>이미지 URL<input name="imageUrl" required placeholder="https://..." /></label>
+            <button className="btn btn-primary" type="submit">갤러리 등록</button>
+          </form>
+        )}
+
         <div className="gallery-grid">
           {gallery.map((item) => (
             <figure key={toId(item._id)}>
               <Image src={String(item.imageUrl)} alt={String(item.title)} width={600} height={360} />
               <figcaption>{String(item.title)}</figcaption>
+              {isAdmin && (
+                <form action={removeGallery} className="admin-actions">
+                  <input type="hidden" name="id" value={toId(item._id)} />
+                  <button className="btn btn-danger btn-sm" type="submit">삭제</button>
+                </form>
+              )}
             </figure>
           ))}
+          {gallery.length === 0 && <p className="alert">등록된 갤러리가 없습니다.</p>}
         </div>
       </article>
     );
   }
 
+  /* ── 자유게시판 ── */
   if (section === "support" && slug === "board") {
-    const user = await readSession();
     const posts = await getBoard();
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>자유게시판</h1>
+
         {user ? (
           <form action={submitBoard} className="panel form-grid">
-            <label>
-              제목
-              <input name="title" required />
-            </label>
-            <label>
-              내용
-              <textarea name="content" required />
-            </label>
-            <button className="btn btn-primary" type="submit">
-              글 등록
-            </button>
+            <label>제목<input name="title" required /></label>
+            <label>내용<textarea name="content" required /></label>
+            <button className="btn btn-primary" type="submit">글 등록</button>
           </form>
         ) : (
           <p className="alert">글쓰기는 로그인 후 가능합니다.</p>
         )}
+
         <div className="list">
           {posts.map((item) => (
             <div key={toId(item._id)} className="list-item">
               <h3>{String(item.title)}</h3>
               <div className="meta">{String(item.author)} · {new Date(String(item.createdAt)).toLocaleString("ko-KR")}</div>
               <p>{String(item.content)}</p>
+              {isAdmin && (
+                <div className="admin-actions">
+                  <form action={removeBoard}>
+                    <input type="hidden" name="id" value={toId(item._id)} />
+                    <button className="btn btn-danger btn-sm" type="submit">삭제</button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
+          {posts.length === 0 && <p className="alert">게시글이 없습니다.</p>}
         </div>
       </article>
     );
   }
 
+  /* ── 문의사항 ── */
   if (section === "support" && slug === "inquiry") {
     const inquiries = await getInquiry();
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>문의사항</h1>
+
         <form action={submitInquiry} className="panel form-grid">
-          <label>
-            이름
-            <input name="name" required />
-          </label>
-          <label>
-            연락처
-            <input name="phone" required />
-          </label>
-          <label>
-            분류
+          <label>이름<input name="name" required /></label>
+          <label>연락처<input name="phone" required /></label>
+          <label>분류
             <select name="category" defaultValue="일반 문의">
               <option>일반 문의</option>
               <option>분양 문의</option>
@@ -152,27 +321,33 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
               <option>기타</option>
             </select>
           </label>
-          <label>
-            문의 내용
-            <textarea name="message" required />
-          </label>
-          <button className="btn btn-primary" type="submit">
-            문의 등록
-          </button>
+          <label>문의 내용<textarea name="message" required /></label>
+          <button className="btn btn-primary" type="submit">문의 등록</button>
         </form>
+
         <div className="list">
           {inquiries.map((item) => (
             <div key={toId(item._id)} className="list-item">
               <h3>{String(item.category)}</h3>
               <div className="meta">{String(item.name)} · {String(item.phone)} · {new Date(String(item.createdAt)).toLocaleString("ko-KR")}</div>
               <p>{String(item.message)}</p>
+              {isAdmin && (
+                <div className="admin-actions">
+                  <form action={removeInquiry}>
+                    <input type="hidden" name="id" value={toId(item._id)} />
+                    <button className="btn btn-danger btn-sm" type="submit">삭제</button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
+          {inquiries.length === 0 && <p className="alert">등록된 문의가 없습니다.</p>}
         </div>
       </article>
     );
   }
 
+  /* ── 정적 페이지 (재단소개, 분양, 시설, 서비스) ── */
   const page = getPage(section, slug);
   if (!page) notFound();
 
