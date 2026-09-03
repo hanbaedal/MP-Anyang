@@ -99,14 +99,6 @@ export function SiteShell({ children, userName }: Props) {
             </div>
           ))}
 
-          <div className="nav-cta">
-            <Link href="/consult" className="btn btn-primary nav-cta-btn" onClick={() => setMobileOpen(false)}>
-              <ChatIcon /> 상담신청
-            </Link>
-            <Link href="/grave-search" className="btn nav-cta-btn" onClick={() => setMobileOpen(false)}>
-              <SearchIcon /> 묘역찾기
-            </Link>
-          </div>
         </aside>
         <button className={`drawer-backdrop ${mobileOpen ? "open" : ""}`} onClick={() => setMobileOpen(false)} />
 
@@ -125,13 +117,13 @@ export function SiteShell({ children, userName }: Props) {
         </main>
       </div>
 
-      {/* 모바일에서만 보이는 하단 고정 버튼 */}
-      <div className="mobile-cta">
-        <Link href="/consult" className="btn btn-primary mobile-cta-btn">
-          <ChatIcon /> 상담신청
+      {/* 우측 중간 고정 사이드 버튼 */}
+      <div className="side-cta">
+        <Link href="/consult" className="side-cta-btn primary">
+          <ChatIcon /><span>상담신청</span>
         </Link>
-        <Link href="/grave-search" className="btn mobile-cta-btn">
-          <SearchIcon /> 묘역찾기
+        <Link href="/grave-search" className="side-cta-btn">
+          <SearchIcon /><span>묘역찾기</span>
         </Link>
       </div>
     </div>
