@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
 import { findUserByUsername, toId } from "../../../lib/store";
 import { setSessionCookie, signSession } from "../../../lib/auth";
+import { redirectTo } from "../../../lib/public-url";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const hash = String(user?.passwordHash || user?.password || "");
 
     if (!user || !hash || !(await bcrypt.compare(password, hash))) {
-      return NextResponse.redirect(new URL("/login?error=1", request.url));
+      return redirectTo(request, "/login?error=1");
     }
 
     const token = await signSession({
@@ -22,8 +22,8 @@ export async function POST(request: Request) {
       role: user.role === "admin" ? "admin" : "member",
     });
     await setSessionCookie(token);
-    return NextResponse.redirect(new URL(user.role === "admin" ? "/admin" : "/", request.url));
+    return redirectTo(request, user.role === "admin" ? "/admin" : "/");
   } catch {
-    return NextResponse.redirect(new URL("/login?error=server", request.url));
+    return redirectTo(request, "/login?error=server");
   }
 }

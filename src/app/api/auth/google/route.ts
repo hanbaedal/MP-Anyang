@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { authBaseUrl, randomState } from "../../../../lib/oauth";
+import { redirectTo } from "../../../../lib/public-url";
 
 export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
-    return NextResponse.redirect(new URL("/login?oauth=google-config", request.url));
+    return redirectTo(request, "/login?oauth=google-config");
   }
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);

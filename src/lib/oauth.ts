@@ -1,18 +1,10 @@
 import { randomBytes } from "crypto";
-import { NextResponse } from "next/server";
 import { loginAs } from "./auth";
+import { publicOrigin, redirectTo } from "./public-url";
 import { createOAuthMember, findUserByGoogle, findUserByKakao, toId } from "./store";
 
-export function authBaseUrl(request?: Request) {
-  const fromEnv = (process.env.AUTH_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  if (request) {
-    const url = new URL(request.url);
-    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || url.host;
-    const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "") || "https";
-    return `${proto}://${host}`.replace(/\/$/, "");
-  }
-  throw new Error("사이트 주소를 확인할 수 없습니다. AUTH_BASE_URL을 설정해 주세요.");
+export function authBaseUrl(request: Request) {
+  return publicOrigin(request);
 }
 
 export async function completeOAuthLogin(input: {
@@ -46,9 +38,7 @@ export async function completeOAuthLogin(input: {
 }
 
 export function oauthErrorRedirect(request: Request, message: string) {
-  const url = new URL("/login", request.url);
-  url.searchParams.set("oauth", message);
-  return NextResponse.redirect(url);
+  return redirectTo(request, `/login?oauth=${encodeURIComponent(message)}`);
 }
 
 export function randomState() {

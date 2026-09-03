@@ -1,7 +1,7 @@
 import { hash } from "bcryptjs";
-import { NextResponse } from "next/server";
 import { createMember, phoneExists, usernameExists } from "../../../lib/store";
 import type { Relation } from "../../../lib/store";
+import { redirectTo } from "../../../lib/public-url";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -13,19 +13,19 @@ export async function POST(request: Request) {
   const email = String(form.get("email") || "").trim();
 
   if (!username || !password || !name || !phone) {
-    return NextResponse.redirect(new URL("/signup?error=required", request.url));
+    return redirectTo(request, "/signup?error=required");
   }
   if (password !== password2) {
-    return NextResponse.redirect(new URL("/signup?error=pw", request.url));
+    return redirectTo(request, "/signup?error=pw");
   }
   if (password.length < 6) {
-    return NextResponse.redirect(new URL("/signup?error=short", request.url));
+    return redirectTo(request, "/signup?error=short");
   }
   if (await usernameExists(username)) {
-    return NextResponse.redirect(new URL("/signup?error=id", request.url));
+    return redirectTo(request, "/signup?error=id");
   }
   if (await phoneExists(phone)) {
-    return NextResponse.redirect(new URL("/signup?error=phone", request.url));
+    return redirectTo(request, "/signup?error=phone");
   }
 
   const deceasedNames = form.getAll("deceasedName").map(String);
@@ -55,8 +55,5 @@ export async function POST(request: Request) {
     annualFee: Number(form.get("annualFee") || 0),
   });
 
-  const url = new URL("/login", request.url);
-  url.searchParams.set("signup", "1");
-  url.searchParams.set("u", username);
-  return NextResponse.redirect(url);
+  return redirectTo(request, `/login?signup=1&u=${encodeURIComponent(username)}`);
 }

@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { authBaseUrl, completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { redirectTo } from "../../../../../lib/public-url";
 
 export async function GET(request: Request) {
   const code = new URL(request.url).searchParams.get("code");
@@ -34,5 +34,5 @@ export async function GET(request: Request) {
     name: me.kakao_account?.profile?.nickname || "카카오회원",
     email: me.kakao_account?.email || "",
   });
-  return NextResponse.redirect(new URL("/mypage", request.url));
+  return redirectTo(request, "/mypage");
 }
