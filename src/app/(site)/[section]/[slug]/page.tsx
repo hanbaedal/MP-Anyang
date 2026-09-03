@@ -6,14 +6,8 @@ import { readSession } from "../../../../lib/auth";
 
 type Params = { section: string; slug: string };
 
-export async function generateStaticParams() {
-  return [
-    ...slugsOf("about").map((item) => ({ section: "about", slug: item.slug })),
-    ...slugsOf("lots").map((item) => ({ section: "lots", slug: item.slug })),
-    ...slugsOf("facilities").map((item) => ({ section: "facilities", slug: item.slug })),
-    ...slugsOf("services").map((item) => ({ section: "services", slug: item.slug })),
-  ];
-}
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 async function submitBoard(formData: FormData) {
   "use server";

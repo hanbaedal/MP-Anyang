@@ -1,4 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
+import { ensureSeed } from "./seed";
 
 const mongoUri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "MP-Anyang";
@@ -12,6 +13,7 @@ function requireMongoUri() {
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _mongoSeeded: boolean | undefined;
 }
 
 function getClientPromise() {
@@ -24,5 +26,10 @@ function getClientPromise() {
 
 export async function getDb(): Promise<Db> {
   const client = await getClientPromise();
-  return client.db(dbName);
+  const db = client.db(dbName);
+  if (!global._mongoSeeded) {
+    global._mongoSeeded = true;
+    ensureSeed(db).catch(() => {});
+  }
+  return db;
 }

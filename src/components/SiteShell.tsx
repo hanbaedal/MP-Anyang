@@ -106,6 +106,15 @@ export function SiteShell({ children, userName }: Props) {
               )}
             </div>
           ))}
+
+          <div className="nav-cta">
+            <Link href="/consult" className="btn btn-primary nav-cta-btn" onClick={() => setMobileOpen(false)}>
+              <ChatIcon /> 상담신청
+            </Link>
+            <Link href="/grave-search" className="btn nav-cta-btn" onClick={() => setMobileOpen(false)}>
+              <SearchIcon /> 묘역찾기
+            </Link>
+          </div>
         </aside>
         <button className={`drawer-backdrop ${mobileOpen ? "open" : ""}`} onClick={() => setMobileOpen(false)} />
 
@@ -113,15 +122,23 @@ export function SiteShell({ children, userName }: Props) {
           {children}
           <footer className="page-footer">
             <SocialBar light />
+            <div className="footer-info">
+              <p className="footer-name">안양공원묘지</p>
+              <p>경기도 의왕시 청계동 산 8-5 일원</p>
+              <p>관리사무실: 031-421-9165 | 긴급연락: 010-9111-0107</p>
+              <p>운영시간: 매일 08:00 – 18:00 (동절기 08:00 – 17:30)</p>
+              <p className="footer-copy">&copy; {new Date().getFullYear()} 안양공원묘지. All rights reserved.</p>
+            </div>
           </footer>
         </main>
       </div>
 
-      <div className="floating">
-        <Link href="/consult" className="btn consult">
+      {/* 모바일에서만 보이는 하단 고정 버튼 */}
+      <div className="mobile-cta">
+        <Link href="/consult" className="btn btn-primary mobile-cta-btn">
           <ChatIcon /> 상담신청
         </Link>
-        <Link href="/grave-search" className="btn">
+        <Link href="/grave-search" className="btn mobile-cta-btn">
           <SearchIcon /> 묘역찾기
         </Link>
       </div>
