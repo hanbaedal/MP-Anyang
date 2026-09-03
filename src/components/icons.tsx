@@ -83,3 +83,22 @@ export function VolumeIcon({ muted }: { muted: boolean }) {
     </svg>
   );
 }
+
+export function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M3 3l18 18" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.4M9.9 5.1A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a18.8 18.8 0 0 1-4.1 4.7" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M6.7 6.7C4.1 8.4 2 12 2 12s3.5 6 10 6a10.2 10.2 0 0 0 4.9-1.2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}

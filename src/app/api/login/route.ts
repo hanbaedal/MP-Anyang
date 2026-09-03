@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const password = String(formData.get("password") || "");
   const user = await findUserByUsername(username);
 
-  if (!user || !(await bcrypt.compare(password, String(user.passwordHash || "")))) {
+  if (!user || !user.passwordHash || !(await bcrypt.compare(password, String(user.passwordHash)))) {
     return NextResponse.redirect(new URL("/login?error=1", request.url));
   }
 

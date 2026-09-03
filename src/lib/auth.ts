@@ -41,6 +41,10 @@ export async function readSession(): Promise<SessionUser | null> {
   }
 }
 
+export async function loginAs(user: SessionUser) {
+  await setSessionCookie(await signSession(user));
+}
+
 export async function setSessionCookie(token: string) {
   const jar = await cookies();
   jar.set(COOKIE_NAME, token, {

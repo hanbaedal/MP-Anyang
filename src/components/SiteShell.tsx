@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { MENU, groupIdFromPath } from "../lib/menu";
+import { ADMIN_MENU, MENU, groupIdFromPath } from "../lib/menu";
 import { ChatIcon, Chevron, FacebookIcon, InstagramIcon, LogoMark, NaverCafeIcon, SearchIcon, YoutubeIcon } from "./icons";
 
 type Props = {
   children: React.ReactNode;
   userName?: string;
+  userRole?: "admin" | "member";
 };
 
 const slogan = "추억과 그리움이 머무는 자리, 안양공원묘지";
@@ -24,7 +25,7 @@ function SocialBar({ light = false }: { light?: boolean }) {
   );
 }
 
-export function SiteShell({ children, userName }: Props) {
+export function SiteShell({ children, userName, userRole }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,6 +56,11 @@ export function SiteShell({ children, userName }: Props) {
         <div className="header-actions">
           {userName ? (
             <>
+              {userRole === "member" ? (
+                <Link className="btn btn-sm" href="/mypage">내정보</Link>
+              ) : userRole === "admin" ? (
+                <Link className="btn btn-sm" href="/admin">관리</Link>
+              ) : null}
               <span className="meta">{userName}</span>
               <button className="btn" onClick={onLogout}>
                 로그아웃
@@ -99,6 +105,23 @@ export function SiteShell({ children, userName }: Props) {
             </div>
           ))}
 
+          {userRole === "admin" && (
+            <div className="nav-group admin-nav">
+              <div className="nav-group-btn static">관리자</div>
+              <div className="nav-children">
+                {ADMIN_MENU.map((child) => (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={`nav-link ${pathname === child.href || pathname.startsWith(`${child.href}/`) ? "active" : ""}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
         <button className={`drawer-backdrop ${mobileOpen ? "open" : ""}`} onClick={() => setMobileOpen(false)} />
 

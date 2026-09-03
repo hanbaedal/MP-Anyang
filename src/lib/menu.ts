@@ -9,6 +9,13 @@ export type MenuGroup = {
   children: MenuChild[];
 };
 
+export const ADMIN_MENU: MenuChild[] = [
+  { href: "/admin", label: "관리자 홈" },
+  { href: "/admin/members", label: "회원 관리" },
+  { href: "/admin/graves", label: "묘역 관리" },
+  { href: "/admin/park", label: "공원 정보" },
+];
+
 export const MENU: MenuGroup[] = [
   {
     id: "about",
