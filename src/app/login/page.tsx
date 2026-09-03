@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { PasswordInput } from "../../components/PasswordInput";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [modal, setModal] = useState<"none" | "reset">("none");
   const [step, setStep] = useState<1 | 2>(1);
@@ -67,7 +66,6 @@ function LoginForm() {
     setNewPw("");
     setNewPw2("");
     setMsg("비밀번호가 변경되었습니다. 로그인해 주세요.");
-    router.replace(`/login?u=${encodeURIComponent(data.username)}`);
   };
 
   return (
@@ -76,7 +74,7 @@ function LoginForm() {
       {oauthMsg && <p className="alert">간편 로그인 설정이 필요합니다. Render 환경변수를 확인해 주세요.</p>}
       {msg && <p className={msg.includes("변경") || msg.includes("인증") ? "ok" : "alert"}>{msg}</p>}
 
-      <form className="panel form-grid" action="/api/login" method="POST" key={`${username}-${password}`}>
+      <form className="panel form-grid" action="/api/login" method="POST">
         <label>
           아이디
           <input name="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
