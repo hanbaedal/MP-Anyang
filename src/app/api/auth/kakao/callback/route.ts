@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       grant_type: "authorization_code",
       client_id: clientId,
       client_secret: clientSecret || "",
-      redirect_uri: `${authBaseUrl()}/api/auth/kakao/callback`,
+      redirect_uri: `${authBaseUrl(request)}/api/auth/kakao/callback`,
       code,
     }),
   });

@@ -3,8 +3,16 @@ import { NextResponse } from "next/server";
 import { loginAs } from "./auth";
 import { createOAuthMember, findUserByGoogle, findUserByKakao, toId } from "./store";
 
-export function authBaseUrl() {
-  return process.env.AUTH_BASE_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
+export function authBaseUrl(request?: Request) {
+  const fromEnv = (process.env.AUTH_BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (request) {
+    const url = new URL(request.url);
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || url.host;
+    const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "") || "https";
+    return `${proto}://${host}`.replace(/\/$/, "");
+  }
+  throw new Error("사이트 주소를 확인할 수 없습니다. AUTH_BASE_URL을 설정해 주세요.");
 }
 
 export async function completeOAuthLogin(input: {

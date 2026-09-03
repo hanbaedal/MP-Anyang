@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   if (!clientId) {
     return NextResponse.redirect(new URL("/login?oauth=kakao-config", request.url));
   }
-  const redirectUri = `${authBaseUrl()}/api/auth/kakao/callback`;
+  const redirectUri = `${authBaseUrl(request)}/api/auth/kakao/callback`;
   const url = new URL("https://kauth.kakao.com/oauth/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);

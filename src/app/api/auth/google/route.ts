@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   }
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", `${authBaseUrl()}/api/auth/google/callback`);
+  url.searchParams.set("redirect_uri", `${authBaseUrl(request)}/api/auth/google/callback`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid email profile");
   url.searchParams.set("state", randomState());

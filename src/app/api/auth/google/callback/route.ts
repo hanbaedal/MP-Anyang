@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: `${authBaseUrl()}/api/auth/google/callback`,
+      redirect_uri: `${authBaseUrl(request)}/api/auth/google/callback`,
       grant_type: "authorization_code",
     }),
   });
