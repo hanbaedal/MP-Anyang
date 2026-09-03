@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { findUserByUsername, toId } from "@/lib/store";
-import { setSessionCookie, signSession } from "@/lib/auth";
+import { findUserByUsername, toId } from "../../../lib/store";
+import { setSessionCookie, signSession } from "../../../lib/auth";
 
 export async function POST(request: Request) {
   const formData = await request.formData();

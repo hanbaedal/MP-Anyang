@@ -1,4 +1,4 @@
-import { searchGrave } from "@/lib/store";
+import { searchGrave } from "../../../lib/store";
 
 export default async function GraveSearchPage({
   searchParams,

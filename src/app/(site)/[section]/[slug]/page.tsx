@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getPage, slugsOf } from "@/lib/content";
-import { createBoardPost, createInquiry, getBoard, getFaqs, getGallery, getInquiry, getNotices, toId } from "@/lib/store";
-import { readSession } from "@/lib/auth";
+import { getPage, slugsOf } from "../../../../lib/content";
+import { createBoardPost, createInquiry, getBoard, getFaqs, getGallery, getInquiry, getNotices, toId } from "../../../../lib/store";
+import { readSession } from "../../../../lib/auth";
 
 type Params = { section: string; slug: string };
 

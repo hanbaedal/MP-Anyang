@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { MENU, groupIdFromPath } from "@/lib/menu";
+import { MENU, groupIdFromPath } from "../lib/menu";
 import { ChatIcon, Chevron, LogoMark, SearchIcon } from "./icons";
 
 type Props = {

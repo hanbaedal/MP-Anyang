@@ -1,4 +1,4 @@
-import { createConsult } from "@/lib/store";
+import { createConsult } from "../../../lib/store";
 
 async function submitConsult(formData: FormData) {
   "use server";

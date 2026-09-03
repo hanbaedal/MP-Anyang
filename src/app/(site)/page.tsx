@@ -1,4 +1,4 @@
-import { IntroGate } from "@/components/IntroGate";
+import { IntroGate } from "../../components/IntroGate";
 
 export default function HomePage() {
   return (
