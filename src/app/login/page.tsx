@@ -20,7 +20,7 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="meta">
-        기본 관리자 계정은 서버 최초 구동 시 생성됩니다. 로그인 후 <Link href="/">홈으로</Link> 이동해 주세요.
+        운영 계정은 데이터베이스에서 별도로 관리합니다. 로그인 후 <Link href="/">홈으로</Link> 이동해 주세요.
       </p>
     </main>
   );
