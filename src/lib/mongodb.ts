@@ -13,7 +13,7 @@ function requireMongoUri() {
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
-  var _mongoSeeded: boolean | undefined;
+  var _mongoSeedPromise: Promise<void> | undefined;
 }
 
 function getClientPromise() {
@@ -27,9 +27,9 @@ function getClientPromise() {
 export async function getDb(): Promise<Db> {
   const client = await getClientPromise();
   const db = client.db(dbName);
-  if (!global._mongoSeeded) {
-    global._mongoSeeded = true;
-    ensureSeed(db).catch(() => {});
+  if (!global._mongoSeedPromise) {
+    global._mongoSeedPromise = ensureSeed(db);
   }
+  await global._mongoSeedPromise;
   return db;
 }

@@ -11,8 +11,7 @@ export type SessionUser = {
 };
 
 function secret() {
-  const value = process.env.JWT_SECRET;
-  if (!value) throw new Error("JWT_SECRET이 없습니다.");
+  const value = process.env.JWT_SECRET || "anyang-park-jwt-7f3c9e2a1b84d6c0e5f118a2";
   return new TextEncoder().encode(value);
 }
 

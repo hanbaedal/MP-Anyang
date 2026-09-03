@@ -1,25 +1,30 @@
 import { hash } from "bcryptjs";
 import type { Db } from "mongodb";
 
+const ADMINS = [
+  { username: "MP-Anyang-00", plainPw: "MPA000!", name: "관리자1" },
+  { username: "MP-Anyang-01", plainPw: "MPA001", name: "관리자2" },
+];
+
 export async function ensureSeed(db: Db) {
   const users = db.collection("users");
-  const admins = [
-    { username: "MP-Anyang-00", plainPw: "MPA000!", name: "관리자1" },
-    { username: "MP-Anyang-01", plainPw: "MPA001", name: "관리자2" },
-  ];
 
-  for (const a of admins) {
-    const exists = await users.findOne({ username: a.username });
-    if (exists) continue;
-    await users.insertOne({
-      username: a.username,
-      passwordHash: await hash(a.plainPw, 12),
-      name: a.name,
-      role: "admin",
-      phone: "",
-      email: "",
-      createdAt: new Date(),
-    });
+  for (const a of ADMINS) {
+    const passwordHash = await hash(a.plainPw, 12);
+    await users.updateOne(
+      { username: a.username },
+      {
+        $set: {
+          username: a.username,
+          passwordHash,
+          name: a.name,
+          role: "admin",
+        },
+        $unset: { password: "" },
+        $setOnInsert: { phone: "", email: "", createdAt: new Date() },
+      },
+      { upsert: true },
+    );
   }
 
   if ((await db.collection("notices").countDocuments()) === 0) {

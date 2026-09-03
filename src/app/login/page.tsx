@@ -20,6 +20,7 @@ function LoginForm() {
 
   const signupDone = searchParams.get("signup") === "1";
   const oauthMsg = searchParams.get("oauth");
+  const loginError = searchParams.get("error");
 
   const verifyPhone = async () => {
     setMsg("");
@@ -72,6 +73,8 @@ function LoginForm() {
     <>
       {signupDone && <p className="ok">회원가입이 완료되었습니다. 로그인해 주세요.</p>}
       {oauthMsg && <p className="alert">간편 로그인 설정이 필요합니다. Render 환경변수를 확인해 주세요.</p>}
+      {loginError === "1" && <p className="alert">아이디 또는 비밀번호가 올바르지 않습니다.</p>}
+      {loginError === "server" && <p className="alert">로그인 처리 중 오류가 났습니다. 잠시 후 다시 시도해 주세요.</p>}
       {msg && <p className={msg.includes("변경") || msg.includes("인증") ? "ok" : "alert"}>{msg}</p>}
 
       <form className="panel form-grid" action="/api/login" method="POST">

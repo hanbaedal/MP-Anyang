@@ -207,7 +207,7 @@ export async function deleteParkPhoto(id: string) {
 /* ── 사용자 ── */
 export async function findUserByUsername(username: string) {
   const db = await getDb();
-  return db.collection("users").findOne({ username });
+  return db.collection("users").findOne({ username: username.trim() });
 }
 
 export async function findUserById(id: string) {
