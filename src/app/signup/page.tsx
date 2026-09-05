@@ -24,6 +24,8 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const [plotNo, setPlotNo] = useState("");
+  const [annualFee, setAnnualFee] = useState(0);
+  const [feeAuto, setFeeAuto] = useState(false);
   const [rowCount, setRowCount] = useState(2);
   const [plotHint, setPlotHint] = useState("");
   const [plotStatus, setPlotStatus] = useState<"idle" | "loading" | "ok" | "miss">("idle");
@@ -36,6 +38,7 @@ function SignupForm() {
     if (!key) {
       setPlotHint("");
       setPlotStatus("idle");
+      setFeeAuto(false);
       return;
     }
 
@@ -56,6 +59,10 @@ function SignupForm() {
       const slots = Number(data.slots) || 2;
       setPlotStatus("ok");
       setPlotHint(`${data.type}${data.capacity ? ` · ${data.capacity}` : ""} — 망자 ${slots}명 (${data.hint || ""})`);
+      if (data.annualFee) {
+        setAnnualFee(Number(data.annualFee));
+        setFeeAuto(true);
+      }
       setRowCount(slots);
       setDeceasedNames((prev) => resizeRows(prev, slots));
       setRelations((prev) => resizeRows(prev, slots));
@@ -129,8 +136,18 @@ function SignupForm() {
           </label>
           <label>
             연간 관리비(원)
-            <input name="annualFee" type="number" min="0" defaultValue="0" />
+            <input
+              name="annualFee"
+              type="number"
+              min="0"
+              value={annualFee}
+              readOnly={feeAuto}
+              onChange={(e) => setAnnualFee(Number(e.target.value))}
+            />
           </label>
+          {feeAuto && annualFee > 0 ? (
+            <p className="meta signup-fee-hint ok">묘역 형태별 요금표에서 {annualFee.toLocaleString()}원이 자동 적용되었습니다.</p>
+          ) : null}
         </div>
 
         <h2 className="signup-section-title">관계 / 망자</h2>

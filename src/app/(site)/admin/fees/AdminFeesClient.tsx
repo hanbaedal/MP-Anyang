@@ -31,6 +31,9 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editTarget, setEditTarget] = useState<AdminFeeRow | null>(null);
   const [historyRows, setHistoryRows] = useState<FeeRecord[]>([]);
+  const [annualFeeEdit, setAnnualFeeEdit] = useState(0);
+  const [plotSuggestedFee, setPlotSuggestedFee] = useState<number | null>(null);
+  const [plotFeeHint, setPlotFeeHint] = useState("");
 
   const stats = useMemo(() => {
     const counts = { 완납: 0, 미납: 0, 분납: 0 };
@@ -50,10 +53,28 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
     });
   }, [members, query, statusFilter]);
 
-  const openEdit = (member: AdminFeeRow) => {
+  const openEdit = async (member: AdminFeeRow) => {
     setEditTarget(member);
+    setAnnualFeeEdit(member.annualFee);
+    setPlotFeeHint("");
+    setPlotSuggestedFee(null);
     const rows = member.feeHistory.length ? member.feeHistory.map((r) => ({ ...r })) : [emptyHistoryRow()];
     setHistoryRows(rows);
+
+    if (member.plotNo.trim()) {
+      try {
+        const res = await fetch(`/api/plot-lookup?plotNo=${encodeURIComponent(member.plotNo.trim())}`);
+        const data = await res.json();
+        if (data.found && data.annualFee) {
+          const fee = Number(data.annualFee);
+          setPlotSuggestedFee(fee);
+          const src = data.feeSource === "plot" ? "묘역 개별 지정" : "형태별 요금표";
+          setPlotFeeHint(`${data.type} ${data.capacity} · ${src} → ${fee.toLocaleString()}원`);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   const addHistoryRow = () => {
@@ -150,7 +171,14 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
               <div className="form-grid modal-form-compact">
                 <label>
                   연간 관리비 (원)
-                  <input name="annualFee" type="number" min="0" defaultValue={editTarget.annualFee} required />
+                  <input
+                    name="annualFee"
+                    type="number"
+                    min="0"
+                    value={annualFeeEdit}
+                    onChange={(e) => setAnnualFeeEdit(Number(e.target.value))}
+                    required
+                  />
                 </label>
                 <label>
                   납부 상태
@@ -163,6 +191,16 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
                   </select>
                 </label>
               </div>
+              {plotFeeHint ? (
+                <p className="meta admin-plot-fee-hint">
+                  {plotFeeHint}
+                  {plotSuggestedFee ? (
+                    <button type="button" className="link-btn" onClick={() => setAnnualFeeEdit(plotSuggestedFee)}>
+                      이 금액 적용
+                    </button>
+                  ) : null}
+                </p>
+              ) : null}
 
               <h3>연도별 납부 내역</h3>
               <p className="meta">회원 내 정보 화면에 표시됩니다. 최대 10건.</p>

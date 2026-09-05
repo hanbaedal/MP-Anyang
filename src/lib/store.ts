@@ -1,6 +1,8 @@
 import { ObjectId, type Document } from "mongodb";
 import { getDb } from "./mongodb";
 import { normalizePhone } from "./phone";
+import type { FeeRateRow } from "./fee-rates";
+import { mergeFeeRates, resolveAnnualFee } from "./fee-rates";
 
 export type Relation = {
   deceasedName: string;
@@ -205,6 +207,7 @@ export type GraveInput = {
   zone: string;
   type: string;
   capacity?: string;
+  annualFee?: number;
   buriedAt: string;
   mapNote?: string;
   photos?: string[];
@@ -407,4 +410,37 @@ export async function updatePassword(userId: string, passwordHash: string) {
     { _id: oid(userId) },
     { $set: { passwordHash }, $unset: { resetToken: "", resetExpires: "" } },
   );
+}
+
+/* ── 관리비 요금표 (형태·기수별) ── */
+export async function getFeeRatesMerged(): Promise<FeeRateRow[]> {
+  const db = await getDb();
+  const stored = await db.collection("feeRates").find().toArray();
+  const rows = stored.map((r) => ({
+    type: String(r.type),
+    capacity: String(r.capacity),
+    annualFee: Number(r.annualFee || 0),
+  }));
+  return mergeFeeRates(rows);
+}
+
+export async function saveFeeRates(rates: FeeRateRow[]) {
+  const db = await getDb();
+  await db.collection("feeRates").deleteMany({});
+  if (rates.length) {
+    await db.collection("feeRates").insertMany(rates.map((r) => ({ ...r, updatedAt: new Date() })));
+  }
+}
+
+export async function resolvePlotAnnualFee(plotNo: string) {
+  const grave = await findGraveByPlotNo(plotNo);
+  if (!grave) return null;
+  const rates = await getFeeRatesMerged();
+  const override = Number(grave.annualFee || 0);
+  return resolveAnnualFee({
+    type: String(grave.type || ""),
+    capacity: String(grave.capacity || ""),
+    plotOverride: override > 0 ? override : undefined,
+    rates,
+  });
 }

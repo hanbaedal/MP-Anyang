@@ -10,6 +10,8 @@ export type AdminGraveRow = {
   familyName: string;
   zone: string;
   type: string;
+  capacity: string;
+  annualFee: number;
   buriedAt: string;
   mapNote: string;
   mapImage: string;
@@ -64,6 +66,20 @@ function GraveFields({ tab, grave }: { tab: Tab; grave?: AdminGraveRow }) {
               <option key={t}>{t}</option>
             ))}
           </select>
+        </label>
+        <label>
+          기수·규모
+          <input name="capacity" defaultValue={grave?.capacity} placeholder="2기, 합장형, 4위…" />
+        </label>
+        <label>
+          연간 관리비 (개별)
+          <input
+            name="annualFee"
+            type="number"
+            min="0"
+            defaultValue={grave?.annualFee || ""}
+            placeholder="비우면 요금표 적용"
+          />
         </label>
         <label>
           안치일

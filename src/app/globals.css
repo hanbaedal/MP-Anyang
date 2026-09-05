@@ -2699,6 +2699,52 @@ h3,
   flex-shrink: 0;
 }
 
+.admin-fee-rates {
+  margin-bottom: 16px;
+}
+
+.admin-fee-rates-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-fee-rates-head h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.admin-fee-rates-form {
+  margin-top: 14px;
+}
+
+.admin-fee-rates-table input {
+  width: 120px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.admin-fee-rates-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-plot-fee-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.signup-fee-hint {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
+
 .admin-member-name .meta {
   display: block;
   margin-top: 2px;
