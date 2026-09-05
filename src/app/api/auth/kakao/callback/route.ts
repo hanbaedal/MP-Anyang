@@ -10,8 +10,8 @@ export async function GET(request: Request) {
   if (oauthError) return oauthErrorRedirect(request, `kakao-${oauthError}`);
 
   const code = url.searchParams.get("code");
-  const clientId = process.env.KAKAO_CLIENT_ID;
-  const clientSecret = process.env.KAKAO_CLIENT_SECRET;
+    const clientId = process.env.KAKAO_CLIENT_ID?.trim();
+    const clientSecret = process.env.KAKAO_CLIENT_SECRET?.trim();
   if (!code || !clientId) return oauthErrorRedirect(request, "kakao-fail");
 
   try {

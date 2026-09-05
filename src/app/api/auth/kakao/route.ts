@@ -6,7 +6,7 @@ import { redirectTo } from "../../../../lib/public-url";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const clientId = process.env.KAKAO_CLIENT_ID;
+  const clientId = process.env.KAKAO_CLIENT_ID?.trim();
   if (!clientId) {
     return redirectTo(request, "/login?oauth=kakao-config");
   }
@@ -16,6 +16,6 @@ export async function GET(request: Request) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", randomState());
-  url.searchParams.set("scope", "profile_nickname account_email");
+  // scope 미지정 — 카카오 콘솔 [동의항목] 설정을 따름 (미설정 scope 요청 시 KOE205)
   return NextResponse.redirect(url);
 }
