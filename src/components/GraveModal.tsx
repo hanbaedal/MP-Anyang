@@ -110,7 +110,7 @@ export function GraveModal({
               공원 풍광
             </button>
             <button type="button" className={`tab ${tab === "grave" ? "active" : ""}`} onClick={() => setTab("grave")}>
-              묘역 사진
+              추억 회상하기
             </button>
           </div>
 
@@ -211,7 +211,7 @@ export function GraveModal({
                     />
                   ))
                 ) : (
-                  <p className="meta">등록된 묘역 사진이 없습니다. 명절 전후 관리자 점검 사진이 업데이트됩니다.</p>
+                  <p className="meta">등록된 추억 회상 사진이 없습니다. 명절 전후 관리자 점검 사진이 업데이트됩니다.</p>
                 )}
               </div>
             )}

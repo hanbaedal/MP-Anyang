@@ -263,6 +263,11 @@ export async function listMemorialJobs(status?: MemorialJobDoc["status"]) {
   return db.collection<MemorialJobDoc>("memorialJobs").find(filter).sort({ createdAt: -1 }).toArray();
 }
 
+export async function listMemorialJobsByHall(hallCode: string) {
+  const db = await getDb();
+  return db.collection<MemorialJobDoc>("memorialJobs").find({ hallCode }).sort({ createdAt: -1 }).toArray();
+}
+
 export async function findMemorialJob(id: string) {
   const db = await getDb();
   return db.collection<MemorialJobDoc>("memorialJobs").findOne({ _id: oid(id) });

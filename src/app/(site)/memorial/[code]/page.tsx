@@ -6,10 +6,12 @@ import { detectMemorialEvents } from "../../../../lib/memorial-events";
 import {
   findHallByCode,
   listEntries,
+  listMemorialJobsByHall,
   memberCanEditHall,
   serializeMemorialDoc,
   syncHall,
 } from "../../../../lib/memorial-store";
+import { findGraveByPlotNo } from "../../../../lib/store";
 
 export default async function MemorialHallPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -47,6 +49,19 @@ export default async function MemorialHallPage({ params }: { params: Promise<{ c
   const canEdit = session ? await memberCanEditHall(session.id, session.role, hall) : false;
   const includePending = session?.role === "admin";
   const rawEntries = await listEntries(code, includePending);
+  const grave = hall.plotNo ? await findGraveByPlotNo(hall.plotNo) : null;
+  const recallPhotos = ((grave?.photos as string[] | undefined) || []).filter(Boolean).slice(0, 10);
+  const rawJobs = await listMemorialJobsByHall(code);
+  const jobs = rawJobs.map((doc) => {
+    const s = serializeMemorialDoc(doc) as Record<string, unknown>;
+    return {
+      _id: String(s._id),
+      status: String(s.status),
+      note: String(s.note),
+      staffNote: s.staffNote ? String(s.staffNote) : undefined,
+      createdAt: String(s.createdAt),
+    };
+  });
   const entries = rawEntries.map((doc) => {
     const s = serializeMemorialDoc(doc) as Record<string, unknown>;
     return {
@@ -84,8 +99,11 @@ export default async function MemorialHallPage({ params }: { params: Promise<{ c
         hallCode={hall.code}
         deceasedName={hall.deceasedName}
         plotNo={hall.plotNo}
+        deathDate={hall.deathDate}
         canEdit={canEdit}
+        recallPhotos={recallPhotos}
         entries={entries}
+        jobs={jobs}
       />
     </article>
   );
