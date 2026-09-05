@@ -3,8 +3,10 @@ import { randomState } from "../../../../lib/oauth";
 import { googleRedirectUri } from "../../../../lib/oauth-redirect";
 import { redirectTo } from "../../../../lib/public-url";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
   if (!clientId) {
     return redirectTo(request, "/login?oauth=google-config");
   }

@@ -17,14 +17,16 @@ export function googleRedirectUri(request: Request) {
 }
 
 export function oauthConfigInfo(request: Request) {
-  const clientId = process.env.KAKAO_CLIENT_ID || "";
+  const kakaoClientId = process.env.KAKAO_CLIENT_ID || "";
+  const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
   return {
     authBaseUrl: authBaseUrl(request),
     kakaoRedirectUri: kakaoRedirectUri(request),
     googleRedirectUri: googleRedirectUri(request),
-    kakaoClientIdHint: clientId ? `${clientId.slice(0, 6)}…${clientId.slice(-4)}` : "(미설정)",
-    hasKakaoSecret: Boolean(process.env.KAKAO_CLIENT_SECRET),
-    hasGoogleClient: Boolean(process.env.GOOGLE_CLIENT_ID),
-    hasGoogleSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET),
+    kakaoClientIdHint: kakaoClientId ? `${kakaoClientId.slice(0, 6)}…${kakaoClientId.slice(-4)}` : "(미설정)",
+    googleClientIdHint: googleClientId ? `${googleClientId.slice(0, 8)}…${googleClientId.slice(-12)}` : "(미설정)",
+    hasKakaoSecret: Boolean(process.env.KAKAO_CLIENT_SECRET?.trim()),
+    hasGoogleClient: Boolean(process.env.GOOGLE_CLIENT_ID?.trim()),
+    hasGoogleSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim()),
   };
 }

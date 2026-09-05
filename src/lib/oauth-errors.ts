@@ -12,6 +12,13 @@ export function oauthErrorMessage(code: string | null | undefined): string | nul
     "kakao-token-fail": "카카오 인증 코드 교환에 실패했습니다.",
     "kakao-server": "서버 처리 중 오류가 났습니다. 잠시 후 다시 시도해 주세요.",
     "google-fail": "Google 로그인에 실패했습니다. Google Cloud Redirect URI 설정을 확인해 주세요.",
+    "google-config":
+      "Google Client ID가 없습니다. Render 환경변수 GOOGLE_CLIENT_ID를 확인해 주세요.",
+    "google-invalid_grant":
+      "Google Redirect URI 불일치입니다. 콘솔에 https://mp-anyang.onrender.com/api/auth/google/callback 를 정확히 등록해 주세요.",
+    "google-invalid_client": "Google Client ID 또는 Client Secret이 올바르지 않습니다.",
+    "google-access_denied": "Google 로그인이 취소되었습니다.",
+    "google-server": "서버 처리 중 오류가 났습니다. 잠시 후 다시 시도해 주세요.",
   };
   if (map[code]) return map[code];
   if (code.startsWith("kakao-")) return map["kakao-fail"];
@@ -20,3 +27,4 @@ export function oauthErrorMessage(code: string | null | undefined): string | nul
 }
 
 export const KAKAO_REDIRECT_URI_HINT = "https://mp-anyang.onrender.com/api/auth/kakao/callback";
+export const GOOGLE_REDIRECT_URI_HINT = "https://mp-anyang.onrender.com/api/auth/google/callback";

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { CompactFooter } from "../../components/CompactFooter";
 import { PasswordInput } from "../../components/PasswordInput";
-import { KAKAO_REDIRECT_URI_HINT, oauthErrorMessage } from "../../lib/oauth-errors";
+import { GOOGLE_REDIRECT_URI_HINT, KAKAO_REDIRECT_URI_HINT, oauthErrorMessage } from "../../lib/oauth-errors";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -82,6 +82,17 @@ function LoginForm() {
               카카오 개발자 콘솔 → 앱 → 카카오 로그인 → Redirect URI에 아래 주소를 등록하세요.
               <br />
               <code>{KAKAO_REDIRECT_URI_HINT}</code>
+              <br />
+              <a href="/api/auth/oauth-info" target="_blank" rel="noreferrer">
+                OAuth 설정 확인 (JSON)
+              </a>
+            </p>
+          )}
+          {oauthMsg.startsWith("google") && (
+            <p className="meta">
+              Google Cloud → 사용자 인증 정보 → OAuth 클라이언트 → 승인된 리디렉션 URI에 아래 주소를 등록하세요.
+              <br />
+              <code>{GOOGLE_REDIRECT_URI_HINT}</code>
               <br />
               <a href="/api/auth/oauth-info" target="_blank" rel="noreferrer">
                 OAuth 설정 확인 (JSON)
