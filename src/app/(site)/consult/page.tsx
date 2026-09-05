@@ -1,3 +1,5 @@
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createConsult } from "../../../lib/store";
 
 async function submitConsult(formData: FormData) {
@@ -8,14 +10,22 @@ async function submitConsult(formData: FormData) {
     lotType: String(formData.get("lotType") || ""),
     message: String(formData.get("message") || ""),
   });
+  revalidatePath("/consult");
+  redirect("/consult?ok=1");
 }
 
-export default function ConsultPage() {
+export default async function ConsultPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string }>;
+}) {
+  const { ok } = await searchParams;
   return (
     <article className="article">
       <p className="kicker">서비스</p>
       <h1>상담신청</h1>
       <p className="lead">분양, 상조, 리모델링 상담을 남겨 주시면 담당자가 연락드립니다.</p>
+      {ok === "1" && <p className="ok">상담 신청이 접수되었습니다. 담당자가 연락드리겠습니다.</p>}
       <form action={submitConsult} className="panel form-grid">
         <label>
           신청자 이름

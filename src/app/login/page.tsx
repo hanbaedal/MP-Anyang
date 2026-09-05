@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { CompactFooter } from "../../components/CompactFooter";
 import { PasswordInput } from "../../components/PasswordInput";
 
 function LoginForm() {
@@ -129,14 +130,17 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="article login-page">
-      <p className="kicker">계정</p>
-      <h1>로그인</h1>
-      <p className="lead">회원 또는 관리자 계정으로 로그인하세요.</p>
-      <Suspense fallback={<p className="meta">로딩 중...</p>}>
-        <LoginForm />
-      </Suspense>
-      <p className="meta">로그인 후 <Link href="/">홈으로</Link> 이동할 수 있습니다.</p>
-    </main>
+    <div className="auth-screen">
+      <main className="article login-page">
+        <p className="kicker">계정</p>
+        <h1>로그인</h1>
+        <p className="lead">회원 또는 관리자 계정으로 로그인하세요.</p>
+        <Suspense fallback={<p className="meta">로딩 중...</p>}>
+          <LoginForm />
+        </Suspense>
+        <p className="meta">로그인 후 <Link href="/">홈으로</Link> 이동할 수 있습니다.</p>
+      </main>
+      <CompactFooter light />
+    </div>
   );
 }
