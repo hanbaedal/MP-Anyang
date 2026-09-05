@@ -1056,6 +1056,103 @@ h3,
   width: min(860px, 96vw);
 }
 
+.grave-info-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 200px);
+  gap: 16px 20px;
+  align-items: start;
+}
+
+.grave-info-fields p {
+  margin: 0 0 10px;
+}
+
+.grave-type-visual {
+  margin: 0;
+  text-align: center;
+}
+
+.grave-type-image {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.grave-type-visual figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--sage-deep);
+  font-family: "Noto Serif KR", serif;
+}
+
+.grave-map-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.grave-map-note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.grave-map-photo {
+  display: grid;
+  gap: 6px;
+}
+
+.park-map-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--cream);
+}
+
+.park-map-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.park-map-route-bg {
+  fill: none;
+  stroke: rgba(164, 139, 98, 0.25);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.park-map-route {
+  fill: none;
+  stroke: #a48b62;
+  stroke-width: 3.5;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: park-map-march 1.1s linear infinite;
+}
+
+.park-map-waypoint {
+  fill: #fffdf8;
+  stroke: #a48b62;
+  stroke-width: 2;
+}
+
+.park-map-pin {
+  fill: #3f4c3b;
+  stroke: #a48b62;
+  stroke-width: 2.5;
+}
+
+@keyframes park-map-march {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
 .modal h2 {
   margin-top: 0;
 }
@@ -1892,5 +1989,13 @@ h3,
   .modal-admin-member {
     max-height: 92vh;
     padding: 16px;
+  }
+
+  .grave-info-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .grave-type-visual {
+    max-width: 240px;
   }
 }
