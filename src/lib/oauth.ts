@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { loginAs } from "./auth";
+import type { SessionUser } from "./auth";
 import { publicOrigin, redirectTo } from "./public-url";
 import { createOAuthMember, findUserByGoogle, findUserByKakao, toId } from "./store";
 
@@ -12,18 +12,17 @@ export async function completeOAuthLogin(input: {
   providerId: string;
   name: string;
   email: string;
-}) {
+}): Promise<SessionUser> {
   const existing =
     input.provider === "kakao" ? await findUserByKakao(input.providerId) : await findUserByGoogle(input.providerId);
 
   if (existing) {
-    await loginAs({
+    return {
       id: toId(existing._id),
       username: String(existing.username),
       name: String(existing.name || existing.username),
       role: existing.role === "admin" ? "admin" : "member",
-    });
-    return;
+    };
   }
 
   const username = `${input.provider}_${input.providerId.slice(0, 12)}`;
@@ -34,7 +33,7 @@ export async function completeOAuthLogin(input: {
     kakaoId: input.provider === "kakao" ? input.providerId : undefined,
     googleId: input.provider === "google" ? input.providerId : undefined,
   });
-  await loginAs({ id, username, name: input.name || username, role: "member" });
+  return { id, username, name: input.name || username, role: "member" };
 }
 
 export function oauthErrorRedirect(request: Request, message: string) {

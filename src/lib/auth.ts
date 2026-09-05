@@ -1,7 +1,9 @@
 import { SignJWT, jwtVerify } from "jose";
 import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
+import { publicOrigin } from "./public-url";
 
 export const COOKIE_NAME = "ap_session";
 
@@ -47,15 +49,27 @@ export async function loginAs(user: SessionUser) {
   await setSessionCookie(await signSession(user));
 }
 
-export async function setSessionCookie(token: string) {
-  const jar = await cookies();
-  jar.set(COOKIE_NAME, token, {
+export function sessionCookieOptions() {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
-  });
+  };
+}
+
+/** OAuth 콜백 — Route Handler redirect 응답에 세션 쿠키를 직접 설정 */
+export async function redirectWithSession(request: Request, path: string, user: SessionUser, status = 303) {
+  const token = await signSession(user);
+  const res = NextResponse.redirect(new URL(path, `${publicOrigin(request)}/`), status);
+  res.cookies.set(COOKIE_NAME, token, sessionCookieOptions());
+  return res;
+}
+
+export async function setSessionCookie(token: string) {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, token, sessionCookieOptions());
 }
 
 export async function clearSessionCookie() {

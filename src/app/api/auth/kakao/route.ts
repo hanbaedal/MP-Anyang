@@ -3,6 +3,8 @@ import { authBaseUrl, randomState } from "../../../../lib/oauth";
 import { kakaoRedirectUri } from "../../../../lib/oauth-redirect";
 import { redirectTo } from "../../../../lib/public-url";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const clientId = process.env.KAKAO_CLIENT_ID;
   if (!clientId) {
@@ -14,5 +16,6 @@ export async function GET(request: Request) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", randomState());
+  url.searchParams.set("scope", "profile_nickname account_email");
   return NextResponse.redirect(url);
 }

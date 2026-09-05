@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { CompactFooter } from "../../components/CompactFooter";
 import { PasswordInput } from "../../components/PasswordInput";
+import { KAKAO_REDIRECT_URI_HINT, oauthErrorMessage } from "../../lib/oauth-errors";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -73,7 +74,22 @@ function LoginForm() {
   return (
     <>
       {signupDone && <p className="ok">회원가입이 완료되었습니다. 로그인해 주세요.</p>}
-      {oauthMsg && <p className="alert">간편 로그인 설정이 필요합니다. Render 환경변수를 확인해 주세요.</p>}
+      {oauthMsg && (
+        <>
+          <p className="alert">{oauthErrorMessage(oauthMsg)}</p>
+          {oauthMsg.startsWith("kakao") && (
+            <p className="meta">
+              카카오 개발자 콘솔 → 앱 → 카카오 로그인 → Redirect URI에 아래 주소를 등록하세요.
+              <br />
+              <code>{KAKAO_REDIRECT_URI_HINT}</code>
+              <br />
+              <a href="/api/auth/oauth-info" target="_blank" rel="noreferrer">
+                OAuth 설정 확인 (JSON)
+              </a>
+            </p>
+          )}
+        </>
+      )}
       {loginError === "1" && <p className="alert">아이디 또는 비밀번호가 올바르지 않습니다.</p>}
       {loginError === "server" && <p className="alert">로그인 처리 중 오류가 났습니다. 잠시 후 다시 시도해 주세요.</p>}
       {msg && <p className={msg.includes("변경") || msg.includes("인증") ? "ok" : "alert"}>{msg}</p>}
