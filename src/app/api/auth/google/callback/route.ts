@@ -1,4 +1,5 @@
-import { authBaseUrl, completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { googleRedirectUri } from "../../../../../lib/oauth-redirect";
 import { redirectTo } from "../../../../../lib/public-url";
 
 export async function GET(request: Request) {
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: `${authBaseUrl(request)}/api/auth/google/callback`,
+      redirect_uri: googleRedirectUri(request),
       grant_type: "authorization_code",
     }),
   });

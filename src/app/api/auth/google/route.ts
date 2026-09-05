@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { authBaseUrl, randomState } from "../../../../lib/oauth";
+import { randomState } from "../../../../lib/oauth";
+import { googleRedirectUri } from "../../../../lib/oauth-redirect";
 import { redirectTo } from "../../../../lib/public-url";
 
 export async function GET(request: Request) {
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
   }
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", `${authBaseUrl(request)}/api/auth/google/callback`);
+  url.searchParams.set("redirect_uri", googleRedirectUri(request));
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid email profile");
   url.searchParams.set("state", randomState());

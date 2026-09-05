@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authBaseUrl, randomState } from "../../../../lib/oauth";
+import { kakaoRedirectUri } from "../../../../lib/oauth-redirect";
 import { redirectTo } from "../../../../lib/public-url";
 
 export async function GET(request: Request) {
@@ -7,7 +8,7 @@ export async function GET(request: Request) {
   if (!clientId) {
     return redirectTo(request, "/login?oauth=kakao-config");
   }
-  const redirectUri = `${authBaseUrl(request)}/api/auth/kakao/callback`;
+  const redirectUri = kakaoRedirectUri(request);
   const url = new URL("https://kauth.kakao.com/oauth/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);
