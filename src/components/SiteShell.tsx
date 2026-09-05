@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ADMIN_MENU, MENU, groupIdFromPath } from "../lib/menu";
-import { ChatIcon, Chevron, LogoMark, SearchIcon } from "./icons";
+import { ChatIcon, Chevron, LogoMark, MemorialIcon, SearchIcon } from "./icons";
 import { SocialBar } from "./SocialBar";
 
 type Props = {
@@ -144,6 +144,9 @@ export function SiteShell({ children, userName, userRole }: Props) {
         </Link>
         <Link href="/grave-search" className="side-cta-btn">
           <SearchIcon /><span>묘역찾기</span>
+        </Link>
+        <Link href="/memorial" className="side-cta-btn memorial">
+          <MemorialIcon /><span>사이버 추모관</span>
         </Link>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { ADMIN_MENU, MENU } from "../../../lib/menu";
 const ADMIN_LINKS = [
   ...ADMIN_MENU.filter((item) => item.href !== "/admin"),
   { href: "/", label: "메인" },
+  { href: "/memorial", label: "사이버 추모관" },
   { href: "/grave-search", label: "묘역찾기" },
   { href: "/consult", label: "상담신청" },
 ];

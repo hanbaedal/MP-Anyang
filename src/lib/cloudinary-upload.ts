@@ -21,14 +21,14 @@ function ensureConfig() {
   });
 }
 
-export async function uploadImageBuffer(buffer: Buffer, folder: string) {
+function uploadBuffer(buffer: Buffer, folder: string, resourceType: "image" | "video" | "auto" = "image") {
   if (!configured()) {
     throw new Error("Cloudinary 환경변수가 설정되지 않았습니다.");
   }
   ensureConfig();
   return new Promise<string>((resolve, reject) => {
     cloudinary.uploader
-      .upload_stream({ folder: `mp-anyang/${folder}` }, (error, result) => {
+      .upload_stream({ folder: `mp-anyang/${folder}`, resource_type: resourceType }, (error, result) => {
         if (error || !result?.secure_url) {
           reject(error ?? new Error("Cloudinary 업로드에 실패했습니다."));
           return;
@@ -37,4 +37,13 @@ export async function uploadImageBuffer(buffer: Buffer, folder: string) {
       })
       .end(buffer);
   });
+}
+
+export async function uploadImageBuffer(buffer: Buffer, folder: string) {
+  return uploadBuffer(buffer, folder, "image");
+}
+
+export async function uploadMediaBuffer(buffer: Buffer, folder: string, mimeType: string) {
+  const resourceType = mimeType.startsWith("video/") ? "video" : "image";
+  return uploadBuffer(buffer, folder, resourceType);
 }

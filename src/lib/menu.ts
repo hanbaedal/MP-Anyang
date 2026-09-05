@@ -13,6 +13,7 @@ export const ADMIN_MENU: MenuChild[] = [
   { href: "/admin", label: "사이트맵" },
   { href: "/admin/members", label: "회원 관리" },
   { href: "/admin/graves", label: "묘역 관리" },
+  { href: "/admin/memorial", label: "사이버 추모관" },
   { href: "/admin/park", label: "공원 정보" },
 ];
 
@@ -54,6 +55,7 @@ export const MENU: MenuGroup[] = [
     id: "services",
     label: "서비스상품",
     children: [
+      { href: "/memorial", label: "사이버 추모관" },
       { href: "/services/memorial", label: "추모" },
       { href: "/services/sangjo", label: "상조" },
       { href: "/services/grave", label: "묘지" },
@@ -74,6 +76,7 @@ export const MENU: MenuGroup[] = [
 ];
 
 export function groupIdFromPath(pathname: string): string | null {
+  if (pathname === "/memorial" || pathname.startsWith("/memorial/")) return "services";
   const found = MENU.find((group) =>
     group.children.some((child) => pathname === child.href || pathname.startsWith(`${child.href}/`)),
   );
