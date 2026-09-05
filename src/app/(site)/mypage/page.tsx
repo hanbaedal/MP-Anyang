@@ -1,7 +1,7 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireUser } from "../../../lib/auth";
+import { guardMemberPage } from "../../../lib/auth";
 import { formatPhone } from "../../../lib/phone";
 import { formatSmsConsentAt, smsConsentFromForm } from "../../../lib/sms-consent";
 import { deleteMember, findUserById, toId, updateMember } from "../../../lib/store";
@@ -9,7 +9,7 @@ import type { FeeRecord, Relation } from "../../../lib/store";
 
 async function saveProfile(formData: FormData) {
   "use server";
-  const user = await requireUser();
+  const user = await guardMemberPage();
   const password = String(formData.get("password") || "");
   const data: Record<string, unknown> = {
     name: String(formData.get("name") || ""),
@@ -41,7 +41,7 @@ async function saveProfile(formData: FormData) {
 }
 
 export default async function MyPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
-  const session = await requireUser();
+  const session = await guardMemberPage();
   const { saved } = await searchParams;
   const doc = await findUserById(session.id);
   if (!doc) redirect("/login");

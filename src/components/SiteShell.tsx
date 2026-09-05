@@ -61,6 +61,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
   const onLogout = async () => {
     await fetch("/api/logout", { method: "POST" });
     setSessionUser(null);
+    router.replace("/");
     router.refresh();
   };
 

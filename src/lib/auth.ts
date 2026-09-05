@@ -105,6 +105,13 @@ export async function guardAdminPage(nextPath = "/admin") {
   return user;
 }
 
+/** 회원 전용 페이지 — throw 대신 로그인으로 redirect */
+export async function guardMemberPage(nextPath = "/mypage") {
+  const user = await readSession();
+  if (!user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  return user;
+}
+
 export function errorStatus(error: unknown) {
   if (error && typeof error === "object" && "status" in error) {
     return Number((error as { status: number }).status) || 500;
