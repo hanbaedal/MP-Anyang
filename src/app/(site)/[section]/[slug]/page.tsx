@@ -15,6 +15,11 @@ type Params = { section: string; slug: string };
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
+function dbErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return "데이터베이스 연결에 실패했습니다.";
+}
+
 /* ── Server Actions ── */
 
 async function addNotice(formData: FormData) {
@@ -148,11 +153,19 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── 공지사항 ── */
   if (section === "support" && slug === "notices") {
-    const notices = await getNotices();
+    let notices: Awaited<ReturnType<typeof getNotices>> = [];
+    let loadError = "";
+    try {
+      notices = await getNotices();
+    } catch (error) {
+      console.error("[support/notices]", error);
+      loadError = dbErrorMessage(error);
+    }
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>공지사항</h1>
+        {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
           <form action={addNotice} className="panel form-grid admin-form">
@@ -190,11 +203,19 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── FAQ ── */
   if (section === "support" && slug === "faq") {
-    const faqs = await getFaqs();
+    let faqs: Awaited<ReturnType<typeof getFaqs>> = [];
+    let loadError = "";
+    try {
+      faqs = await getFaqs();
+    } catch (error) {
+      console.error("[support/faq]", error);
+      loadError = dbErrorMessage(error);
+    }
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>자주묻는 질문</h1>
+        {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
           <form action={addFaq} className="panel form-grid admin-form">
@@ -228,11 +249,19 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── 갤러리 ── */
   if (section === "support" && slug === "gallery") {
-    const gallery = await getGallery();
+    let gallery: Awaited<ReturnType<typeof getGallery>> = [];
+    let loadError = "";
+    try {
+      gallery = await getGallery();
+    } catch (error) {
+      console.error("[support/gallery]", error);
+      loadError = dbErrorMessage(error);
+    }
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>갤러리</h1>
+        {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
           <form action={addGalleryAction} className="panel form-grid admin-form">
@@ -246,7 +275,7 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
         <div className="gallery-grid">
           {gallery.map((item) => (
             <figure key={toId(item._id)}>
-              <Image src={String(item.imageUrl)} alt={String(item.title)} width={600} height={360} />
+              <Image src={String(item.imageUrl)} alt={String(item.title)} width={600} height={360} unoptimized />
               <figcaption>{String(item.title)}</figcaption>
               {isAdmin && (
                 <form action={removeGallery} className="admin-actions">
@@ -264,11 +293,19 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── 자유게시판 ── */
   if (section === "support" && slug === "board") {
-    const posts = await getBoard();
+    let posts: Awaited<ReturnType<typeof getBoard>> = [];
+    let loadError = "";
+    try {
+      posts = await getBoard();
+    } catch (error) {
+      console.error("[support/board]", error);
+      loadError = dbErrorMessage(error);
+    }
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>자유게시판</h1>
+        {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {user ? (
           <form action={submitBoard} className="panel form-grid">
@@ -304,11 +341,19 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── 문의사항 ── */
   if (section === "support" && slug === "inquiry") {
-    const inquiries = await getInquiry();
+    let inquiries: Awaited<ReturnType<typeof getInquiry>> = [];
+    let loadError = "";
+    try {
+      inquiries = await getInquiry();
+    } catch (error) {
+      console.error("[support/inquiry]", error);
+      loadError = dbErrorMessage(error);
+    }
     return (
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>문의사항</h1>
+        {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         <form action={submitInquiry} className="panel form-grid">
           <label>이름<input name="name" required /></label>

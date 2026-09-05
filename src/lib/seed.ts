@@ -6,7 +6,9 @@ const ADMINS = [
   { username: "MP-Anyang-01", plainPw: "MPA001", name: "관리자2" },
 ];
 
-export async function ensureSeed(db: Db) {
+const SAMPLE_IMAGE = "/images/park-panorama.png";
+
+export async function ensureAdmins(db: Db) {
   const users = db.collection("users");
 
   for (const a of ADMINS) {
@@ -26,7 +28,9 @@ export async function ensureSeed(db: Db) {
       { upsert: true },
     );
   }
+}
 
+export async function ensureSampleData(db: Db) {
   if ((await db.collection("notices").countDocuments()) === 0) {
     await db.collection("notices").insertMany([
       { title: "안양공원묘지 홈페이지가 새롭게 단장되었습니다.", content: "새로운 홈페이지를 통해 더 편리한 서비스를 제공하겠습니다.", author: "관리자", createdAt: new Date() },
@@ -44,8 +48,8 @@ export async function ensureSeed(db: Db) {
 
   if ((await db.collection("gallery").countDocuments()) === 0) {
     await db.collection("gallery").insertMany([
-      { title: "안양공원묘지 전경", imageUrl: "/images/hero-panorama.jpg", createdAt: new Date() },
-      { title: "정원 풍경", imageUrl: "/images/hero-panorama.jpg", createdAt: new Date() },
+      { title: "안양공원묘지 전경", imageUrl: SAMPLE_IMAGE, createdAt: new Date() },
+      { title: "정원 풍경", imageUrl: SAMPLE_IMAGE, createdAt: new Date() },
     ]);
   }
 
@@ -59,8 +63,14 @@ export async function ensureSeed(db: Db) {
 
   if ((await db.collection("parkPhotos").countDocuments()) === 0) {
     await db.collection("parkPhotos").insertMany([
-      { title: "공원 전경", imageUrl: "/images/hero-panorama.jpg", season: "사계절", createdAt: new Date() },
-      { title: "정원 산책로", imageUrl: "/images/hero-panorama.jpg", season: "봄", createdAt: new Date() },
+      { title: "공원 전경", imageUrl: SAMPLE_IMAGE, season: "사계절", createdAt: new Date() },
+      { title: "정원 산책로", imageUrl: SAMPLE_IMAGE, season: "봄", createdAt: new Date() },
     ]);
   }
+}
+
+/** @deprecated use ensureAdmins + ensureSampleData */
+export async function ensureSeed(db: Db) {
+  await ensureAdmins(db);
+  await ensureSampleData(db);
 }
