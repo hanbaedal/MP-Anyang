@@ -11,6 +11,7 @@ export type MenuGroup = {
 
 export const ADMIN_MENU: MenuChild[] = [
   { href: "/admin/members", label: "회원 관리" },
+  { href: "/admin/fees", label: "관리비 현황" },
   { href: "/admin/graves", label: "묘역 관리" },
   { href: "/admin/inquiries", label: "문의·상담" },
   { href: "/admin/memorial", label: "사이버 추모관" },

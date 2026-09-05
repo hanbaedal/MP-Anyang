@@ -2634,6 +2634,51 @@ h3,
   padding: 20px;
 }
 
+.admin-fee-stats {
+  margin-bottom: 12px;
+}
+
+.admin-fee-stats p {
+  margin: 0;
+}
+
+.admin-member-name .meta {
+  display: block;
+  margin-top: 2px;
+}
+
+.fee-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fee-완납 {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.fee-미납 {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.fee-분납 {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.modal-admin-fee {
+  width: min(760px, 96vw);
+}
+
+.modal-admin-fee h3 {
+  margin: 16px 0 4px;
+  font-size: 15px;
+}
+
 .modal-admin-member {
   width: min(680px, 96vw);
   max-height: min(88vh, 720px);
