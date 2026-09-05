@@ -385,6 +385,55 @@ h3,
   min-width: 0;
 }
 
+/* 메인 전경: 노트북 한 화면에 전경+푸터 */
+.shell:has(.home-view) .shell-body {
+  min-height: calc(100dvh - var(--header-h));
+  max-height: calc(100dvh - var(--header-h));
+  overflow: hidden;
+}
+
+.shell:has(.home-view) .content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell:has(.home-view) .home-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell:has(.home-view) .home-hero {
+  flex: 1;
+  min-height: 0;
+}
+
+.shell:has(.home-view) .home-hero-copy {
+  padding: 28px 32px;
+}
+
+.shell:has(.home-view) .page-footer {
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 12px 20px 14px;
+}
+
+.shell:has(.home-view) .footer-info p:nth-child(n + 3) {
+  display: none;
+}
+
+.shell:has(.home-view) .footer-info {
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.shell:has(.home-view) .sns-bar.light {
+  padding: 0 0 6px;
+}
+
 .home-hero {
   min-height: calc(100vh - var(--header-h));
   background: #6d7d6a center / cover no-repeat;
