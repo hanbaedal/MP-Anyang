@@ -1099,6 +1099,75 @@ h3,
   flex-shrink: 0;
 }
 
+.modal-admin-grave {
+  width: min(760px, 96vw);
+  max-height: min(88vh, 740px);
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-tab-body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.modal-tab-panel {
+  display: none;
+}
+
+.modal-tab-panel.active {
+  display: block;
+}
+
+.modal-form-single {
+  grid-template-columns: 1fr;
+}
+
+.admin-grave-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.grave-photo-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.grave-photo-pick {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.grave-photo-pick img {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.modal-preview {
+  max-height: 180px;
+  overflow: hidden;
+}
+
+.modal-preview .modal-image {
+  max-height: 180px;
+  object-fit: cover;
+}
+
+.admin-grave-table th:last-child,
+.admin-grave-table td:last-child {
+  width: 132px;
+}
+
 .tab-row {
   display: flex;
   flex-wrap: wrap;
@@ -1460,7 +1529,11 @@ h3,
   .admin-member-table th:nth-child(2),
   .admin-member-table td:nth-child(2),
   .admin-member-table th:nth-child(4),
-  .admin-member-table td:nth-child(4) {
+  .admin-member-table td:nth-child(4),
+  .admin-grave-table th:nth-child(3),
+  .admin-grave-table td:nth-child(3),
+  .admin-grave-table th:nth-child(5),
+  .admin-grave-table td:nth-child(5) {
     display: none;
   }
 
