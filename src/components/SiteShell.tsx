@@ -15,6 +15,11 @@ type Props = {
 
 const slogan = "추억과 그리움이 머무는 자리, 안양공원묘지";
 
+function adminNavActive(pathname: string, href: string) {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteShell({ children, userName, userRole }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -51,7 +56,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
               {userRole === "member" ? (
                 <Link className="btn btn-sm" href="/mypage">내정보</Link>
               ) : userRole === "admin" ? (
-                <Link className="btn btn-sm" href="/admin">관리</Link>
+                <Link className="btn btn-sm" href="/admin">사이트맵</Link>
               ) : null}
               <span className="meta">{userName}</span>
               <button className="btn" onClick={onLogout}>
@@ -105,7 +110,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
                   <Link
                     key={child.href}
                     href={child.href}
-                    className={`nav-link ${pathname === child.href || pathname.startsWith(`${child.href}/`) ? "active" : ""}`}
+                    className={`nav-link ${adminNavActive(pathname, child.href) ? "active" : ""}`}
                     onClick={() => setMobileOpen(false)}
                   >
                     {child.label}

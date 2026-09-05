@@ -10,7 +10,7 @@ export type MenuGroup = {
 };
 
 export const ADMIN_MENU: MenuChild[] = [
-  { href: "/admin", label: "관리자 홈" },
+  { href: "/admin", label: "사이트맵" },
   { href: "/admin/members", label: "회원 관리" },
   { href: "/admin/graves", label: "묘역 관리" },
   { href: "/admin/park", label: "공원 정보" },

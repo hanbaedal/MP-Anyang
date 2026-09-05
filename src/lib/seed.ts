@@ -2,8 +2,8 @@ import { hash } from "bcryptjs";
 import type { Db } from "mongodb";
 
 const ADMINS = [
-  { username: "MP-Anyang-00", plainPw: "MPA000!", name: "관리자1" },
-  { username: "MP-Anyang-01", plainPw: "MPA001", name: "관리자2" },
+  { username: "MP-Anyang-00", plainPw: "MPA000!", name: "슈퍼바이저" },
+  { username: "MP-Anyang-01", plainPw: "MPA001", name: "관리자" },
 ];
 
 const SAMPLE_IMAGE = "/images/park-panorama.png";
