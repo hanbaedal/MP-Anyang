@@ -1,29 +1,21 @@
 import Link from "next/link";
-import { requireAdmin } from "../../../lib/auth";
+import { guardAdminPage } from "../../../lib/auth";
 import { ADMIN_MENU, MENU } from "../../../lib/menu";
 
-const ADMIN_LINKS = [
-  ...ADMIN_MENU.filter((item) => item.href !== "/admin"),
-  { href: "/", label: "메인" },
-  { href: "/memorial", label: "사이버 추모관" },
-  { href: "/grave-search", label: "묘역찾기" },
-  { href: "/consult", label: "상담신청" },
-];
-
 const GROUP_TONE: Record<string, string> = {
-  admin: "tone-admin",
-  about: "tone-about",
-  lots: "tone-lots",
-  facilities: "tone-facilities",
-  services: "tone-services",
-  support: "tone-support",
+  admin: "sitemap-tone-admin",
+  about: "sitemap-tone-about",
+  lots: "sitemap-tone-lots",
+  facilities: "sitemap-tone-facilities",
+  services: "sitemap-tone-services",
+  support: "sitemap-tone-support",
 };
 
 export default async function AdminSiteMapPage() {
-  await requireAdmin();
+  await guardAdminPage("/admin");
 
   const groups = [
-    { id: "admin", label: "관리자", links: ADMIN_LINKS },
+    { id: "admin", label: "관리자", links: ADMIN_MENU },
     ...MENU.map((group) => ({
       id: group.id,
       label: group.label,

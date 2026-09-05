@@ -16,7 +16,6 @@ type Props = {
 const slogan = "추억과 그리움이 머무는 자리, 안양공원묘지";
 
 function adminNavActive(pathname: string, href: string) {
-  if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
