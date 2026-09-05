@@ -3,7 +3,13 @@ export type ContentBlock =
   | { type: "list"; items: string[] }
   | { type: "quote"; text: string; cite?: string }
   | { type: "timeline"; items: { year: string; text: string }[] }
-  | { type: "image"; src: string; alt: string };
+  | { type: "image"; src: string; alt: string }
+  | { type: "steps"; title?: string; items: { label: string; text: string }[] }
+  | {
+      type: "procGrid";
+      items: { title: string; flow?: string; docs?: string[]; note?: string }[];
+    }
+  | { type: "cta"; phone?: string; links: { href: string; label: string; primary?: boolean }[] };
 
 export type StaticPage = {
   section: string;
@@ -145,6 +151,94 @@ const pages: StaticPage[] = [
           "주소: 경기도 의왕시 청계동 산 8-5",
           "성묘철 혼잡 시간: 오전 10시~오후 1시",
         ],
+      },
+    ],
+  },
+  {
+    section: "lots",
+    slug: "procedure",
+    kicker: "분양안내",
+    title: "분양절차",
+    lead: "문의부터 묘역 사용까지, 필요한 순서와 서류를 한눈에 안내합니다.",
+    blocks: [
+      {
+        type: "steps",
+        title: "묘지 사용 계약",
+        items: [
+          { label: "1", text: "상담 문의" },
+          { label: "2", text: "현장 방문" },
+          { label: "3", text: "계약·계약금" },
+          { label: "4", text: "잔금" },
+          { label: "5", text: "묘역 사용" },
+        ],
+      },
+      {
+        type: "procGrid",
+        items: [
+          {
+            title: "묘지 사용 계약",
+            flow: "상담 → 현장 확인 → 계약금 → 잔금 → 사용",
+            docs: ["계약자 신분증", "계약자 도장", "계약금 입금 확인(무통장)"],
+          },
+          {
+            title: "석물·표석 설치",
+            flow: "문의 → 모델 결정 → 계약 → 계약금 → 잔금 → 설치",
+          },
+          {
+            title: "묘지 사용 통보",
+            note: "매장·납골 작업 24시간 전 관리사무실로 통보해 주세요.",
+            docs: ["계약자 성명", "묘역번호", "매장·납골 여부", "하관 일시", "연락처"],
+          },
+          {
+            title: "매장",
+            docs: [
+              "사망진단서 또는 시검 안내문",
+              "시체 매장 신고서(관리실 비치·대행 가능)",
+              "신고자(상주) 주민등록등본",
+              "도장",
+            ],
+          },
+          {
+            title: "납골",
+            docs: [
+              "화장신고필증(또는 화장증명서)",
+              "납골증명서",
+              "신고자(상주) 주민등록등본",
+              "도장",
+              "묘지사용 승낙서",
+            ],
+            note: "유골함 규격: 직경 21cm, 높이 25cm 이하",
+          },
+          {
+            title: "개장(이장) — 매장",
+            docs: [
+              "개장신고필증",
+              "시체 매장·화장신고서(관리실 대행)",
+              "신고자(상주) 주민등록등본",
+              "도장",
+              "묘지사용 승낙서",
+            ],
+          },
+          {
+            title: "개장(이장) — 납골",
+            docs: [
+              "개장신고필증",
+              "납골증명서",
+              "신고자(상주) 주민등록등본",
+              "도장",
+              "묘지사용 승낙서",
+            ],
+          },
+        ],
+      },
+      {
+        type: "p",
+        text: "봉안묘·수목장·매장묘·평장묘별 상세 안내는 각 분양 페이지와 상담을 통해 확인하실 수 있습니다.",
+      },
+      {
+        type: "cta",
+        phone: "031-421-9165",
+        links: [{ href: "/consult", label: "상담신청", primary: true }],
       },
     ],
   },

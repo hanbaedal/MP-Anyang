@@ -571,6 +571,127 @@ h3,
   font-family: "Noto Serif KR", serif;
 }
 
+.procedure-steps-wrap {
+  margin: 4px 0 18px;
+}
+
+.procedure-steps-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-family: "Noto Serif KR", serif;
+  color: var(--sage-deep);
+}
+
+.procedure-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.procedure-steps li {
+  flex: 1 1 88px;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.procedure-steps .step-num {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+
+.proc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.proc-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.proc-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-family: "Noto Serif KR", serif;
+  color: var(--sage-deep);
+}
+
+.proc-flow {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--sage-deep);
+  line-height: 1.45;
+}
+
+.proc-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--gold);
+  line-height: 1.45;
+}
+
+.proc-docs {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.proc-docs li + li {
+  margin-top: 2px;
+}
+
+.procedure-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin: 8px 0 4px;
+  padding: 16px 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.procedure-phone {
+  margin: 0;
+  font-family: "Noto Serif KR", serif;
+  font-size: 18px;
+}
+
+.procedure-phone a {
+  color: var(--sage-deep);
+  text-decoration: none;
+}
+
+.procedure-phone a:hover {
+  color: var(--gold);
+}
+
+.procedure-cta-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .cards-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1415,6 +1536,28 @@ h3,
 
   .menu-toggle {
     display: inline-flex;
+  }
+
+  .proc-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .procedure-steps li {
+    flex: 1 1 calc(33% - 8px);
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+
+  .procedure-cta {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 14px;
+  }
+
+  .procedure-cta-links {
+    justify-content: center;
   }
 
   .cards-3 {

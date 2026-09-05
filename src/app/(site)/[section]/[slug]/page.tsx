@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { getPage, slugsOf } from "../../../../lib/content";
@@ -429,6 +430,60 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
                 </li>
               ))}
             </ol>
+          );
+        if (block.type === "steps")
+          return (
+            <section key={index} className="procedure-steps-wrap">
+              {block.title ? <h2 className="procedure-steps-title">{block.title}</h2> : null}
+              <ol className="procedure-steps">
+                {block.items.map((item) => (
+                  <li key={item.label}>
+                    <span className="step-num">{item.label}</span>
+                    {item.text}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          );
+        if (block.type === "procGrid")
+          return (
+            <section key={index} className="proc-grid">
+              {block.items.map((item) => (
+                <article key={item.title} className="proc-card">
+                  <h3>{item.title}</h3>
+                  {item.flow ? <p className="proc-flow">{item.flow}</p> : null}
+                  {item.note ? <p className="proc-note">{item.note}</p> : null}
+                  {item.docs?.length ? (
+                    <ul className="proc-docs">
+                      {item.docs.map((doc) => (
+                        <li key={doc}>{doc}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </article>
+              ))}
+            </section>
+          );
+        if (block.type === "cta")
+          return (
+            <div key={index} className="procedure-cta">
+              {block.phone ? (
+                <p className="procedure-phone">
+                  <a href={`tel:${block.phone.replace(/-/g, "")}`}>{block.phone}</a>
+                </p>
+              ) : null}
+              <div className="procedure-cta-links">
+                {block.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={link.primary ? "btn btn-primary" : "btn btn-ghost"}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           );
         return null;
       })}

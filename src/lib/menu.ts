@@ -32,6 +32,7 @@ export const MENU: MenuGroup[] = [
     id: "lots",
     label: "분양안내",
     children: [
+      { href: "/lots/procedure", label: "분양절차" },
       { href: "/lots/columbarium", label: "봉안묘" },
       { href: "/lots/tree", label: "수목장" },
       { href: "/lots/burial", label: "매장묘" },
