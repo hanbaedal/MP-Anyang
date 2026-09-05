@@ -2,6 +2,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardAdminPage } from "../../../../lib/auth";
 import {
+  createMemberCharge,
+  deleteMemberCharge,
+  listMemberCharges,
+  syncMemberChargesFromLegacy,
+  updateMemberCharge,
+  type ChargeStatus,
+  type ChargeType,
+} from "../../../../lib/member-charges";
+import {
   getFeeRatesMerged,
   getSaleRatesMerged,
   listMembers,
@@ -40,6 +49,7 @@ async function updateFeeAction(formData: FormData) {
     salePrice: Number(formData.get("salePrice") || 0) || undefined,
     feeHistory: parseFeeHistory(formData),
   });
+  await syncMemberChargesFromLegacy(id);
   revalidatePath("/admin/fees");
   revalidatePath("/mypage");
   redirect("/admin/fees?saved=1");
@@ -79,6 +89,60 @@ async function saveSaleRatesAction(formData: FormData) {
   redirect("/admin/fees?sale=1");
 }
 
+async function loadChargesAction(memberId: string) {
+  "use server";
+  await guardAdminPage("/admin/fees");
+  await syncMemberChargesFromLegacy(memberId);
+  return listMemberCharges(memberId);
+}
+
+async function addChargeAction(formData: FormData) {
+  "use server";
+  await guardAdminPage("/admin/fees");
+  const memberId = String(formData.get("memberId"));
+  await createMemberCharge({
+    memberId,
+    chargeType: String(formData.get("chargeType")) as ChargeType,
+    title: String(formData.get("title") || ""),
+    amount: Number(formData.get("amount") || 0),
+    paidAmount: Number(formData.get("paidAmount") || 0),
+    status: String(formData.get("status") || "pending") as ChargeStatus,
+    periodYear: String(formData.get("periodYear") || ""),
+    memo: String(formData.get("memo") || ""),
+    source: "manual",
+  });
+  revalidatePath("/mypage");
+}
+
+async function updateChargeAction(formData: FormData) {
+  "use server";
+  await guardAdminPage("/admin/fees");
+  await updateMemberCharge(String(formData.get("id")), {
+    chargeType: String(formData.get("chargeType")) as ChargeType,
+    title: String(formData.get("title") || ""),
+    amount: Number(formData.get("amount") || 0),
+    paidAmount: Number(formData.get("paidAmount") || 0),
+    status: String(formData.get("status") || "pending") as ChargeStatus,
+    periodYear: String(formData.get("periodYear") || ""),
+    memo: String(formData.get("memo") || ""),
+  });
+  revalidatePath("/mypage");
+}
+
+async function deleteChargeAction(formData: FormData) {
+  "use server";
+  await guardAdminPage("/admin/fees");
+  await deleteMemberCharge(String(formData.get("id")));
+  revalidatePath("/mypage");
+}
+
+async function syncChargesAction(formData: FormData) {
+  "use server";
+  await guardAdminPage("/admin/fees");
+  await syncMemberChargesFromLegacy(String(formData.get("memberId")));
+  revalidatePath("/mypage");
+}
+
 export default async function AdminFeesPage({
   searchParams,
 }: {
@@ -105,7 +169,7 @@ export default async function AdminFeesPage({
       <p className="kicker">관리자</p>
       <h1>관리비·요금표</h1>
       <p className="lead">
-        분양가·연관리비 요금표(마스터)와 회원별 실제 청구·납부 내역을 관리합니다. 상담·회원가입·공개 안내에 동일 요금표가 사용됩니다.
+        요금표(마스터)와 회원별 <strong>비용 원장</strong>(분양·연관리·추모·기타)을 관리합니다.
       </p>
       {saved && <p className="ok">회원 관리비 정보가 저장되었습니다.</p>}
       {ratesSaved && <p className="ok">연간 관리비 요금표가 저장되었습니다.</p>}
@@ -118,7 +182,15 @@ export default async function AdminFeesPage({
         saveSaleRatesAction={saveSaleRatesAction}
       />
 
-      <AdminFeesClient members={members} updateFeeAction={updateFeeAction} />
+      <AdminFeesClient
+        members={members}
+        updateFeeAction={updateFeeAction}
+        loadChargesAction={loadChargesAction}
+        addChargeAction={addChargeAction}
+        updateChargeAction={updateChargeAction}
+        deleteChargeAction={deleteChargeAction}
+        syncChargesAction={syncChargesAction}
+      />
     </article>
   );
 }

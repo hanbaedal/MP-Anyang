@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { formatPhone } from "../../../../lib/phone";
+import type { MemberChargeRow } from "../../../../lib/member-charges-types";
 import type { FeeRecord } from "../../../../lib/store";
+import { AdminMemberChargesModal } from "./AdminMemberChargesModal";
 
 export type AdminFeeRow = {
   id: string;
@@ -19,6 +21,11 @@ export type AdminFeeRow = {
 type Props = {
   members: AdminFeeRow[];
   updateFeeAction: (formData: FormData) => Promise<void>;
+  loadChargesAction: (memberId: string) => Promise<MemberChargeRow[]>;
+  addChargeAction: (formData: FormData) => Promise<void>;
+  updateChargeAction: (formData: FormData) => Promise<void>;
+  deleteChargeAction: (formData: FormData) => Promise<void>;
+  syncChargesAction: (formData: FormData) => Promise<void>;
 };
 
 const STATUS_OPTIONS = ["완납", "미납", "분납"] as const;
@@ -27,10 +34,19 @@ function emptyHistoryRow(): FeeRecord {
   return { year: "", amount: 0, paid: false, memo: "" };
 }
 
-export function AdminFeesClient({ members, updateFeeAction }: Props) {
+export function AdminFeesClient({
+  members,
+  updateFeeAction,
+  loadChargesAction,
+  addChargeAction,
+  updateChargeAction,
+  deleteChargeAction,
+  syncChargesAction,
+}: Props) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [editTarget, setEditTarget] = useState<AdminFeeRow | null>(null);
+  const [ledgerTarget, setLedgerTarget] = useState<AdminFeeRow | null>(null);
   const [historyRows, setHistoryRows] = useState<FeeRecord[]>([]);
   const [annualFeeEdit, setAnnualFeeEdit] = useState(0);
   const [salePriceEdit, setSalePriceEdit] = useState(0);
@@ -150,9 +166,14 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
                 </td>
                 <td className="meta">{m.feeHistory.length ? `${m.feeHistory.length}건` : "없음"}</td>
                 <td>
-                  <button type="button" className="btn btn-sm" onClick={() => openEdit(m)}>
-                    관리
-                  </button>
+                  <div className="admin-member-row-actions">
+                    <button type="button" className="btn btn-sm" onClick={() => openEdit(m)}>
+                      관리
+                    </button>
+                    <button type="button" className="btn btn-sm" onClick={() => setLedgerTarget(m)}>
+                      원장
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -279,6 +300,26 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
           </div>
         </div>
       )}
+
+      <AdminMemberChargesModal
+        member={
+          ledgerTarget
+            ? {
+                id: ledgerTarget.id,
+                name: ledgerTarget.name,
+                username: ledgerTarget.username,
+                phone: ledgerTarget.phone,
+                plotNo: ledgerTarget.plotNo,
+              }
+            : null
+        }
+        onClose={() => setLedgerTarget(null)}
+        loadChargesAction={loadChargesAction}
+        addChargeAction={addChargeAction}
+        updateChargeAction={updateChargeAction}
+        deleteChargeAction={deleteChargeAction}
+        syncChargesAction={syncChargesAction}
+      />
     </>
   );
 }

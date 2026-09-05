@@ -1,12 +1,13 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { MemberChargesView } from "../../../components/MemberChargesView";
 import { guardMemberPage } from "../../../lib/auth";
-import { listMemberSubscriptions, subscriptionLabel } from "../../../lib/memorial-billing";
+import { listMemberCharges, syncMemberChargesFromLegacy } from "../../../lib/member-charges";
 import { formatPhone } from "../../../lib/phone";
 import { formatSmsConsentAt, smsConsentFromForm } from "../../../lib/sms-consent";
-import { deleteMember, findUserById, toId, updateMember } from "../../../lib/store";
-import type { FeeRecord, Relation } from "../../../lib/store";
+import { findUserById, updateMember } from "../../../lib/store";
+import type { Relation } from "../../../lib/store";
 
 async function saveProfile(formData: FormData) {
   "use server";
@@ -49,8 +50,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
 
   const relations = ((doc.relations as Relation[] | undefined) || []).slice(0, 8);
   while (relations.length < 4) relations.push({ deceasedName: "", relation: "", plotNo: "" });
-  const feeHistory = (doc.feeHistory as FeeRecord[] | undefined) || [];
-  const memorialSubs = await listMemberSubscriptions(session.id);
+
+  await syncMemberChargesFromLegacy(session.id);
+  const charges = await listMemberCharges(session.id);
 
   return (
     <article className="article">
@@ -60,63 +62,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
 
       <section className="panel member-cost-panel">
         <h2>비용 현황</h2>
-        <div className="member-cost-grid">
-          <div className="member-cost-item">
-            <h3>분양가</h3>
-            <p className="member-cost-amount">
-              {Number(doc.salePrice || 0) > 0 ? `${Number(doc.salePrice).toLocaleString()}원` : "—"}
-            </p>
-            <p className="meta">계약 시 1회 분양 금액 (관리자 등록)</p>
-          </div>
-          <div className="member-cost-item">
-            <h3>연간 관리비</h3>
-            <p className="member-cost-amount">{Number(doc.annualFee || 0).toLocaleString()}원</p>
-            <p className="meta">
-              납부 상태: <strong>{String(doc.feeStatus || "미납")}</strong>
-            </p>
-          </div>
-          <div className="member-cost-item">
-            <h3>사이버 추모관</h3>
-            {memorialSubs.length ? (
-              <ul className="member-cost-list">
-                {memorialSubs.map((sub) => (
-                  <li key={String(sub._id)}>
-                    {sub.hallCode} · {subscriptionLabel(sub.planId)} · ~
-                    {new Date(sub.expiresAt).toLocaleDateString("ko-KR")}까지
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="meta">이용 중인 유료 추모관 없음 · <a href="/memorial/plans">요금 안내</a></p>
-            )}
-          </div>
-          <div className="member-cost-item">
-            <h3>기타</h3>
-            <p className="meta">상조·리모델링·추모 대행 등은 상담·계약 후 별도 안내</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>관리비 납부 내역</h2>
-        {feeHistory.length ? (
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead><tr><th>연도</th><th>금액</th><th>납부</th><th>비고</th></tr></thead>
-              <tbody>
-                {feeHistory.map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.year}</td>
-                    <td>{row.amount.toLocaleString()}원</td>
-                    <td>{row.paid ? "완납" : "미납"}</td>
-                    <td>{row.memo || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="meta">관리비 내역은 관리자가 등록합니다.</p>
+        <MemberChargesView charges={charges} />
+        {charges.length === 0 && (
+          <p className="meta">등록된 비용 내역이 없습니다. 관리자가 원장에 등록하면 여기에 표시됩니다.</p>
         )}
       </section>
 

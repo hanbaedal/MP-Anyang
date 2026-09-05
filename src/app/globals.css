@@ -2614,7 +2614,7 @@ h3,
 .admin-member-table th:last-child,
 .admin-member-table td:last-child {
   text-align: right;
-  width: 132px;
+  width: 168px;
 }
 
 .admin-member-name {
@@ -2826,6 +2826,61 @@ h3,
   margin: 0;
   padding-left: 18px;
   font-size: 14px;
+}
+
+.member-charges-table-wrap {
+  margin-top: 16px;
+}
+
+.charge-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.charge-status-paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.charge-status-pending {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.charge-status-partial {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.charge-status-cancelled {
+  background: #eceff1;
+  color: #546e7a;
+}
+
+.modal-member-charges {
+  width: min(820px, 96vw);
+  max-height: min(92vh, 880px);
+  overflow: auto;
+}
+
+.admin-charges-sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-charges-table .inline-form {
+  display: inline;
+  margin-left: 4px;
+}
+
+.admin-charges-table .btn-sm {
+  vertical-align: middle;
 }
 
 .admin-member-name .meta {

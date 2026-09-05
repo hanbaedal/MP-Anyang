@@ -1,4 +1,5 @@
 import { hash } from "bcryptjs";
+import { syncMemberChargesFromLegacy } from "../../../lib/member-charges";
 import { createMember, phoneExists, usernameExists } from "../../../lib/store";
 import type { Relation } from "../../../lib/store";
 import { redirectTo } from "../../../lib/public-url";
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
 
   const consent = smsConsentFromForm(form);
 
-  await createMember({
+  const memberId = await createMember({
     username,
     passwordHash: await hash(password, 12),
     name,
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
     salePrice: Number(form.get("salePrice") || 0) || undefined,
     ...consent,
   });
+  await syncMemberChargesFromLegacy(memberId);
 
   return redirectTo(request, `/login?signup=1&u=${encodeURIComponent(username)}`);
 }
