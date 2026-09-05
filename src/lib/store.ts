@@ -232,7 +232,8 @@ export async function findUserByGoogle(googleId: string) {
 
 export async function listMembers() {
   const db = await getDb();
-  return db.collection("users").find({ role: { $ne: "admin" } }).sort({ createdAt: -1 }).toArray();
+  const members = await db.collection("users").find({ role: { $ne: "admin" } }).toArray();
+  return members.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ko"));
 }
 
 export async function usernameExists(username: string) {
