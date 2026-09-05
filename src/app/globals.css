@@ -1381,6 +1381,61 @@ h3,
   background: #f8f5ef;
 }
 
+.memorial-plan-demo {
+  opacity: 0.95;
+}
+
+.memorial-billing-mode-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  background: #f4f7f2;
+  border-radius: 10px;
+}
+
+.memorial-checkout-page {
+  max-width: 560px;
+}
+
+.memorial-checkout-panel h2 {
+  margin-top: 0;
+}
+
+.memorial-checkout-field {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.memorial-checkout-field select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.memorial-checkout-mock {
+  padding: 8px 10px;
+  background: #fff8e6;
+  border-radius: 8px;
+  border: 1px solid #e8d9a8;
+}
+
+.memorial-checkout-note {
+  margin-top: 16px;
+}
+
+.memorial-sub-active {
+  color: var(--sage-deep);
+  font-weight: 600;
+}
+
+.memorial-sub-none a {
+  color: var(--sage-deep);
+  text-decoration: underline;
+}
+
 .memorial-plan-badge {
   align-self: flex-start;
   padding: 2px 8px;

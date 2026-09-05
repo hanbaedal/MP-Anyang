@@ -20,17 +20,17 @@ export const MEMORIAL_VS_AGENCY = [
   },
 ] as const;
 
-/** 유료화 예정 플랜 — 결제 연동 전 placeholder */
 export type MemorialPlanId = "demo" | "standard" | "premium";
 
 export type MemorialPlan = {
   id: MemorialPlanId;
   name: string;
   priceLabel: string;
+  priceAmount: number;
   period: string;
   badge?: string;
   highlight?: boolean;
-  available: boolean;
+  purchasable: boolean;
   features: string[];
 };
 
@@ -39,24 +39,25 @@ export const MEMORIAL_PLANS: MemorialPlan[] = [
     id: "demo",
     name: "데모 체험",
     priceLabel: "무료",
-    period: "체험 기간",
-    badge: "현재 이용 가능",
-    available: true,
+    priceAmount: 0,
+    period: "체험",
+    badge: "샘플 추모관",
+    purchasable: false,
     features: [
       "샘플 추모관 열람 (DEMO-A101 등)",
-      "타임라인·추억 업로드 체험",
-      "편집 영상 요청 UI 확인",
+      "기능·UI 체험 (업로드는 유료권 필요)",
     ],
   },
   {
     id: "standard",
     name: "스탠다드",
-    priceLabel: "월 9,900원",
-    period: "1개 추모관",
-    badge: "출시 예정",
-    available: false,
+    priceLabel: "99,000원",
+    priceAmount: 99000,
+    period: "연간 · 추모관 1개",
+    badge: "연간권",
+    purchasable: true,
     features: [
-      "망자 1명 추모관 개설",
+      "망자 1명 추모관 1년 이용",
       "사진·동영상·글 무제한 업로드",
       "기일·명절 자동 타임라인 갱신",
       "묘역 점검 사진 연동",
@@ -65,11 +66,12 @@ export const MEMORIAL_PLANS: MemorialPlan[] = [
   {
     id: "premium",
     name: "프리미엄",
-    priceLabel: "월 19,900원",
-    period: "1개 추모관",
-    badge: "출시 예정",
+    priceLabel: "199,000원",
+    priceAmount: 199000,
+    period: "연간 · 추모관 1개",
+    badge: "연간권",
     highlight: true,
-    available: false,
+    purchasable: true,
     features: [
       "스탠다드 기능 전체",
       "연 2회 편집 추모영상 제작",
@@ -79,5 +81,11 @@ export const MEMORIAL_PLANS: MemorialPlan[] = [
   },
 ];
 
+export function getPaidPlan(planId: string) {
+  const plan = MEMORIAL_PLANS.find((p) => p.id === planId);
+  if (!plan || !plan.purchasable) return null;
+  return plan;
+}
+
 export const MEMORIAL_BILLING_NOTE =
-  "정식 요금·결제는 추후 오픈 예정입니다. 현재는 데모 체험과 상담을 통해 이용 방법을 안내해 드립니다.";
+  "연간권은 추모관 1개당 1년 이용권입니다. 결제·갱신은 추모관별로 적용됩니다.";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorStatus, readSession } from "../../../../lib/auth";
+import { memberHasMemorialPass } from "../../../../lib/memorial-billing";
 import { storeMemorialMedia } from "../../../../lib/memorial-media";
 import { findHallByCode, memberCanEditHall, syncHall } from "../../../../lib/memorial-store";
 import { findGraveByPlotNo, updateGrave, toId } from "../../../../lib/store";
@@ -21,6 +22,12 @@ export async function POST(request: Request) {
     if (!hall) return NextResponse.json({ error: "추모관을 찾을 수 없습니다." }, { status: 404 });
     if (!(await memberCanEditHall(user.id, user.role, hall))) {
       return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+    }
+    if (!(await memberHasMemorialPass(user.id, user.role, hallCode))) {
+      return NextResponse.json(
+        { error: "연간권이 필요합니다. 요금·플랜에서 구매해 주세요." },
+        { status: 402 },
+      );
     }
 
     const grave = await findGraveByPlotNo(hall.plotNo);

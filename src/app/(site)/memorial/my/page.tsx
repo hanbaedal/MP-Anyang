@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { readSession } from "../../../../lib/auth";
+import { listMemberSubscriptions, subscriptionLabel } from "../../../../lib/memorial-billing";
 import { ensureMemberMemorialHalls, syncHall } from "../../../../lib/memorial-store";
 import { findUserById } from "../../../../lib/store";
 import type { Relation } from "../../../../lib/store";
@@ -26,6 +27,9 @@ export default async function MyMemorialPage() {
     await syncHall(hall);
   }
 
+  const subs = await listMemberSubscriptions(session.id);
+  const subByHall = new Map(subs.map((s) => [s.hallCode, s]));
+
   return (
     <article className="article">
       <p className="kicker">사이버 추모관</p>
@@ -41,29 +45,43 @@ export default async function MyMemorialPage() {
         </section>
       ) : (
         <div className="memorial-my-grid">
-          {halls.map((hall) => (
-            <Link key={hall.code} href={`/memorial/${hall.code}`} className="panel memorial-my-card">
-              <p className="kicker">{hall.plotNo || "묘역"}</p>
-              <h2>{hall.deceasedName}님</h2>
-              <p className="meta">추모관 바로가기 →</p>
-            </Link>
-          ))}
+          {halls.map((hall) => {
+            const sub = subByHall.get(String(hall.code));
+            return (
+              <Link key={hall.code} href={`/memorial/${hall.code}`} className="panel memorial-my-card">
+                <p className="kicker">{hall.plotNo || "묘역"}</p>
+                <h2>{hall.deceasedName}님</h2>
+                {sub ? (
+                  <p className="meta memorial-sub-active">
+                    {subscriptionLabel(sub.planId)} · ~{new Date(sub.expiresAt).toLocaleDateString("ko-KR")}
+                  </p>
+                ) : String(hall.code).startsWith("DEMO-") ? (
+                  <p className="meta">데모 추모관</p>
+                ) : (
+                  <p className="meta memorial-sub-none">
+                    연간권 없음 · <Link href="/memorial/plans">구매</Link>
+                  </p>
+                )}
+                <p className="meta">추모관 바로가기 →</p>
+              </Link>
+            );
+          })}
         </div>
       )}
 
       <section className="panel memorial-intro-steps">
         <h2>이용 안내</h2>
         <ol>
-          <li>사진·동영상·추모 글을 올리면 타임라인에 쌓입니다.</li>
+          <li>연간권 구매 후 사진·동영상·추모 글을 올리면 타임라인에 쌓입니다.</li>
           <li>기일·설·추석 등 추모 시점에 묘역 사진과 함께 자동 갱신됩니다.</li>
-          <li>편집 추모영상 요청 시 운영팀이 생전·가족 자료로 영상을 제작합니다.</li>
+          <li>편집 추모영상 요청(프리미엄) 시 운영팀이 생전·가족 자료로 영상을 제작합니다.</li>
         </ol>
         <div className="memorial-guide-actions">
+          <Link href="/memorial/plans" className="btn btn-primary btn-sm">
+            연간권 구매
+          </Link>
           <Link href="/memorial/guide" className="btn btn-sm">
             이용 방법
-          </Link>
-          <Link href="/memorial/plans" className="btn btn-sm">
-            요금·플랜
           </Link>
         </div>
       </section>
