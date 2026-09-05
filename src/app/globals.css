@@ -1076,9 +1076,24 @@ h3,
 }
 
 @media (max-width: 900px) {
+  :root {
+    --header-h: 60px;
+  }
+
+  html,
+  body {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
   .site-header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0 12px;
+    gap: 8px;
+  }
+
+  .logo-text strong {
+    font-size: 15px;
   }
 
   .logo-text span {
@@ -1086,7 +1101,16 @@ h3,
   }
 
   .slogan {
+    display: none;
+  }
+
+  .header-actions .btn {
+    padding: 7px 11px;
     font-size: 13px;
+  }
+
+  .header-actions .meta {
+    display: none;
   }
 
   .shell-body {
@@ -1095,6 +1119,7 @@ h3,
 
   .explorer {
     display: none;
+    padding: 10px 8px 18px;
   }
 
   .explorer.open {
@@ -1102,8 +1127,32 @@ h3,
     position: fixed;
     z-index: 40;
     inset: var(--header-h) auto 0 0;
-    width: min(86vw, 320px);
+    width: min(86vw, 300px);
     overflow: auto;
+  }
+
+  .explorer-title {
+    padding: 2px 8px 6px;
+    font-size: 11px;
+  }
+
+  .nav-group {
+    margin-bottom: 0;
+  }
+
+  .nav-group-btn,
+  .nav-link {
+    padding: 6px 8px;
+    gap: 6px;
+    line-height: 1.35;
+  }
+
+  .nav-children {
+    padding: 0 0 2px 12px;
+  }
+
+  .nav-link {
+    font-size: 14px;
   }
 
   .drawer-backdrop.open {
@@ -1120,6 +1169,16 @@ h3,
 
   .cards-3 {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 16px 14px 18px;
+  }
+
+  .card h2 {
+    font-size: 17px;
+    margin-bottom: 8px;
   }
 
   .side-cta-btn span {
@@ -1130,9 +1189,117 @@ h3,
     padding: 10px;
   }
 
-  .article,
+  .article {
+    padding: 22px 16px 56px;
+  }
+
+  .article h1 {
+    font-size: clamp(22px, 6.2vw, 28px);
+    margin-bottom: 8px;
+  }
+
+  .kicker {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .lead {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+
+  .article-image {
+    height: min(240px, 56vw);
+    margin: 6px 0 20px;
+    border-radius: 12px;
+  }
+
+  .article p {
+    margin-bottom: 12px;
+  }
+
+  .quote {
+    padding: 14px 16px;
+    margin: 6px 0 18px;
+  }
+
+  .quote p {
+    font-size: 15px;
+  }
+
+  .list-item {
+    padding: 12px 14px;
+  }
+
+  .list-item h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .panel {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .form-grid {
+    gap: 10px;
+  }
+
+  .form-grid label,
+  .field {
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  .form-grid input,
+  .form-grid textarea,
+  .form-grid select {
+    padding: 8px 10px;
+  }
+
+  .btn {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
   .home-hero-copy {
-    padding-left: 18px;
-    padding-right: 18px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .home-hero-copy h1 {
+    font-size: clamp(22px, 6vw, 30px);
+  }
+
+  .home-hero-copy p {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .page-footer {
+    padding: 20px 16px 24px;
+    font-size: 12px;
+    margin-top: 28px;
+  }
+
+  .footer-name {
+    font-size: 14px;
+  }
+
+  .footer-info {
+    line-height: 1.65;
+  }
+
+  .intro-body h1 {
+    font-size: clamp(22px, 7vw, 32px);
+  }
+
+  .intro-body p {
+    font-size: 14px;
+  }
+
+  .auth-screen > .article {
+    padding-top: 20px;
+    padding-bottom: 40px;
   }
 }
