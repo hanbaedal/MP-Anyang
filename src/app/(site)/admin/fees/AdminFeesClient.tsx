@@ -70,18 +70,18 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
         </p>
       </div>
 
-      <div className="admin-member-toolbar panel">
-        <label className="admin-member-search">
-          검색
+      <div className="admin-fee-toolbar panel">
+        <label className="admin-fee-field admin-fee-search">
+          <span className="admin-fee-label">검색</span>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="이름, 아이디, 묘역번호"
+            placeholder="이름·아이디·묘역"
           />
         </label>
-        <label>
-          납부 상태
+        <label className="admin-fee-field">
+          <span className="admin-fee-label">납부 상태</span>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">전체</option>
             {STATUS_OPTIONS.map((s) => (
@@ -91,7 +91,7 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
             ))}
           </select>
         </label>
-        <p className="meta admin-member-count">{filtered.length}명</p>
+        <span className="admin-fee-count">{filtered.length}명</span>
       </div>
 
       <div className="table-wrap admin-member-table-wrap">
