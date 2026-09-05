@@ -208,14 +208,19 @@ export function MemorialHallClient({
               <p className="meta panel">아직 등록된 추억이 없습니다.</p>
             ) : (
               <ol className="memorial-timeline-list">
-                {timelineEntries.map((entry) => (
-                  <li key={entry._id} className="panel memorial-timeline-item">
+                {timelineEntries.map((entry) => {
+                  const hasMedia = Boolean(entry.mediaUrl);
+                  return (
+                  <li
+                    key={entry._id}
+                    className={`panel memorial-timeline-item${hasMedia ? " memorial-timeline-card" : ""}`}
+                  >
                     <div className="memorial-timeline-meta">
                       <span className="memorial-badge">{entryBadge(entry.type, entry.eventKind)}</span>
                       <time>{new Date(entry.createdAt).toLocaleDateString("ko-KR")}</time>
                     </div>
                     <h3>{entry.title}</h3>
-                    {displayBody(entry.body) ? <p>{displayBody(entry.body)}</p> : null}
+                    {!hasMedia && displayBody(entry.body) ? <p>{displayBody(entry.body)}</p> : null}
                     {entry.mediaUrl ? (
                       entry.mediaType === "video" || entry.type === "video" ? (
                         <video src={entry.mediaUrl} controls className="memorial-media" preload="metadata" />
@@ -225,13 +230,14 @@ export function MemorialHallClient({
                           className="memorial-media-btn"
                           onClick={() => setLightbox({ kind: "image", src: entry.mediaUrl!, alt: entry.title, caption: entry.title })}
                         >
-                          <Image src={entry.mediaUrl} alt={entry.title} width={800} height={600} className="memorial-media" unoptimized />
+                          <Image src={entry.mediaUrl} alt={entry.title} width={320} height={240} className="memorial-media" unoptimized />
                         </button>
                       )
                     ) : null}
                     <p className="meta memorial-author">{entry.authorName}</p>
                   </li>
-                ))}
+                  );
+                })}
               </ol>
             )}
           </section>
