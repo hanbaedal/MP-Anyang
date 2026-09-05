@@ -58,9 +58,14 @@ export default async function MyMemorialPage() {
           <li>기일·설·추석 등 추모 시점에 묘역 사진과 함께 자동 갱신됩니다.</li>
           <li>편집 추모영상 요청 시 운영팀이 생전·가족 자료로 영상을 제작합니다.</li>
         </ol>
-        <Link href="/memorial" className="btn btn-sm">
-          사이버 추모관 소개
-        </Link>
+        <div className="memorial-guide-actions">
+          <Link href="/memorial/guide" className="btn btn-sm">
+            이용 방법
+          </Link>
+          <Link href="/memorial/plans" className="btn btn-sm">
+            요금·플랜
+          </Link>
+        </div>
       </section>
     </article>
   );

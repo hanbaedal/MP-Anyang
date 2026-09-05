@@ -312,22 +312,28 @@ h3,
 }
 
 .shell {
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .shell-body {
   flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: var(--nav-w) minmax(0, 1fr);
-  min-height: calc(100vh - var(--header-h));
+  overflow: hidden;
 }
 
 .explorer {
   background: #ebe4d8;
   border-right: 1px solid var(--line);
   padding: 16px 10px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
 }
 
 .explorer-title {
@@ -396,6 +402,9 @@ h3,
 .content {
   background: var(--cream);
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* 메인 전경: 노트북 한 화면에 전경+푸터 */
@@ -1256,11 +1265,174 @@ h3,
   border-color: #c4b59a;
 }
 
+.side-cta-btn.memorial.open {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: #f7f3ea;
+}
+
+.side-cta-memorial {
+  position: relative;
+}
+
+.side-cta-submenu {
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 168px;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: -4px 4px 16px rgba(42, 38, 34, 0.12);
+  z-index: 60;
+}
+
+.side-cta-submenu-item {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.side-cta-submenu-item:hover {
+  background: #f4f7f2;
+  color: var(--sage-deep);
+}
+
+.side-cta-modal {
+  width: min(520px, 96vw);
+  max-height: min(88vh, 640px);
+  overflow: auto;
+}
+
+.memorial-diff-dl {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+
+.memorial-diff-dl dt {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--sage-deep);
+  font-size: 14px;
+}
+
+.memorial-diff-dl dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .memorial-intro-cta {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.memorial-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.memorial-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.memorial-plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  min-height: 100%;
+}
+
+.memorial-plan-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.memorial-plan-highlight {
+  border-color: var(--sage);
+  box-shadow: inset 0 0 0 1px rgba(95, 112, 89, 0.2);
+}
+
+.memorial-plan-available {
+  background: #f8f5ef;
+}
+
+.memorial-plan-badge {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ebe6dc;
+  color: var(--sage-deep);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.memorial-plan-highlight .memorial-plan-badge {
+  background: var(--sage);
+  color: #fff;
+}
+
+.memorial-plan-price {
+  margin: 0;
+}
+
+.memorial-plan-price strong {
+  display: block;
+  font-size: 22px;
+  font-family: "Noto Serif KR", serif;
+  color: var(--sage-deep);
+}
+
+.memorial-plan-features {
+  margin: 0;
+  padding-left: 1.1rem;
+  flex: 1 1 auto;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.memorial-plan-features li + li {
+  margin-top: 4px;
+}
+
+.memorial-plan-card .btn {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.memorial-plan-faq h2 {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .memorial-plans-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .memorial-steps {
@@ -2594,6 +2766,11 @@ h3,
 .sitemap-tone-facilities {
   background: #e4f0ee;
   border-color: #b8d4cf;
+}
+
+.sitemap-tone-memorial {
+  background: #f0ebe3;
+  border-color: #d4c4a8;
 }
 
 .sitemap-tone-services {

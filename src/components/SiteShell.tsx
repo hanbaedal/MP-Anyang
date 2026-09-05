@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ADMIN_MENU, MENU, groupIdFromPath } from "../lib/menu";
-import { ChatIcon, Chevron, LogoMark, MemorialIcon, SearchIcon } from "./icons";
+import { ADMIN_MENU, MENU, groupIdFromPath, memorialNavActive } from "../lib/menu";
+import { SideCta } from "./SideCta";
+import { Chevron, LogoMark } from "./icons";
 import { SocialBar } from "./SocialBar";
 
 type Props = {
@@ -90,7 +91,15 @@ export function SiteShell({ children, userName, userRole }: Props) {
                     <Link
                       key={child.href}
                       href={child.href}
-                      className={`nav-link ${pathname === child.href ? "active" : ""}`}
+                      className={`nav-link ${
+                        group.id === "memorial"
+                          ? memorialNavActive(pathname, child.href)
+                            ? "active"
+                            : ""
+                          : pathname === child.href
+                            ? "active"
+                            : ""
+                      }`}
                       onClick={() => setMobileOpen(false)}
                     >
                       {child.label}
@@ -136,18 +145,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
         </main>
       </div>
 
-      {/* 우측 중간 고정 사이드 버튼 */}
-      <div className="side-cta">
-        <Link href="/consult" className="side-cta-btn primary">
-          <ChatIcon /><span>상담신청</span>
-        </Link>
-        <Link href="/grave-search" className="side-cta-btn">
-          <SearchIcon /><span>묘역찾기</span>
-        </Link>
-        <Link href="/memorial" className="side-cta-btn memorial">
-          <MemorialIcon /><span>사이버 추모관</span>
-        </Link>
-      </div>
+      <SideCta loggedIn={Boolean(userName)} />
     </div>
   );
 }

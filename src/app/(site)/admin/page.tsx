@@ -7,6 +7,7 @@ const GROUP_TONE: Record<string, string> = {
   about: "sitemap-tone-about",
   lots: "sitemap-tone-lots",
   facilities: "sitemap-tone-facilities",
+  memorial: "sitemap-tone-memorial",
   services: "sitemap-tone-services",
   support: "sitemap-tone-support",
 };

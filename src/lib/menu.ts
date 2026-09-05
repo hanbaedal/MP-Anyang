@@ -16,6 +16,14 @@ export const ADMIN_MENU: MenuChild[] = [
   { href: "/admin/park", label: "공원 정보" },
 ];
 
+/** 사이버 추모관 — 서비스상품과 분리된 1급 메뉴 (유료·독립 운영 예정) */
+export const MEMORIAL_MENU: MenuChild[] = [
+  { href: "/memorial", label: "소개" },
+  { href: "/memorial/guide", label: "이용 방법" },
+  { href: "/memorial/plans", label: "요금·플랜" },
+  { href: "/memorial/my", label: "내 추모관" },
+];
+
 export const MENU: MenuGroup[] = [
   {
     id: "about",
@@ -51,10 +59,14 @@ export const MENU: MenuGroup[] = [
     ],
   },
   {
+    id: "memorial",
+    label: "사이버 추모관",
+    children: MEMORIAL_MENU,
+  },
+  {
     id: "services",
     label: "서비스상품",
     children: [
-      { href: "/memorial", label: "사이버 추모관" },
       { href: "/services/memorial", label: "추모" },
       { href: "/services/sangjo", label: "상조" },
       { href: "/services/grave", label: "묘지" },
@@ -75,9 +87,14 @@ export const MENU: MenuGroup[] = [
 ];
 
 export function groupIdFromPath(pathname: string): string | null {
-  if (pathname === "/memorial" || pathname.startsWith("/memorial/")) return "services";
+  if (pathname === "/memorial" || pathname.startsWith("/memorial/")) return "memorial";
   const found = MENU.find((group) =>
     group.children.some((child) => pathname === child.href || pathname.startsWith(`${child.href}/`)),
   );
   return found?.id ?? null;
+}
+
+export function memorialNavActive(pathname: string, href: string) {
+  if (href === "/memorial") return pathname === "/memorial";
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
