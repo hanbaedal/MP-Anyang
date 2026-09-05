@@ -8,7 +8,7 @@ import { createParkPhoto, deleteParkPhoto, getParkPhotos, toId } from "../../../
 async function addParkPhoto(formData: FormData) {
   "use server";
   await requireAdmin();
-  const imageUrl = await fileToDataUrl(formData, "image");
+  const imageUrl = await fileToDataUrl(formData, "image", "park");
   const url = imageUrl || String(formData.get("imageUrl") || "");
   if (!url) redirect("/admin/park?error=image");
   await createParkPhoto({

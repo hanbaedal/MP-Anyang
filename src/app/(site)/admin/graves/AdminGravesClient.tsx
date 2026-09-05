@@ -23,10 +23,19 @@ type Tab = "basic" | "map" | "media";
 
 type Props = {
   graves: AdminGraveRow[];
+  imageStorage: "cloudinary" | "base64";
   addGraveAction: (formData: FormData) => Promise<void>;
   editGraveAction: (formData: FormData) => Promise<void>;
   removeGraveAction: (formData: FormData) => Promise<void>;
 };
+
+function isStaleInspection(dateStr: string) {
+  if (!dateStr) return true;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return true;
+  const days = (Date.now() - date.getTime()) / 86_400_000;
+  return days > 90;
+}
 
 function GraveFields({ tab, grave }: { tab: Tab; grave?: AdminGraveRow }) {
   if (tab === "basic") {
@@ -181,19 +190,38 @@ function GraveModal({
   );
 }
 
-export function AdminGravesClient({ graves, addGraveAction, editGraveAction, removeGraveAction }: Props) {
+export function AdminGravesClient({
+  graves,
+  imageStorage,
+  addGraveAction,
+  editGraveAction,
+  removeGraveAction,
+}: Props) {
   const [query, setQuery] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("");
+  const [inspectFilter, setInspectFilter] = useState<"all" | "unchecked" | "checked" | "stale">("all");
   const [editTarget, setEditTarget] = useState<AdminGraveRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminGraveRow | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
+  const zones = useMemo(
+    () => [...new Set(graves.map((g) => g.zone).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko")),
+    [graves],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim();
-    if (!q) return graves;
-    return graves.filter(
-      (g) => g.plotNo.includes(q) || g.deceasedName.includes(q) || g.familyName.includes(q),
-    );
-  }, [graves, query]);
+    return graves.filter((g) => {
+      if (q && !g.plotNo.includes(q) && !g.deceasedName.includes(q) && !g.familyName.includes(q)) return false;
+      if (zoneFilter && g.zone !== zoneFilter) return false;
+      if (inspectFilter === "unchecked" && g.lastInspectedAt) return false;
+      if (inspectFilter === "checked" && !g.lastInspectedAt) return false;
+      if (inspectFilter === "stale" && !isStaleInspection(g.lastInspectedAt)) return false;
+      return true;
+    });
+  }, [graves, query, zoneFilter, inspectFilter]);
+
+  const filterActive = Boolean(query.trim() || zoneFilter || inspectFilter !== "all");
 
   return (
     <>
@@ -207,9 +235,35 @@ export function AdminGravesClient({ graves, addGraveAction, editGraveAction, rem
             placeholder="묘번 · 고인 · 성씨"
           />
         </label>
+        <div className="admin-grave-filters">
+          <label>
+            구역
+            <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)}>
+              <option value="">전체</option>
+              {zones.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            점검
+            <select
+              value={inspectFilter}
+              onChange={(e) => setInspectFilter(e.target.value as typeof inspectFilter)}
+            >
+              <option value="all">전체</option>
+              <option value="unchecked">미점검</option>
+              <option value="checked">점검완료</option>
+              <option value="stale">90일+ 미점검</option>
+            </select>
+          </label>
+        </div>
         <div className="admin-grave-toolbar-actions">
           <p className="meta admin-member-count">
-            {query.trim() ? `검색 ${filtered.length}건` : `전체 ${graves.length}건`} · 묘번순
+            {filterActive ? `조회 ${filtered.length}건` : `전체 ${graves.length}건`} · 묘번순
+            {imageStorage === "cloudinary" ? " · Cloudinary" : " · 로컬(base64)"}
           </p>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => setCreateOpen(true)}>
             + 새 묘역
@@ -232,7 +286,7 @@ export function AdminGravesClient({ graves, addGraveAction, editGraveAction, rem
           </thead>
           <tbody>
             {filtered.map((g) => (
-              <tr key={g.id}>
+              <tr key={g.id} className={!g.lastInspectedAt ? "admin-grave-row-warn" : undefined}>
                 <td className="admin-member-name">{g.plotNo}</td>
                 <td>{g.deceasedName}</td>
                 <td>{g.familyName}</td>
@@ -255,7 +309,7 @@ export function AdminGravesClient({ graves, addGraveAction, editGraveAction, rem
         </table>
         {filtered.length === 0 && (
           <p className="alert admin-member-empty">
-            {query.trim() ? `"${query.trim()}" 검색 결과가 없습니다.` : "등록된 묘역이 없습니다."}
+            {filterActive ? "조건에 맞는 묘역이 없습니다." : "등록된 묘역이 없습니다."}
           </p>
         )}
       </div>

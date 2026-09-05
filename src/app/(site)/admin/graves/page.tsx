@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../../lib/auth";
-import { filesToDataUrls, fileToDataUrl } from "../../../../lib/images";
+import { filesToDataUrls, fileToDataUrl, imageStorageMode } from "../../../../lib/images";
 import { createGrave, deleteGrave, getGraves, toId, updateGrave } from "../../../../lib/store";
 import { AdminGravesClient } from "./AdminGravesClient";
 
@@ -86,6 +86,7 @@ export default async function AdminGravesPage() {
 
       <AdminGravesClient
         graves={graves}
+        imageStorage={imageStorageMode()}
         addGraveAction={addGraveAction}
         editGraveAction={editGraveAction}
         removeGraveAction={removeGraveAction}
