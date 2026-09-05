@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { readSession } from "../../../lib/auth";
+import { DEMO_FAMILY_MEMBER, DEMO_MEMORIAL_HALLS, demoHallHref } from "../../../lib/memorial-demo";
 
 const STEPS = [
   { n: "1", title: "묘역 연결", text: "회원가입 시 등록한 묘역번호·망자 정보로 고인별 추모관이 생성됩니다." },
@@ -39,6 +40,32 @@ export default async function MemorialIntroPage() {
           추모 대행 안내
         </Link>
       </div>
+
+      <section className="panel memorial-demo-panel">
+        <h2>데모 체험</h2>
+        <p className="meta">배포 환경에서 바로 확인할 수 있는 샘플 추모관입니다.</p>
+        <div className="memorial-demo-grid">
+          {DEMO_MEMORIAL_HALLS.map((hall) => (
+            <Link key={hall.code} href={demoHallHref(hall.code)} className="memorial-demo-card">
+              <p className="kicker">{hall.plotNo}</p>
+              <h3>{hall.deceasedName}님</h3>
+              <p className="meta">
+                {hall.visibility === "public" ? "누구나 열람" : "로그인 후 열람"} · {hall.code}
+              </p>
+            </Link>
+          ))}
+        </div>
+        <div className="memorial-demo-login">
+          <p>
+            <strong>데모 유족 계정</strong> — 아이디 <code>{DEMO_FAMILY_MEMBER.username}</code> · 비밀번호{" "}
+            <code>{DEMO_FAMILY_MEMBER.password}</code>
+          </p>
+          <p className="meta">홍길동님(DEMO-A101) 추모관 업로드·편집 요청을 테스트할 수 있습니다.</p>
+          <Link href={`/login?next=${encodeURIComponent("/memorial/my")}`} className="btn btn-sm">
+            데모 계정으로 로그인
+          </Link>
+        </div>
+      </section>
 
       <section className="panel">
         <h2>어떻게 이용하나요?</h2>

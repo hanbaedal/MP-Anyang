@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import type { Db } from "mongodb";
+import { DEMO_FAMILY_MEMBER, DEMO_MEMORIAL_HALLS } from "./memorial-demo";
 
 const ADMINS = [
   { username: "MP-Anyang-00", plainPw: "MPA000!", name: "슈퍼바이저" },
@@ -25,6 +26,8 @@ const GRAVE_DEMO_PHOTOS = [
 ];
 
 const DEMO_GRAVE_PLOTS = ["A-101", "B-205", "C-310"];
+
+const DEMO_INSPECTED_AT = "2026-03-01";
 
 export async function ensureAdmins(db: Db) {
   const users = db.collection("users");
@@ -150,6 +153,227 @@ export async function ensureDemoMedia(db: Db) {
     if (!grave.capacity && capacityByPlot[plotNo]) {
       await graves.updateOne({ plotNo }, { $set: { capacity: capacityByPlot[plotNo] } });
     }
+    if (!grave.lastInspectedAt) {
+      await graves.updateOne(
+        { plotNo },
+        { $set: { lastInspectedAt: DEMO_INSPECTED_AT, inspectNote: "데모 점검 — 추모관 연동용" } },
+      );
+    }
+  }
+}
+
+/** 데모 회원·추모관·타임라인 샘플 */
+export async function ensureDemoMemorial(db: Db) {
+  const users = db.collection("users");
+  const halls = db.collection("memorialHalls");
+  const entries = db.collection("memorialEntries");
+  const jobs = db.collection("memorialJobs");
+
+  const passwordHash = await hash(DEMO_FAMILY_MEMBER.password, 12);
+  const memberResult = await users.findOneAndUpdate(
+    { username: DEMO_FAMILY_MEMBER.username },
+    {
+      $set: {
+        username: DEMO_FAMILY_MEMBER.username,
+        passwordHash,
+        name: DEMO_FAMILY_MEMBER.name,
+        phone: DEMO_FAMILY_MEMBER.phone,
+        email: DEMO_FAMILY_MEMBER.email,
+        plotNo: DEMO_FAMILY_MEMBER.plotNo,
+        role: "member",
+        relations: [{ deceasedName: "홍길동", relation: "자", plotNo: "A-101" }],
+        registeredAt: "2024-01-01",
+        feeStatus: "완납",
+        annualFee: 120000,
+        smsConsent: true,
+        marketingSmsConsent: false,
+      },
+      $setOnInsert: { feeHistory: [], createdAt: new Date() },
+    },
+    { upsert: true, returnDocument: "after" },
+  );
+  const memberId = memberResult?._id?.toString() || "";
+
+  const now = new Date();
+  const day = (offset: number) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - offset);
+    return d;
+  };
+
+  type EntrySeed = {
+    demoKey: string;
+    hallCode: string;
+    type: "photo" | "video" | "text" | "grave_snapshot" | "event" | "edited_video";
+    title: string;
+    body: string;
+    mediaUrl?: string;
+    mediaType?: "image" | "video";
+    eventKind?: string;
+    eventDate?: string;
+    authorName: string;
+    daysAgo: number;
+  };
+
+  const entrySeeds: EntrySeed[] = [
+    {
+      demoKey: "intro-text",
+      hallCode: "DEMO-A101",
+      type: "text",
+      title: "아버지를 그리며",
+      body: "demo:intro-text\n청계산 자락을 함께 걸으며 나누었던 이야기들. 사이버 추모관에 마음을 모아 둡니다.",
+      authorName: "홍길순",
+      daysAgo: 120,
+    },
+    {
+      demoKey: "family-photo",
+      hallCode: "DEMO-A101",
+      type: "photo",
+      title: "1985년 가족 여행",
+      body: "demo:family-photo",
+      mediaUrl: "/images/facility-garden.png",
+      mediaType: "image",
+      eventKind: "family",
+      authorName: "홍길순",
+      daysAgo: 90,
+    },
+    {
+      demoKey: "grave-snap",
+      hallCode: "DEMO-A101",
+      type: "grave_snapshot",
+      title: "A-101 묘역 현황",
+      body: "demo:grave-snap",
+      mediaUrl: "/images/lot-columbarium.png",
+      mediaType: "image",
+      eventKind: "grave_inspection",
+      eventDate: DEMO_INSPECTED_AT,
+      authorName: "안양공원",
+      daysAgo: 14,
+    },
+    {
+      demoKey: "memorial-event",
+      hallCode: "DEMO-A101",
+      type: "event",
+      title: "기일 추모의 날",
+      body: "demo:memorial-event\n홍길동님의 기일에 맞춰 추모관이 갱신되었습니다.",
+      eventKind: "memorial_day",
+      eventDate: "2026-03-15",
+      authorName: "추모 이벤트",
+      daysAgo: 7,
+    },
+    {
+      demoKey: "edited-video",
+      hallCode: "DEMO-A101",
+      type: "edited_video",
+      title: "2026년 설날 추모 영상 (샘플)",
+      body: "demo:edited-video\n운영팀이 가족 자료를 바탕으로 편집한 추모 영상 예시입니다.",
+      mediaUrl: "/images/park-panorama.png",
+      mediaType: "image",
+      eventKind: "staff_edit",
+      authorName: "관리자",
+      daysAgo: 3,
+    },
+    {
+      demoKey: "b-family",
+      hallCode: "DEMO-B205",
+      type: "photo",
+      title: "언덕길을 함께 오르던 날",
+      body: "demo:b-family",
+      mediaUrl: "/images/lot-burial.png",
+      mediaType: "image",
+      authorName: "김가족",
+      daysAgo: 60,
+    },
+    {
+      demoKey: "b-grave",
+      hallCode: "DEMO-B205",
+      type: "grave_snapshot",
+      title: "B-205 묘역 현황",
+      body: "demo:b-grave",
+      mediaUrl: "/images/lot-flat.png",
+      mediaType: "image",
+      eventKind: "grave_inspection",
+      eventDate: DEMO_INSPECTED_AT,
+      authorName: "안양공원",
+      daysAgo: 14,
+    },
+    {
+      demoKey: "c-tree",
+      hallCode: "DEMO-C310",
+      type: "text",
+      title: "수목 아래에서",
+      body: "demo:c-tree\n봄마다 찾아뵙던 수목장. 바람과 향기가 그리운 계절입니다.",
+      authorName: "이가족",
+      daysAgo: 45,
+    },
+    {
+      demoKey: "c-photo",
+      hallCode: "DEMO-C310",
+      type: "photo",
+      title: "손주와 함께한 봄날",
+      body: "demo:c-photo",
+      mediaUrl: "/images/lot-tree.png",
+      mediaType: "image",
+      authorName: "이가족",
+      daysAgo: 30,
+    },
+  ];
+
+  for (const hall of DEMO_MEMORIAL_HALLS) {
+    const memberIds = hall.code === "DEMO-A101" && memberId ? [memberId] : [];
+    await halls.updateOne(
+      { code: hall.code },
+      {
+        $set: {
+          code: hall.code,
+          plotNo: hall.plotNo,
+          deceasedName: hall.deceasedName,
+          memberIds,
+          visibility: hall.visibility,
+          deathDate: hall.deathDate,
+          coverUrl: hall.coverUrl,
+          updatedAt: now,
+        },
+        $setOnInsert: { createdAt: now },
+      },
+      { upsert: true },
+    );
+  }
+
+  for (const seed of entrySeeds) {
+    const exists = await entries.findOne({ hallCode: seed.hallCode, body: { $regex: `^demo:${seed.demoKey}` } });
+    if (exists) continue;
+    const createdAt = day(seed.daysAgo);
+    await entries.insertOne({
+      hallCode: seed.hallCode,
+      type: seed.type,
+      title: seed.title,
+      body: seed.body.startsWith("demo:") ? seed.body : `demo:${seed.demoKey}\n${seed.body}`,
+      mediaUrl: seed.mediaUrl,
+      mediaType: seed.mediaType,
+      eventKind: seed.eventKind,
+      eventDate: seed.eventDate,
+      authorId: seed.authorName === "관리자" ? "admin-demo" : memberId || "demo",
+      authorName: seed.authorName,
+      status: "published",
+      createdAt,
+    });
+  }
+
+  const jobExists = await jobs.findOne({ hallCode: "DEMO-A101", note: { $regex: "데모 편집" } });
+  if (!jobExists && memberId) {
+    await jobs.insertOne({
+      hallCode: "DEMO-A101",
+      deceasedName: "홍길동",
+      plotNo: "A-101",
+      requestedBy: memberId,
+      requesterName: DEMO_FAMILY_MEMBER.name,
+      status: "in_progress",
+      note: "데모 편집 — 2026년 가족 추억 영상 요청",
+      staffNote: "샘플 데이터 — 편집 중",
+      createdAt: day(5),
+      updatedAt: day(1),
+    });
   }
 }
 

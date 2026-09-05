@@ -1405,6 +1405,41 @@ h3,
   border-bottom: 1px solid var(--line);
 }
 
+.memorial-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.memorial-demo-card {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  background: #faf8f4;
+}
+
+.memorial-demo-card:hover {
+  border-color: var(--sage);
+}
+
+.memorial-demo-login {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.memorial-demo-login code {
+  font-size: 13px;
+  background: #ebe6dc;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .admin-inline-form {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
-import { ensureAdmins, ensureDemoMedia, ensureSampleData } from "./seed";
+import { ensureAdmins, ensureDemoMedia, ensureDemoMemorial, ensureSampleData } from "./seed";
 
 const mongoUri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "MP-Anyang";
@@ -16,6 +16,7 @@ declare global {
   var _mongoAdminsPromise: Promise<void> | undefined;
   var _mongoSampleSeedStarted: boolean | undefined;
   var _mongoDemoMediaPromise: Promise<void> | undefined;
+  var _mongoDemoMemorialPromise: Promise<void> | undefined;
 }
 
 function getClientPromise() {
@@ -54,6 +55,15 @@ export async function getDb(): Promise<Db> {
     });
   }
   await global._mongoDemoMediaPromise;
+
+  if (!global._mongoDemoMemorialPromise) {
+    global._mongoDemoMemorialPromise = ensureDemoMemorial(db).catch((error) => {
+      global._mongoDemoMemorialPromise = undefined;
+      console.error("[mongodb] demo memorial seed failed:", error);
+      throw error;
+    });
+  }
+  await global._mongoDemoMemorialPromise;
 
   if (!global._mongoSampleSeedStarted) {
     global._mongoSampleSeedStarted = true;

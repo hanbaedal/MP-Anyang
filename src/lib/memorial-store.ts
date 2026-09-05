@@ -86,12 +86,16 @@ export async function ensureHallForRelation(memberId: string, rel: Relation, dea
 
   const db = await getDb();
   const halls = db.collection<MemorialHallDoc>("memorialHalls");
-  const existing = await halls.findOne({
-    plotNo: rel.plotNo.trim(),
-    deceasedName: rel.deceasedName.trim(),
-    memberIds: memberId,
-  });
-  if (existing) return existing;
+  const plotNo = rel.plotNo.trim();
+  const deceasedName = rel.deceasedName.trim();
+  const existing = await halls.findOne({ plotNo, deceasedName });
+  if (existing) {
+    if (!existing.memberIds.includes(memberId)) {
+      await halls.updateOne({ code: existing.code }, { $addToSet: { memberIds: memberId }, $set: { updatedAt: new Date() } });
+      return { ...existing, memberIds: [...existing.memberIds, memberId] };
+    }
+    return existing;
+  }
 
   const grave = rel.plotNo ? await findGraveByPlotNo(rel.plotNo) : null;
   const code = makeHallCode(rel.plotNo || "NA", rel.deceasedName || "고인");
