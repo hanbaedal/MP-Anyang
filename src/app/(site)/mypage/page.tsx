@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireUser } from "../../../lib/auth";
 import { formatPhone } from "../../../lib/phone";
+import { formatSmsConsentAt, smsConsentFromForm } from "../../../lib/sms-consent";
 import { deleteMember, findUserById, toId, updateMember } from "../../../lib/store";
 import type { FeeRecord, Relation } from "../../../lib/store";
 
@@ -33,6 +34,7 @@ async function saveProfile(formData: FormData) {
     }))
     .filter((row) => row.deceasedName || row.plotNo);
   if (password) data.passwordHash = await hash(password, 12);
+  Object.assign(data, smsConsentFromForm(formData));
   await updateMember(user.id, data);
   revalidatePath("/mypage");
   redirect("/mypage?saved=1");
@@ -108,6 +110,19 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
               ))}
             </tbody>
           </table>
+        </div>
+
+        <h3>SMS 수신 동의</h3>
+        <div className="consent-box">
+          <label className="consent-label">
+            <input name="smsConsent" type="checkbox" defaultChecked={Boolean(doc.smsConsent)} />
+            <span>[선택] SMS 서비스 알림 수신 (관리비·기일·운영 안내)</span>
+          </label>
+          <label className="consent-label">
+            <input name="marketingSmsConsent" type="checkbox" defaultChecked={Boolean(doc.marketingSmsConsent)} />
+            <span>[선택] 마케팅·홍보 SMS 수신</span>
+          </label>
+          <p className="meta">동의 일시: {formatSmsConsentAt(doc.smsConsentAt)}</p>
         </div>
         <button className="btn btn-primary" type="submit">저장</button>
       </form>

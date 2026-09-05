@@ -261,6 +261,9 @@ export async function createMember(input: {
   annualFee?: number;
   kakaoId?: string;
   googleId?: string;
+  smsConsent?: boolean;
+  marketingSmsConsent?: boolean;
+  smsConsentAt?: Date | null;
 }) {
   const db = await getDb();
   const result = await db.collection("users").insertOne({
@@ -270,6 +273,9 @@ export async function createMember(input: {
     role: "member",
     feeStatus: "미납",
     feeHistory: [] as FeeRecord[],
+    smsConsent: Boolean(input.smsConsent),
+    marketingSmsConsent: Boolean(input.marketingSmsConsent),
+    smsConsentAt: input.smsConsentAt ?? null,
     createdAt: new Date(),
   });
   return result.insertedId.toString();
@@ -297,6 +303,9 @@ export async function createOAuthMember(input: {
     feeHistory: [],
     kakaoId: input.kakaoId || "",
     googleId: input.googleId || "",
+    smsConsent: false,
+    marketingSmsConsent: false,
+    smsConsentAt: null,
     createdAt: new Date(),
   });
   return result.insertedId.toString();

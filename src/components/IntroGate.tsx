@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FacebookIcon, InstagramIcon, NaverCafeIcon, VolumeIcon, YoutubeIcon } from "./icons";
+import { SocialBar } from "./SocialBar";
+import { VolumeIcon } from "./icons";
 
 type Props = {
   children: React.ReactNode;
@@ -59,12 +60,7 @@ export function IntroGate({ children }: Props) {
         {muted ? "음소거됨" : "소리 켜짐"}
       </button>
       <footer className="intro-footer">
-        <div className="sns-bar">
-          <a href="#" aria-label="페이스북"><FacebookIcon /></a>
-          <a href="#" aria-label="인스타그램"><InstagramIcon /></a>
-          <a href="#" aria-label="유튜브"><YoutubeIcon /></a>
-          <a href="#" aria-label="네이버카페"><NaverCafeIcon /></a>
-        </div>
+        <SocialBar />
         <p className="intro-footer-info">
           경기도 의왕시 청계동 산 8-5 일원 · 관리사무실 031-421-9165
         </p>

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ADMIN_MENU, MENU, groupIdFromPath } from "../lib/menu";
-import { ChatIcon, Chevron, FacebookIcon, InstagramIcon, LogoMark, NaverCafeIcon, SearchIcon, YoutubeIcon } from "./icons";
+import { ChatIcon, Chevron, LogoMark, SearchIcon } from "./icons";
+import { SocialBar } from "./SocialBar";
 
 type Props = {
   children: React.ReactNode;
@@ -13,17 +14,6 @@ type Props = {
 };
 
 const slogan = "추억과 그리움이 머무는 자리, 안양공원묘지";
-
-function SocialBar({ light = false }: { light?: boolean }) {
-  return (
-    <div className={`sns-bar ${light ? "light" : ""}`}>
-      <a href="#" aria-label="페이스북"><FacebookIcon /></a>
-      <a href="#" aria-label="인스타그램"><InstagramIcon /></a>
-      <a href="#" aria-label="유튜브"><YoutubeIcon /></a>
-      <a href="#" aria-label="네이버카페"><NaverCafeIcon /></a>
-    </div>
-  );
-}
 
 export function SiteShell({ children, userName, userRole }: Props) {
   const pathname = usePathname();
@@ -46,11 +36,13 @@ export function SiteShell({ children, userName, userRole }: Props) {
           <button className="btn icon-btn menu-toggle" onClick={() => setMobileOpen((v) => !v)} aria-label="메뉴 열기">
             ≡
           </button>
-          <LogoMark />
-          <div className="logo-text">
-            <strong>안양공원묘지</strong>
-            <span>ANYANG MEMORIAL PARK</span>
-          </div>
+          <Link href="/" className="logo-link" aria-label="안양공원묘지 메인으로 이동">
+            <LogoMark />
+            <div className="logo-text">
+              <strong>안양공원묘지</strong>
+              <span>ANYANG MEMORIAL PARK</span>
+            </div>
+          </Link>
         </div>
         <p className="slogan">{slogan}</p>
         <div className="header-actions">

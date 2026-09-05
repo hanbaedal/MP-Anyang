@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../../lib/auth";
 import { formatPhone } from "../../../../lib/phone";
+import { formatSmsConsentAt } from "../../../../lib/sms-consent";
 import { deleteMember, listMembers, toId, updateMember } from "../../../../lib/store";
 import type { Relation } from "../../../../lib/store";
 
@@ -53,6 +54,10 @@ export default async function AdminMembersPage() {
                 {formatPhone(String(m.phone || ""))} · {String(m.email || "-")} · 묘역 {String(m.plotNo || "-")}
               </div>
               <p>관리비: {Number(m.annualFee || 0).toLocaleString()}원 / {String(m.feeStatus || "미납")}</p>
+              <p className="meta">
+                SMS 서비스: {m.smsConsent ? "동의" : "미동의"} · 마케팅 SMS: {m.marketingSmsConsent ? "동의" : "미동의"}
+                {m.smsConsentAt ? ` · 동의일 ${formatSmsConsentAt(m.smsConsentAt)}` : ""}
+              </p>
               {relations.length > 0 && (
                 <p className="meta">관계: {relations.map((r) => `${r.deceasedName}(${r.relation})`).join(", ")}</p>
               )}

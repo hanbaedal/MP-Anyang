@@ -65,6 +65,19 @@ function SignupForm() {
           </button>
         )}
 
+        <h2>SMS 수신 동의</h2>
+        <div className="consent-box">
+          <label className="consent-label">
+            <input name="smsConsent" type="checkbox" />
+            <span>[선택] SMS 서비스 알림 수신에 동의합니다. (관리비 안내, 기일·명절 안내, 운영 공지)</span>
+          </label>
+          <label className="consent-label">
+            <input name="marketingSmsConsent" type="checkbox" />
+            <span>[선택] 마케팅·홍보 SMS 수신에 동의합니다.</span>
+          </label>
+          <p className="meta">동의하지 않아도 회원가입은 가능합니다. 동의 시에만 문자 알림을 보내드립니다.</p>
+        </div>
+
         <button className="btn btn-primary" type="submit">회원 가입</button>
       </form>
     </>

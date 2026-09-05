@@ -2,6 +2,7 @@ import { hash } from "bcryptjs";
 import { createMember, phoneExists, usernameExists } from "../../../lib/store";
 import type { Relation } from "../../../lib/store";
 import { redirectTo } from "../../../lib/public-url";
+import { smsConsentFromForm } from "../../../lib/sms-consent";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -39,6 +40,8 @@ export async function POST(request: Request) {
     }))
     .filter((row) => row.deceasedName || row.plotNo);
 
+  const consent = smsConsentFromForm(form);
+
   await createMember({
     username,
     passwordHash: await hash(password, 12),
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
     registeredAt: String(form.get("registeredAt") || new Date().toISOString().slice(0, 10)),
     relations: rels,
     annualFee: Number(form.get("annualFee") || 0),
+    ...consent,
   });
 
   return redirectTo(request, `/login?signup=1&u=${encodeURIComponent(username)}`);
