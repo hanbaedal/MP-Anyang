@@ -1435,67 +1435,91 @@ h3,
   margin-top: auto;
 }
 
-.admin-sitemap-page .sitemap-section {
-  margin: 28px 0 0;
+.admin-sitemap-page {
+  max-width: 1120px;
+  padding: 14px 20px 28px;
 }
 
-.admin-sitemap-page .sitemap-section h2 {
+.admin-sitemap-page .kicker {
+  margin-bottom: 2px;
+}
+
+.admin-sitemap-page h1 {
   margin: 0 0 12px;
-  font-size: 18px;
-  font-family: "Noto Serif KR", serif;
-  color: var(--sage-deep);
+  font-size: 26px;
 }
 
-.admin-sitemap-page .sitemap-section h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-}
-
-.admin-sitemap-page .card-link p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.sitemap-note {
-  margin: -4px 0 12px;
-}
-
-.sitemap-link-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-
-.sitemap-link-list a {
-  color: var(--sage-deep);
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.sitemap-link-list a:hover {
-  color: var(--gold);
-  text-decoration: underline;
-}
-
-.sitemap-groups {
+.sitemap-board {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.sitemap-group {
-  padding: 14px 16px;
+.sitemap-group-card {
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 10px 12px 11px;
   min-width: 0;
 }
 
-.sitemap-group .sitemap-link-list {
-  flex-direction: column;
-  gap: 6px;
+.sitemap-group-card h2 {
+  margin: 0 0 7px;
+  font-size: 14px;
+  font-family: "Noto Serif KR", serif;
+  color: var(--sage-deep);
+  letter-spacing: 0.02em;
+}
+
+.sitemap-group-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px 10px;
+}
+
+.sitemap-group-links a {
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--sage-deep);
+  padding: 2px 0;
+}
+
+.sitemap-group-links a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.sitemap-tone-admin {
+  background: #e8efe4;
+  border-color: #c8d8c2;
+}
+
+.sitemap-tone-about {
+  background: #e6eef5;
+  border-color: #c5d6e6;
+}
+
+.sitemap-tone-lots {
+  background: #f5ebe0;
+  border-color: #e0cdb8;
+}
+
+.sitemap-tone-facilities {
+  background: #e4f0ee;
+  border-color: #b8d4cf;
+}
+
+.sitemap-tone-services {
+  background: #eee8f3;
+  border-color: #d4c8e4;
+}
+
+.sitemap-tone-support {
+  background: #f7ece8;
+  border-color: #e8cfc4;
 }
 
 .card-link {
@@ -1837,8 +1861,8 @@ h3,
     gap: 12px;
   }
 
-  .sitemap-groups {
-    grid-template-columns: 1fr;
+  .sitemap-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-member-table th:nth-child(2),
