@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { formatPhone } from "../../../../lib/phone";
 import { formatSmsConsentAt } from "../../../../lib/sms-consent";
 import type { Relation } from "../../../../lib/store";
@@ -13,6 +13,7 @@ export type AdminMemberRow = {
   email: string;
   plotNo: string;
   annualFee: number;
+  salePrice: number;
   feeStatus: string;
   smsConsent: boolean;
   marketingSmsConsent: boolean;
@@ -30,12 +31,69 @@ export function AdminMembersClient({ members, updateMemberAction, removeMemberAc
   const [query, setQuery] = useState("");
   const [editTarget, setEditTarget] = useState<AdminMemberRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminMemberRow | null>(null);
+  const [plotNoEdit, setPlotNoEdit] = useState("");
+  const [annualFeeEdit, setAnnualFeeEdit] = useState(0);
+  const [salePriceEdit, setSalePriceEdit] = useState(0);
+  const [applyPlotFees, setApplyPlotFees] = useState(false);
+  const [plotFeeHint, setPlotFeeHint] = useState("");
+  const [plotSuggestedFee, setPlotSuggestedFee] = useState<number | null>(null);
+  const [plotSuggestedSale, setPlotSuggestedSale] = useState<number | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim();
     if (!q) return members;
     return members.filter((m) => m.name.includes(q) || m.username.includes(q));
   }, [members, query]);
+
+  const lookupPlotFees = useCallback(async (plotNo: string) => {
+    const key = plotNo.trim();
+    if (!key) {
+      setPlotFeeHint("");
+      setPlotSuggestedFee(null);
+      setPlotSuggestedSale(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/plot-lookup?plotNo=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      if (!data.found) {
+        setPlotFeeHint("등록된 묘역번호가 없습니다.");
+        setPlotSuggestedFee(null);
+        setPlotSuggestedSale(null);
+        return;
+      }
+      const fee = Number(data.annualFee) || 0;
+      const sale = Number(data.salePrice) || 0;
+      setPlotSuggestedFee(fee > 0 ? fee : null);
+      setPlotSuggestedSale(sale > 0 ? sale : null);
+      const src = data.feeSource === "plot" ? "묘역 개별" : "요금표";
+      setPlotFeeHint(
+        `${data.type} ${data.capacity} · ${src} — 분양 ${sale.toLocaleString()}원 / 연 ${fee.toLocaleString()}원`,
+      );
+    } catch {
+      setPlotFeeHint("묘역 정보를 불러오지 못했습니다.");
+      setPlotSuggestedFee(null);
+      setPlotSuggestedSale(null);
+    }
+  }, []);
+
+  const openEdit = (member: AdminMemberRow) => {
+    setEditTarget(member);
+    setPlotNoEdit(member.plotNo);
+    setAnnualFeeEdit(member.annualFee);
+    setSalePriceEdit(member.salePrice);
+    setApplyPlotFees(false);
+    setPlotFeeHint("");
+    setPlotSuggestedFee(null);
+    setPlotSuggestedSale(null);
+    if (member.plotNo.trim()) void lookupPlotFees(member.plotNo);
+  };
+
+  const applySuggestedFees = () => {
+    if (plotSuggestedFee != null) setAnnualFeeEdit(plotSuggestedFee);
+    if (plotSuggestedSale != null) setSalePriceEdit(plotSuggestedSale);
+    setApplyPlotFees(true);
+  };
 
   return (
     <>
@@ -79,7 +137,7 @@ export function AdminMembersClient({ members, updateMemberAction, removeMemberAc
                 </td>
                 <td>
                   <div className="admin-member-row-actions">
-                    <button type="button" className="btn btn-sm" onClick={() => setEditTarget(m)}>
+                    <button type="button" className="btn btn-sm" onClick={() => openEdit(m)}>
                       수정
                     </button>
                     <button type="button" className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(m)}>
@@ -113,6 +171,7 @@ export function AdminMembersClient({ members, updateMemberAction, removeMemberAc
 
             <form action={updateMemberAction} className="modal-member-form">
               <input type="hidden" name="id" value={editTarget.id} />
+              <input type="hidden" name="applyPlotFees" value={applyPlotFees ? "1" : "0"} />
               <div className="form-grid modal-form-compact">
                 <label>
                   이름
@@ -128,11 +187,42 @@ export function AdminMembersClient({ members, updateMemberAction, removeMemberAc
                 </label>
                 <label>
                   묘역번호
-                  <input name="plotNo" defaultValue={editTarget.plotNo} />
+                  <input
+                    name="plotNo"
+                    value={plotNoEdit}
+                    onChange={(e) => {
+                      setPlotNoEdit(e.target.value);
+                      setApplyPlotFees(false);
+                    }}
+                    onBlur={() => void lookupPlotFees(plotNoEdit)}
+                  />
                 </label>
                 <label>
-                  연간 관리비
-                  <input name="annualFee" type="number" defaultValue={editTarget.annualFee} />
+                  분양가 (원)
+                  <input
+                    name="salePrice"
+                    type="number"
+                    min="0"
+                    value={salePriceEdit}
+                    onChange={(e) => {
+                      setSalePriceEdit(Number(e.target.value));
+                      setApplyPlotFees(false);
+                    }}
+                  />
+                </label>
+                <label>
+                  연간 관리비 (원)
+                  <input
+                    name="annualFee"
+                    type="number"
+                    min="0"
+                    value={annualFeeEdit}
+                    onChange={(e) => {
+                      setAnnualFeeEdit(Number(e.target.value));
+                      setApplyPlotFees(false);
+                    }}
+                    required
+                  />
                 </label>
                 <label>
                   납부 상태
@@ -147,6 +237,17 @@ export function AdminMembersClient({ members, updateMemberAction, removeMemberAc
                   <input name="password" type="password" placeholder="변경할 때만 입력" autoComplete="new-password" />
                 </label>
               </div>
+
+              {plotFeeHint ? (
+                <p className="meta admin-plot-fee-hint">
+                  {plotFeeHint}
+                  {plotSuggestedFee != null || plotSuggestedSale != null ? (
+                    <button type="button" className="link-btn" onClick={applySuggestedFees}>
+                      요금표 적용
+                    </button>
+                  ) : null}
+                </p>
+              ) : null}
 
               <div className="modal-info-strip">
                 <span>SMS 서비스: {editTarget.smsConsent ? "동의" : "미동의"}</span>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ADMIN_MENU, MENU, groupIdFromPath, memorialNavActive } from "../lib/menu";
+import { ADMIN_MENU, MENU, adminNavActive, groupIdFromPath, memorialNavActive } from "../lib/menu";
 import { MemorialMyLink } from "./MemorialMyLink";
 import { SideCta } from "./SideCta";
 import { Chevron, LogoMark } from "./icons";
@@ -23,10 +23,6 @@ type Props = {
 };
 
 const slogan = "추억과 그리움이 머무는 자리, 안양공원묘원";
-
-function adminNavActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 export function SiteShell({ children, userName, userRole }: Props) {
   const pathname = usePathname();

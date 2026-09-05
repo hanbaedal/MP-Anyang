@@ -2740,6 +2740,14 @@ h3,
   margin: 0 0 8px;
 }
 
+.admin-fee-crosslinks {
+  margin: 0 0 16px;
+}
+
+.admin-fee-rates-page {
+  margin-bottom: 16px;
+}
+
 .signup-fee-hint {
   grid-column: 1 / -1;
   margin: -4px 0 0;

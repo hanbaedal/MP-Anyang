@@ -11,12 +11,20 @@ export type MenuGroup = {
 
 export const ADMIN_MENU: MenuChild[] = [
   { href: "/admin/members", label: "회원 관리" },
+  { href: "/admin/fees/sale-rates", label: "분양가 요금표" },
+  { href: "/admin/fees/annual-rates", label: "연간 관리비 요금표" },
   { href: "/admin/fees", label: "관리비 현황" },
   { href: "/admin/graves", label: "묘역 관리" },
   { href: "/admin/inquiries", label: "문의·상담" },
   { href: "/admin/memorial", label: "사이버 추모관" },
   { href: "/admin/park", label: "공원 정보" },
 ];
+
+/** 관리자 nav active — /admin/fees 는 하위 경로와 구분 */
+export function adminNavActive(pathname: string, href: string) {
+  if (href === "/admin/fees") return pathname === "/admin/fees";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 /** 사이버 추모관 — 서비스상품과 분리된 1급 메뉴 (유료·독립 운영 예정) */
 export const MEMORIAL_MENU: MenuChild[] = [
