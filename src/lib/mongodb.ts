@@ -1,5 +1,5 @@
 import { MongoClient, type Db } from "mongodb";
-import { ensureAdmins, ensureSampleData } from "./seed";
+import { ensureAdmins, ensureDemoMedia, ensureSampleData } from "./seed";
 
 const mongoUri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "MP-Anyang";
@@ -15,6 +15,7 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
   var _mongoAdminsPromise: Promise<void> | undefined;
   var _mongoSampleSeedStarted: boolean | undefined;
+  var _mongoDemoMediaPromise: Promise<void> | undefined;
 }
 
 function getClientPromise() {
@@ -44,6 +45,15 @@ export async function getDb(): Promise<Db> {
     });
   }
   await global._mongoAdminsPromise;
+
+  if (!global._mongoDemoMediaPromise) {
+    global._mongoDemoMediaPromise = ensureDemoMedia(db).catch((error) => {
+      global._mongoDemoMediaPromise = undefined;
+      console.error("[mongodb] demo media seed failed:", error);
+      throw error;
+    });
+  }
+  await global._mongoDemoMediaPromise;
 
   if (!global._mongoSampleSeedStarted) {
     global._mongoSampleSeedStarted = true;
