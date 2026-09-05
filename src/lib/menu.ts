@@ -37,6 +37,7 @@ export const MENU: MenuGroup[] = [
       { href: "/lots/tree", label: "수목장" },
       { href: "/lots/burial", label: "매장묘" },
       { href: "/lots/flat", label: "평장묘" },
+      { href: "/lots/composite", label: "복합묘" },
     ],
   },
   {

@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getGraveTypeImage } from "../lib/grave-types";
-import { ImageLightbox, type LightboxItem } from "./ImageLightbox";
+import { ImageLightbox, type GallerySlide, type LightboxItem } from "./ImageLightbox";
 import { ParkMapIllustration } from "./ParkMapIllustration";
 
 export type GraveView = {
@@ -32,16 +32,11 @@ function GalleryThumb({
   src: string;
   alt: string;
   caption: string;
-  onOpen: (item: LightboxItem) => void;
+  onOpen: () => void;
 }) {
   return (
     <figure className="gallery-thumb">
-      <button
-        type="button"
-        className="gallery-thumb-btn"
-        onClick={() => onOpen({ kind: "image", src, alt, caption })}
-        aria-label={`${caption} 크게 보기`}
-      >
+      <button type="button" className="gallery-thumb-btn" onClick={onOpen} aria-label={`${caption} 크게 보기`}>
         <Image src={src} alt={alt} width={400} height={260} unoptimized />
       </button>
       <figcaption>{caption}</figcaption>
@@ -63,6 +58,30 @@ export function GraveModal({
   const photos = (grave.photos || []).filter(Boolean).slice(0, 5);
   const parkList = parkPhotos.slice(0, 5);
   const typeImage = getGraveTypeImage(grave.type);
+
+  const parkSlides = useMemo<GallerySlide[]>(
+    () =>
+      parkList.map((p) => ({
+        src: p.imageUrl,
+        alt: p.title,
+        caption: `${p.title}${p.season ? ` (${p.season})` : ""}`,
+      })),
+    [parkList],
+  );
+
+  const graveSlides = useMemo<GallerySlide[]>(
+    () =>
+      photos.map((src, i) => ({
+        src,
+        alt: `${grave.plotNo} 사진 ${i + 1}`,
+        caption: `${grave.plotNo} — ${i + 1}번 사진`,
+      })),
+    [photos, grave.plotNo],
+  );
+
+  const openGallery = (items: GallerySlide[], index: number) => {
+    setLightbox({ kind: "gallery", items, index });
+  };
 
   const openMapFullscreen = () => {
     setLightbox({
@@ -163,14 +182,14 @@ export function GraveModal({
 
             {tab === "park" && (
               <div className="gallery-grid">
-                {parkList.length ? (
-                  parkList.map((p) => (
+                {parkSlides.length ? (
+                  parkSlides.map((slide, index) => (
                     <GalleryThumb
-                      key={p.title + p.imageUrl}
-                      src={p.imageUrl}
-                      alt={p.title}
-                      caption={`${p.title}${p.season ? ` (${p.season})` : ""}`}
-                      onOpen={setLightbox}
+                      key={slide.src + slide.alt}
+                      src={slide.src}
+                      alt={slide.alt}
+                      caption={slide.caption || slide.alt}
+                      onOpen={() => openGallery(parkSlides, index)}
                     />
                   ))
                 ) : (
@@ -181,14 +200,14 @@ export function GraveModal({
 
             {tab === "grave" && (
               <div className="gallery-grid">
-                {photos.length ? (
-                  photos.map((src, i) => (
+                {graveSlides.length ? (
+                  graveSlides.map((slide, index) => (
                     <GalleryThumb
-                      key={src + i}
-                      src={src}
-                      alt={`${grave.plotNo} 사진 ${i + 1}`}
-                      caption={`${grave.plotNo} — ${i + 1}번 사진`}
-                      onOpen={setLightbox}
+                      key={slide.src + index}
+                      src={slide.src}
+                      alt={slide.alt}
+                      caption={slide.caption || slide.alt}
+                      onOpen={() => openGallery(graveSlides, index)}
                     />
                   ))
                 ) : (

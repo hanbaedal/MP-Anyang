@@ -146,6 +146,7 @@ export type GraveInput = {
   familyName: string;
   zone: string;
   type: string;
+  capacity?: string;
   buriedAt: string;
   mapNote?: string;
   photos?: string[];
@@ -164,6 +165,13 @@ export async function getGravesByPlotNos(plotNos: string[]) {
   const unique = [...new Set(plotNos.map((v) => v.trim()).filter(Boolean))];
   if (!unique.length) return [];
   return db.collection("Anyang").find({ plotNo: { $in: unique } }).toArray();
+}
+
+export async function findGraveByPlotNo(plotNo: string) {
+  const db = await getDb();
+  const key = plotNo.trim();
+  if (!key) return null;
+  return db.collection("Anyang").findOne({ plotNo: key });
 }
 
 export async function createGrave(input: GraveInput) {

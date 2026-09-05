@@ -85,6 +85,7 @@ export async function ensureSampleData(db: Db) {
         familyName: "홍",
         zone: "A구역",
         type: "봉안묘",
+        capacity: "2기",
         buriedAt: "2020-03-15",
         photos: [...GRAVE_DEMO_PHOTOS],
         mapNote: "정문 입구 → 왼쪽 소나무길 200m → A구역 안내판",
@@ -98,6 +99,7 @@ export async function ensureSampleData(db: Db) {
         familyName: "김",
         zone: "B구역",
         type: "매장묘",
+        capacity: "합장형",
         buriedAt: "2019-11-22",
         photos: [...GRAVE_DEMO_PHOTOS],
         mapNote: "제2주차장 → 언덕길 → B구역 205번",
@@ -111,6 +113,7 @@ export async function ensureSampleData(db: Db) {
         familyName: "이",
         zone: "C구역",
         type: "수목장",
+        capacity: "1기",
         buriedAt: "2021-05-01",
         photos: [...GRAVE_DEMO_PHOTOS],
         mapNote: "카페 옆 산책로 → 수목장 C열",
@@ -138,6 +141,14 @@ export async function ensureDemoMedia(db: Db) {
     const photos = (grave.photos as string[] | undefined) || [];
     if (photos.filter(Boolean).length === 0) {
       await graves.updateOne({ plotNo }, { $set: { photos: [...GRAVE_DEMO_PHOTOS] } });
+    }
+    const capacityByPlot: Record<string, string> = {
+      "A-101": "2기",
+      "B-205": "합장형",
+      "C-310": "1기",
+    };
+    if (!grave.capacity && capacityByPlot[plotNo]) {
+      await graves.updateOne({ plotNo }, { $set: { capacity: capacityByPlot[plotNo] } });
     }
   }
 }
