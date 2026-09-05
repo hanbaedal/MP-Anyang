@@ -131,6 +131,15 @@ export async function memberCanEditHall(memberId: string, role: string, hall: Me
   return hall.memberIds.includes(memberId);
 }
 
+export async function listEditedVideoEntries() {
+  const db = await getDb();
+  return db
+    .collection<MemorialEntryDoc>("memorialEntries")
+    .find({ type: "edited_video", status: "published" })
+    .sort({ createdAt: -1 })
+    .toArray();
+}
+
 export async function listEntries(hallCode: string, includePending = false) {
   const db = await getDb();
   const filter: Record<string, unknown> = { hallCode };

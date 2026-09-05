@@ -25,7 +25,7 @@ export async function publishVideoAction(formData: FormData) {
   const file = formData.get("file");
 
   if (!hallCode || !title || !(file instanceof File) || file.size === 0) {
-    redirect("/admin/memorial?error=required");
+    redirect("/admin/memorial?tab=publish&error=required");
   }
 
   const stored = await storeMemorialMedia(file);
@@ -48,5 +48,5 @@ export async function publishVideoAction(formData: FormData) {
 
   revalidatePath("/admin/memorial");
   revalidatePath(`/memorial/${hallCode}`);
-  redirect("/admin/memorial?published=1");
+  redirect("/admin/memorial?tab=publish&published=1");
 }

@@ -35,6 +35,8 @@ export const DEMO_FAMILY_MEMBER = {
   plotNo: "A-101",
 };
 
+export const DEMO_MEMORIAL_VIDEO = "/videos/demo-memorial.mp4";
+
 export function demoHallHref(code: string) {
   return `/memorial/${code}`;
 }

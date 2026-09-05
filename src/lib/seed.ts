@@ -1,6 +1,6 @@
 import { hash } from "bcryptjs";
 import type { Db } from "mongodb";
-import { DEMO_FAMILY_MEMBER, DEMO_MEMORIAL_HALLS } from "./memorial-demo";
+import { DEMO_FAMILY_MEMBER, DEMO_MEMORIAL_HALLS, DEMO_MEMORIAL_VIDEO } from "./memorial-demo";
 
 const ADMINS = [
   { username: "MP-Anyang-00", plainPw: "MPA000!", name: "슈퍼바이저" },
@@ -277,8 +277,8 @@ async function ensureDemoMemorialInner(db: Db) {
       type: "edited_video",
       title: "2026년 설날 추모 영상 (샘플)",
       body: "demo:edited-video\n운영팀이 가족 자료를 바탕으로 편집한 추모 영상 예시입니다.",
-      mediaUrl: "/images/park-panorama.png",
-      mediaType: "image",
+      mediaUrl: DEMO_MEMORIAL_VIDEO,
+      mediaType: "video",
       eventKind: "staff_edit",
       authorName: "관리자",
       daysAgo: 3,
@@ -372,6 +372,10 @@ async function ensureDemoMemorialInner(db: Db) {
 
   await entries.updateMany({ hallCode: "DEMO-A101", authorName: "홍길순" }, { $set: { authorName: DEMO_FAMILY_MEMBER.name } });
   await jobs.updateMany({ hallCode: "DEMO-A101", requesterName: "홍길순" }, { $set: { requesterName: DEMO_FAMILY_MEMBER.name } });
+  await entries.updateMany(
+    { body: { $regex: "^demo:edited-video" } },
+    { $set: { mediaUrl: DEMO_MEMORIAL_VIDEO, mediaType: "video", type: "edited_video" } },
+  );
 
   const jobExists = await jobs.findOne({ hallCode: "DEMO-A101", note: { $regex: "데모 편집" } });
   if (!jobExists && memberId) {
