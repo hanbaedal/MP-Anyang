@@ -1,4 +1,4 @@
-import { IntroGate } from "../../components/IntroGate";
+﻿import { IntroGate } from "../../components/IntroGate";
 
 export default function HomePage() {
   return (
@@ -7,7 +7,7 @@ export default function HomePage() {
         <section className="home-hero" style={{ backgroundImage: "url(/images/park-panorama.png)" }}>
           <div className="home-hero-copy">
             <p>ANYANG MEMORIAL PARK</p>
-            <h1>안양공원묘지 전경</h1>
+            <h1>안양공원묘원 전경</h1>
           </div>
         </section>
       </div>

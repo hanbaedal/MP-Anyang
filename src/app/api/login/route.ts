@@ -8,6 +8,9 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const username = String(formData.get("username") || "").trim();
     const password = String(formData.get("password") || "");
+    const nextRaw = String(formData.get("next") || "").trim();
+    const next =
+      nextRaw.startsWith("/") && !nextRaw.startsWith("//") && !nextRaw.startsWith("/api/") ? nextRaw : null;
     const user = await findUserByUsername(username);
     const hash = String(user?.passwordHash || user?.password || "");
 
@@ -22,6 +25,7 @@ export async function POST(request: Request) {
       role: user.role === "admin" ? "admin" : "member",
     });
     await setSessionCookie(token);
+    if (next) return redirectTo(request, next);
     return redirectTo(request, user.role === "admin" ? "/admin" : "/");
   } catch {
     return redirectTo(request, "/login?error=server");

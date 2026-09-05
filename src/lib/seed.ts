@@ -1,4 +1,4 @@
-import { hash } from "bcryptjs";
+﻿import { hash } from "bcryptjs";
 import type { Db } from "mongodb";
 import { DEMO_FAMILY_MEMBER, DEMO_MEMORIAL_HALLS, DEMO_MEMORIAL_VIDEO } from "./memorial-demo";
 
@@ -54,7 +54,7 @@ export async function ensureAdmins(db: Db) {
 export async function ensureSampleData(db: Db) {
   if ((await db.collection("notices").countDocuments()) === 0) {
     await db.collection("notices").insertMany([
-      { title: "안양공원묘지 홈페이지가 새롭게 단장되었습니다.", content: "새로운 홈페이지를 통해 더 편리한 서비스를 제공하겠습니다.", author: "관리자", createdAt: new Date() },
+      { title: "안양공원묘원 홈페이지가 새롭게 단장되었습니다.", content: "새로운 홈페이지를 통해 더 편리한 서비스를 제공하겠습니다.", author: "관리자", createdAt: new Date() },
       { title: "추석 연휴 운영시간 안내", content: "추석 연휴 기간에는 08:00~19:00까지 연장 운영합니다.", author: "관리자", createdAt: new Date() },
     ]);
   }
@@ -69,7 +69,7 @@ export async function ensureSampleData(db: Db) {
 
   if ((await db.collection("gallery").countDocuments()) === 0) {
     await db.collection("gallery").insertMany([
-      { title: "안양공원묘지 전경", imageUrl: SAMPLE_IMAGE, createdAt: new Date() },
+      { title: "안양공원묘원 전경", imageUrl: SAMPLE_IMAGE, createdAt: new Date() },
       { title: "정원 풍경", imageUrl: SAMPLE_IMAGE, createdAt: new Date() },
     ]);
   }

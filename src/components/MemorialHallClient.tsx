@@ -200,9 +200,6 @@ export function MemorialHallClient({
           <section className="memorial-tab-panel">
             <div className="memorial-tab-panel-head">
               <h2>추모 타임라인</h2>
-              <Link href="/memorial/my" className="btn btn-sm">
-                내 추모관 목록
-              </Link>
             </div>
             {!timelineEntries.length ? (
               <p className="meta panel">아직 등록된 추억이 없습니다.</p>

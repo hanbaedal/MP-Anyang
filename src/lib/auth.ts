@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -25,6 +26,7 @@ export async function signSession(user: SessionUser) {
 }
 
 export async function readSession(): Promise<SessionUser | null> {
+  noStore();
   const jar = await cookies();
   const token = jar.get(COOKIE_NAME)?.value;
   if (!token) return null;

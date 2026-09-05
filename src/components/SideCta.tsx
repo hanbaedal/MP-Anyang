@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { MEMORIAL_VS_AGENCY } from "../lib/memorial-info";
+import { MemorialMyLink } from "./MemorialMyLink";
 import { ChatIcon, MemorialIcon, SearchIcon } from "./icons";
 
 type Props = {
@@ -37,7 +38,7 @@ export function SideCta({ loggedIn }: Props) {
   return (
     <>
       <div className="side-cta">
-        <Link href="/consult" className="side-cta-btn primary">
+        <Link href="/consult?source=side-cta" className="side-cta-btn primary">
           <ChatIcon />
           <span>상담신청</span>
         </Link>
@@ -63,9 +64,13 @@ export function SideCta({ loggedIn }: Props) {
 
               {memorialOpen && (
                 <div className="side-cta-submenu" role="menu">
-                  <Link href="/memorial/my" className="side-cta-submenu-item" role="menuitem" onClick={() => setMemorialOpen(false)}>
+                  <MemorialMyLink
+                    loggedIn={loggedIn}
+                    className="side-cta-submenu-item"
+                    onNavigate={() => setMemorialOpen(false)}
+                  >
                     내 추모관 보기
-                  </Link>
+                  </MemorialMyLink>
                   <Link href="/memorial/guide" className="side-cta-submenu-item" role="menuitem" onClick={() => setMemorialOpen(false)}>
                     추모관 이용 방법
                   </Link>

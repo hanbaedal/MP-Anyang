@@ -1338,6 +1338,199 @@ h3,
   line-height: 1.55;
 }
 
+.admin-inquiry-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-inquiry-row {
+  cursor: pointer;
+}
+
+.admin-inquiry-row:hover td {
+  background: #f8f5ef;
+}
+
+.admin-inquiry-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-inquiry-status-in_progress {
+  background: #e8f0ff;
+  color: #1a4f8a;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.admin-pagination .disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.admin-inquiry-toolbar {
+  align-items: end;
+}
+
+.admin-inquiry-status-filter {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.admin-inquiry-status-form {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ticket-my-list h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.ticket-reply {
+  margin-top: 10px;
+  background: #f4f7f2;
+}
+
+.ticket-reply p {
+  margin: 6px 0 0;
+}
+
+.admin-inquiry-status-pending {
+  background: #fff4e0;
+  color: #8a5a00;
+}
+
+.admin-inquiry-status-done {
+  background: #e8f2e4;
+  color: var(--sage-deep);
+}
+
+.admin-inquiry-modal {
+  width: min(560px, 96vw);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+}
+
+.admin-inquiry-message {
+  white-space: pre-wrap;
+}
+
+.admin-inquiry-delete {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.memorial-intro-minimal .lead {
+  margin-bottom: 0;
+}
+
+.memorial-guide-page .memorial-guide-compact {
+  margin-bottom: 12px;
+}
+
+.memorial-guide-section-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sage-deep);
+}
+
+.memorial-steps-compact {
+  gap: 8px;
+}
+
+.memorial-steps-compact .memorial-step-n {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.memorial-steps-compact .memorial-step-body h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.memorial-steps-compact .memorial-step-body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.memorial-diff-compact {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.memorial-diff-compact dt {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.memorial-diff-compact dd {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.memorial-plan-card-btn {
+  border: 1px solid var(--line);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.memorial-plan-card-btn:hover {
+  border-color: var(--sage);
+  box-shadow: 0 2px 10px rgba(42, 38, 34, 0.06);
+}
+
+.memorial-plan-card-cta {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.memorial-plan-features-modal {
+  margin-bottom: 12px;
+}
+
+.memorial-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.memorial-checkout-modal {
+  width: min(480px, 96vw);
+}
+
+.login-modal {
+  width: min(420px, 96vw);
+}
+
+.login-modal .form-grid {
+  margin-bottom: 12px;
+}
+
 .memorial-intro-cta {
   display: flex;
   flex-wrap: wrap;

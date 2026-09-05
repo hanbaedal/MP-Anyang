@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { getPage, slugsOf } from "../../../../lib/content";
 import {
-  createBoardPost, createFaq, createGalleryItem, createInquiry, createNotice,
-  deleteBoardPost, deleteFaq, deleteGalleryItem, deleteInquiry, deleteNotice,
-  getBoard, getFaqs, getGallery, getInquiry, getNotices,
+  createBoardPost, createFaq, createGalleryItem, createNotice,
+  deleteBoardPost, deleteFaq, deleteGalleryItem, deleteNotice,
+  findUserById,
+  getBoard, getFaqs, getGallery, getNotices,
   toId, updateFaq, updateNotice,
 } from "../../../../lib/store";
+import { createTicket, listTicketsForMember } from "../../../../lib/tickets";
 import { readSession } from "../../../../lib/auth";
 
 type Params = { section: string; slug: string };
@@ -125,30 +127,30 @@ async function removeBoard(formData: FormData) {
 async function submitInquiry(formData: FormData) {
   "use server";
   const user = await readSession();
-  await createInquiry({
+  await createTicket({
     name: String(formData.get("name") || ""),
     phone: String(formData.get("phone") || ""),
     category: String(formData.get("category") || ""),
     message: String(formData.get("message") || ""),
+    source: "inquiry",
     userId: user?.id,
   });
   revalidatePath("/support/inquiry");
-  redirect("/support/inquiry");
-}
-
-async function removeInquiry(formData: FormData) {
-  "use server";
-  const user = await readSession();
-  if (!user || user.role !== "admin") return;
-  await deleteInquiry(String(formData.get("id")));
-  revalidatePath("/support/inquiry");
-  redirect("/support/inquiry");
+  revalidatePath("/admin/inquiries");
+  redirect("/support/inquiry?ok=1");
 }
 
 /* ── Page Component ── */
 
-export default async function SectionPage({ params }: { params: Promise<Params> }) {
+export default async function SectionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<{ ok?: string }>;
+}) {
   const { section, slug } = await params;
+  const { ok } = await searchParams;
   const user = await readSession();
   const isAdmin = user?.role === "admin";
 
@@ -342,10 +344,16 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
 
   /* ── 문의사항 ── */
   if (section === "support" && slug === "inquiry") {
-    let inquiries: Awaited<ReturnType<typeof getInquiry>> = [];
+    let myTickets: Awaited<ReturnType<typeof listTicketsForMember>> = [];
     let loadError = "";
     try {
-      inquiries = await getInquiry();
+      if (user) {
+        const doc = await findUserById(user.id);
+        myTickets = await listTicketsForMember({
+          userId: user.id,
+          phone: doc ? String(doc.phone || "") : undefined,
+        });
+      }
     } catch (error) {
       console.error("[support/inquiry]", error);
       loadError = dbErrorMessage(error);
@@ -354,11 +362,21 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
       <article className="article">
         <p className="kicker">고객센터</p>
         <h1>문의사항</h1>
+        <p className="lead">
+          분양·상조·추모 상담은 <Link href="/consult">상담신청</Link>과 동일하게 접수됩니다. 여기서는 일반 문의를
+          남겨 주세요.
+        </p>
+        {ok === "1" && <p className="ok">문의가 접수되었습니다. 담당자가 확인 후 연락드리겠습니다.</p>}
         {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
+        {isAdmin && (
+          <p className="panel meta">
+            관리자: 전체 문의·상담은 <Link href="/admin/inquiries">문의·상담 관리</Link>에서 확인·답변하세요.
+          </p>
+        )}
 
         <form action={submitInquiry} className="panel form-grid">
-          <label>이름<input name="name" required /></label>
-          <label>연락처<input name="phone" required /></label>
+          <label>이름<input name="name" defaultValue={user?.name || ""} required /></label>
+          <label>연락처<input name="phone" required placeholder="01012345678" /></label>
           <label>분류
             <select name="category" defaultValue="일반 문의">
               <option>일반 문의</option>
@@ -371,24 +389,35 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
           <button className="btn btn-primary" type="submit">문의 등록</button>
         </form>
 
-        <div className="list">
-          {inquiries.map((item) => (
-            <div key={toId(item._id)} className="list-item">
-              <h3>{String(item.category)}</h3>
-              <div className="meta">{String(item.name)} · {String(item.phone)} · {new Date(String(item.createdAt)).toLocaleString("ko-KR")}</div>
-              <p>{String(item.message)}</p>
-              {isAdmin && (
-                <div className="admin-actions">
-                  <form action={removeInquiry}>
-                    <input type="hidden" name="id" value={toId(item._id)} />
-                    <button className="btn btn-danger btn-sm" type="submit">삭제</button>
-                  </form>
-                </div>
-              )}
-            </div>
-          ))}
-          {inquiries.length === 0 && <p className="alert">등록된 문의가 없습니다.</p>}
-        </div>
+        {user ? (
+          <section className="panel ticket-my-list">
+            <h2>내 문의 내역</h2>
+            {myTickets.length === 0 ? (
+              <p className="meta">접수한 문의가 없습니다.</p>
+            ) : (
+              <div className="list">
+                {myTickets.map((item) => (
+                  <div key={item.id} className="list-item">
+                    <h3>{item.category}</h3>
+                    <div className="meta">
+                      {new Date(item.createdAt).toLocaleString("ko-KR")} · {item.sourceLabel} ·{" "}
+                      {item.status === "done" ? "답변완료" : item.status === "in_progress" ? "처리중" : "접수"}
+                    </div>
+                    <p>{item.message}</p>
+                    {item.reply ? (
+                      <div className="ticket-reply panel">
+                        <strong>답변</strong>
+                        <p>{item.reply}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : (
+          <p className="meta">로그인하면 본인 문의 내역과 답변을 확인할 수 있습니다.</p>
+        )}
       </article>
     );
   }
@@ -492,7 +521,7 @@ export default async function SectionPage({ params }: { params: Promise<Params> 
           <article className="card">
             <h2>지도</h2>
             <iframe
-              title="안양공원묘지 지도"
+              title="안양공원묘원 지도"
               className="map-frame"
               loading="lazy"
               src="https://maps.google.com/maps?q=%EC%9D%98%EC%99%95%EC%8B%9C%20%EC%B2%AD%EA%B3%84%EB%8F%99%20%EC%82%B08-5&output=embed"

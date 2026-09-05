@@ -35,7 +35,7 @@ export default async function MemorialBillingSuccessPage({
               추모관으로
             </Link>
           ) : null}
-          <Link href="/memorial/my" className="btn btn-sm">
+          <Link href={`/memorial/${hall || "DEMO-A101"}`} className="btn btn-sm">
             내 추모관
           </Link>
         </div>

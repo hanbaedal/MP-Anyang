@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SocialBar } from "./SocialBar";
@@ -44,7 +44,7 @@ export function IntroGate({ children }: Props) {
     <div className="intro" style={{ backgroundImage: "url(/images/intro-sky.png)" }}>
       <audio ref={audioRef} src="/audio/intro.mp3" loop preload="auto" />
       <div className="intro-body" onClick={enter}>
-        <h1>안양공원묘지</h1>
+        <h1>안양공원묘원</h1>
         <p>하늘이 고요해지는 시간, 그리움을 오래 품는 자리를 준비합니다.</p>
         <div className="intro-hint">클릭하거나 잠시 기다리면 입장합니다</div>
       </div>

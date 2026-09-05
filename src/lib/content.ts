@@ -1,4 +1,4 @@
-export type ContentBlock =
+﻿export type ContentBlock =
   | { type: "p"; text: string }
   | { type: "list"; items: string[] }
   | { type: "quote"; text: string; cite?: string }
@@ -28,11 +28,11 @@ const pages: StaticPage[] = [
     kicker: "재단소개",
     title: "안양공원 소개",
     lead: "청계산 자락, 하늘과 가까운 자리에서 고인을 모시고 유가족을 받듭니다.",
-    image: { src: "/images/park-panorama.png", alt: "안양공원묘지 전경" },
+    image: { src: "/images/park-panorama.png", alt: "안양공원묘원 전경" },
     blocks: [
       {
         type: "p",
-        text: "안양공원묘지는 경기도 의왕시 청계동 산 8-5 일원에 자리한 추모공원입니다. 안양과 맞닿은 청계산 기슭의 수려한 숲과 바람을 배경으로, 고인의 평안과 남겨진 분의 마음을 함께 살핍니다.",
+        text: "안양공원묘원은 경기도 의왕시 청계동 산 8-5 일원에 자리한 추모공원입니다. 안양과 맞닿은 청계산 기슭의 수려한 숲과 바람을 배경으로, 고인의 평안과 남겨진 분의 마음을 함께 살핍니다.",
       },
       {
         type: "p",
@@ -58,8 +58,8 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "quote",
-        text: "떠나신 분을 모시는 일은 산 사람의 마음을 돌보는 일과 같습니다. 안양공원묘지는 그 마음을 서두르지 않고, 그러나 소홀히 하지 않겠습니다.",
-        cite: "안양공원묘지 이사장",
+        text: "떠나신 분을 모시는 일은 산 사람의 마음을 돌보는 일과 같습니다. 안양공원묘원은 그 마음을 서두르지 않고, 그러나 소홀히 하지 않겠습니다.",
+        cite: "안양공원묘원 이사장",
       },
       {
         type: "p",
@@ -142,7 +142,7 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "p",
-        text: "안양공원묘지는 경기도 의왕시 청계동 산 8-5 일원에 있습니다. 인덕원 생활권에서 접근하기 좋고, 성묘철에는 임시 주차장과 안내 인력을 늘립니다.",
+        text: "안양공원묘원은 경기도 의왕시 청계동 산 8-5 일원에 있습니다. 인덕원 생활권에서 접근하기 좋고, 성묘철에는 임시 주차장과 안내 인력을 늘립니다.",
       },
       {
         type: "list",
@@ -458,7 +458,7 @@ const pages: StaticPage[] = [
       },
       {
         type: "cta",
-        links: [{ href: "/consult", label: "상담신청", primary: true }],
+        links: [{ href: "/consult?type=memorial&source=memorial", label: "상담신청", primary: true }],
       },
     ],
   },

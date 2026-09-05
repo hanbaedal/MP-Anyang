@@ -95,30 +95,88 @@ export async function deleteBoardPost(id: string) {
   await db.collection("boardPosts").deleteOne({ _id: oid(id) });
 }
 
-/* ── 문의사항 ── */
-export async function getInquiry() {
-  const db = await getDb();
-  return db.collection("inquiries").find().sort({ createdAt: -1 }).toArray();
-}
+/* ── 문의·상담 (tickets 통합) ── */
+export type InquiryStatus = import("./tickets").TicketStatus;
+
 export async function createInquiry(input: {
   name: string;
   phone: string;
   category: string;
   message: string;
   userId?: string;
+  source?: string;
 }) {
-  const db = await getDb();
-  await db.collection("inquiries").insertOne({ ...input, createdAt: new Date() });
-}
-export async function deleteInquiry(id: string) {
-  const db = await getDb();
-  await db.collection("inquiries").deleteOne({ _id: oid(id) });
+  const { createTicket } = await import("./tickets");
+  await createTicket({
+    name: input.name,
+    phone: input.phone,
+    category: input.category,
+    message: input.message,
+    userId: input.userId,
+    source: (input.source as import("./tickets").TicketSource) || "inquiry",
+  });
 }
 
-/* ── 상담 ── */
-export async function createConsult(input: { name: string; phone: string; lotType: string; message: string }) {
-  const db = await getDb();
-  await db.collection("consults").insertOne({ ...input, createdAt: new Date() });
+export async function createConsult(input: {
+  name: string;
+  phone: string;
+  lotType: string;
+  message: string;
+  source?: string;
+  userId?: string;
+}) {
+  const { createTicket } = await import("./tickets");
+  await createTicket({
+    name: input.name,
+    phone: input.phone,
+    category: input.lotType,
+    message: input.message,
+    userId: input.userId,
+    source: (input.source as import("./tickets").TicketSource) || "consult",
+  });
+}
+
+/** @deprecated tickets.listTicketsAdmin 사용 */
+export async function getInquiry() {
+  const { listTicketsAdmin } = await import("./tickets");
+  const result = await listTicketsAdmin({ page: 1, pageSize: 500 });
+  return result.rows.map((row) => ({
+    _id: row.id,
+    name: row.name,
+    phone: row.phone,
+    category: row.category,
+    message: row.message,
+    source: row.source,
+    status: row.status,
+    reply: row.reply,
+    createdAt: row.createdAt,
+    repliedAt: row.repliedAt,
+  }));
+}
+
+/** @deprecated tickets.listTicketsAdmin 사용 */
+export async function getConsults() {
+  return getInquiry();
+}
+
+export async function deleteInquiry(id: string) {
+  const { deleteTicket } = await import("./tickets");
+  await deleteTicket(id);
+}
+
+export async function replyInquiry(id: string, reply: string) {
+  const { replyTicket } = await import("./tickets");
+  await replyTicket(id, reply);
+}
+
+export async function deleteConsult(id: string) {
+  const { deleteTicket } = await import("./tickets");
+  await deleteTicket(id);
+}
+
+export async function replyConsult(id: string, reply: string) {
+  const { replyTicket } = await import("./tickets");
+  await replyTicket(id, reply);
 }
 
 /* ── 묘역 검색 ── */

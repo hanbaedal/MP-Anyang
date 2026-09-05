@@ -37,6 +37,10 @@ export const DEMO_FAMILY_MEMBER = {
 
 export const DEMO_MEMORIAL_VIDEO = "/videos/demo-memorial.mp4";
 
+/** 내 추모관 메뉴 진입 — 로그인 시 이동 대상 */
+export const MEMORIAL_MY_HALL = "DEMO-A101";
+export const MEMORIAL_MY_PATH = "/memorial/my";
+
 export function demoHallHref(code: string) {
   return `/memorial/${code}`;
 }
