@@ -60,7 +60,6 @@ export async function getDb(): Promise<Db> {
     global._mongoDemoMemorialPromise = ensureDemoMemorial(db).catch((error) => {
       global._mongoDemoMemorialPromise = undefined;
       console.error("[mongodb] demo memorial seed failed:", error);
-      throw error;
     });
   }
   await global._mongoDemoMemorialPromise;

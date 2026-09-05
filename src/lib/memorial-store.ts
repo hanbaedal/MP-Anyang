@@ -47,6 +47,9 @@ export type MemorialJobDoc = {
 };
 
 function oid(id: string) {
+  if (!ObjectId.isValid(id)) {
+    throw new Error("잘못된 ID입니다.");
+  }
   return ObjectId.createFromHexString(id);
 }
 

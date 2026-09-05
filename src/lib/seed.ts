@@ -164,6 +164,14 @@ export async function ensureDemoMedia(db: Db) {
 
 /** 데모 회원·추모관·타임라인 샘플 */
 export async function ensureDemoMemorial(db: Db) {
+  try {
+    await ensureDemoMemorialInner(db);
+  } catch (error) {
+    console.error("[seed] ensureDemoMemorial failed:", error);
+  }
+}
+
+async function ensureDemoMemorialInner(db: Db) {
   const users = db.collection("users");
   const halls = db.collection("memorialHalls");
   const entries = db.collection("memorialEntries");
@@ -192,7 +200,9 @@ export async function ensureDemoMemorial(db: Db) {
     },
     { upsert: true, returnDocument: "after" },
   );
-  const memberId = memberResult?._id?.toString() || "";
+  const memberRaw = memberResult as unknown as { value?: { _id?: unknown } | null; _id?: unknown } | null;
+  const memberDoc = memberRaw && "value" in memberRaw && memberRaw.value !== undefined ? memberRaw.value : memberRaw;
+  const memberId = memberDoc?._id ? String(memberDoc._id) : "";
 
   const now = new Date();
   const day = (offset: number) => {

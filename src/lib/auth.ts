@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const COOKIE_NAME = "ap_session";
 
@@ -77,6 +78,14 @@ export async function requireAdmin() {
     error.status = 403;
     throw error;
   }
+  return user;
+}
+
+/** 관리자 페이지용 — throw 대신 로그인/메인으로 redirect */
+export async function guardAdminPage(nextPath = "/admin") {
+  const user = await readSession();
+  if (!user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (user.role !== "admin") redirect("/");
   return user;
 }
 
