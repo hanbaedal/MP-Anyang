@@ -29,7 +29,7 @@ export const DEMO_MEMORIAL_HALLS = [
 export const DEMO_FAMILY_MEMBER = {
   username: "demo-family",
   password: "Demo001!",
-  name: "홍길순",
+  name: "최창길",
   phone: "01090001001",
   email: "demo-family@anyangpark.local",
   plotNo: "A-101",

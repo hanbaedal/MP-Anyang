@@ -60,7 +60,7 @@ export default async function MemorialIntroPage() {
             <strong>데모 유족 계정</strong> — 아이디 <code>{DEMO_FAMILY_MEMBER.username}</code> · 비밀번호{" "}
             <code>{DEMO_FAMILY_MEMBER.password}</code>
           </p>
-          <p className="meta">홍길동님(DEMO-A101) 추모관 업로드·편집 요청을 테스트할 수 있습니다.</p>
+          <p className="meta">최창길님 계정으로 홍길동님(DEMO-A101) 추모관 업로드·편집 요청을 테스트할 수 있습니다.</p>
           <Link href={`/login?next=${encodeURIComponent("/memorial/my")}`} className="btn btn-sm">
             데모 계정으로 로그인
           </Link>

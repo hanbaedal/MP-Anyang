@@ -222,7 +222,7 @@ export async function ensureDemoMemorial(db: Db) {
       type: "text",
       title: "아버지를 그리며",
       body: "demo:intro-text\n청계산 자락을 함께 걸으며 나누었던 이야기들. 사이버 추모관에 마음을 모아 둡니다.",
-      authorName: "홍길순",
+      authorName: "최창길",
       daysAgo: 120,
     },
     {
@@ -234,7 +234,7 @@ export async function ensureDemoMemorial(db: Db) {
       mediaUrl: "/images/facility-garden.png",
       mediaType: "image",
       eventKind: "family",
-      authorName: "홍길순",
+      authorName: "최창길",
       daysAgo: 90,
     },
     {
@@ -359,6 +359,9 @@ export async function ensureDemoMemorial(db: Db) {
       createdAt,
     });
   }
+
+  await entries.updateMany({ hallCode: "DEMO-A101", authorName: "홍길순" }, { $set: { authorName: DEMO_FAMILY_MEMBER.name } });
+  await jobs.updateMany({ hallCode: "DEMO-A101", requesterName: "홍길순" }, { $set: { requesterName: DEMO_FAMILY_MEMBER.name } });
 
   const jobExists = await jobs.findOne({ hallCode: "DEMO-A101", note: { $regex: "데모 편집" } });
   if (!jobExists && memberId) {
