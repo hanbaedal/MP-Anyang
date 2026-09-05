@@ -2,7 +2,7 @@ import { ObjectId, type Document } from "mongodb";
 import { getDb } from "./mongodb";
 import { normalizePhone } from "./phone";
 import type { FeeRateRow } from "./fee-rates";
-import { mergeFeeRates, resolveAnnualFee } from "./fee-rates";
+import { mergeFeeRates, mergeSaleRates, resolvePlotPrices as computePlotPrices } from "./fee-rates";
 
 export type Relation = {
   deceasedName: string;
@@ -208,6 +208,7 @@ export type GraveInput = {
   type: string;
   capacity?: string;
   annualFee?: number;
+  salePrice?: number;
   buriedAt: string;
   mapNote?: string;
   photos?: string[];
@@ -329,6 +330,7 @@ export async function createMember(input: {
   registeredAt: string;
   relations: Relation[];
   annualFee?: number;
+  salePrice?: number;
   kakaoId?: string;
   googleId?: string;
   smsConsent?: boolean;
@@ -432,15 +434,46 @@ export async function saveFeeRates(rates: FeeRateRow[]) {
   }
 }
 
-export async function resolvePlotAnnualFee(plotNo: string) {
+export async function getSaleRatesMerged(): Promise<FeeRateRow[]> {
+  const db = await getDb();
+  const stored = await db.collection("salePrices").find().toArray();
+  const rows = stored.map((r) => ({
+    type: String(r.type),
+    capacity: String(r.capacity),
+    annualFee: Number(r.salePrice ?? r.annualFee ?? 0),
+  }));
+  return mergeSaleRates(rows);
+}
+
+export async function saveSaleRates(rates: FeeRateRow[]) {
+  const db = await getDb();
+  await db.collection("salePrices").deleteMany({});
+  if (rates.length) {
+    await db.collection("salePrices").insertMany(
+      rates.map((r) => ({ type: r.type, capacity: r.capacity, salePrice: r.annualFee, updatedAt: new Date() })),
+    );
+  }
+}
+
+export async function resolvePlotPrices(plotNo: string) {
   const grave = await findGraveByPlotNo(plotNo);
   if (!grave) return null;
-  const rates = await getFeeRatesMerged();
+  const annualRates = await getFeeRatesMerged();
+  const saleRates = await getSaleRatesMerged();
   const override = Number(grave.annualFee || 0);
-  return resolveAnnualFee({
+  const saleOverride = Number(grave.salePrice || 0);
+  return computePlotPrices({
     type: String(grave.type || ""),
     capacity: String(grave.capacity || ""),
     plotOverride: override > 0 ? override : undefined,
-    rates,
+    plotSaleOverride: saleOverride > 0 ? saleOverride : undefined,
+    annualRates,
+    saleRates,
   });
+}
+
+/** @deprecated use resolvePlotPrices */
+export async function resolvePlotAnnualFee(plotNo: string) {
+  const prices = await resolvePlotPrices(plotNo);
+  return prices?.annualFee ?? null;
 }

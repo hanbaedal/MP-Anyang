@@ -2,6 +2,7 @@ import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardMemberPage } from "../../../lib/auth";
+import { listMemberSubscriptions, subscriptionLabel } from "../../../lib/memorial-billing";
 import { formatPhone } from "../../../lib/phone";
 import { formatSmsConsentAt, smsConsentFromForm } from "../../../lib/sms-consent";
 import { deleteMember, findUserById, toId, updateMember } from "../../../lib/store";
@@ -49,6 +50,7 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
   const relations = ((doc.relations as Relation[] | undefined) || []).slice(0, 8);
   while (relations.length < 4) relations.push({ deceasedName: "", relation: "", plotNo: "" });
   const feeHistory = (doc.feeHistory as FeeRecord[] | undefined) || [];
+  const memorialSubs = await listMemberSubscriptions(session.id);
 
   return (
     <article className="article">
@@ -56,10 +58,47 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       <h1>내 정보</h1>
       {saved && <p className="ok">정보가 저장되었습니다.</p>}
 
+      <section className="panel member-cost-panel">
+        <h2>비용 현황</h2>
+        <div className="member-cost-grid">
+          <div className="member-cost-item">
+            <h3>분양가</h3>
+            <p className="member-cost-amount">
+              {Number(doc.salePrice || 0) > 0 ? `${Number(doc.salePrice).toLocaleString()}원` : "—"}
+            </p>
+            <p className="meta">계약 시 1회 분양 금액 (관리자 등록)</p>
+          </div>
+          <div className="member-cost-item">
+            <h3>연간 관리비</h3>
+            <p className="member-cost-amount">{Number(doc.annualFee || 0).toLocaleString()}원</p>
+            <p className="meta">
+              납부 상태: <strong>{String(doc.feeStatus || "미납")}</strong>
+            </p>
+          </div>
+          <div className="member-cost-item">
+            <h3>사이버 추모관</h3>
+            {memorialSubs.length ? (
+              <ul className="member-cost-list">
+                {memorialSubs.map((sub) => (
+                  <li key={String(sub._id)}>
+                    {sub.hallCode} · {subscriptionLabel(sub.planId)} · ~
+                    {new Date(sub.expiresAt).toLocaleDateString("ko-KR")}까지
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="meta">이용 중인 유료 추모관 없음 · <a href="/memorial/plans">요금 안내</a></p>
+            )}
+          </div>
+          <div className="member-cost-item">
+            <h3>기타</h3>
+            <p className="meta">상조·리모델링·추모 대행 등은 상담·계약 후 별도 안내</p>
+          </div>
+        </div>
+      </section>
+
       <section className="panel">
-        <h2>관리비 현황</h2>
-        <p><strong>상태:</strong> {String(doc.feeStatus || "미납")}</p>
-        <p><strong>연간 관리비:</strong> {Number(doc.annualFee || 0).toLocaleString()}원</p>
+        <h2>관리비 납부 내역</h2>
         {feeHistory.length ? (
           <div className="table-wrap">
             <table className="data-table">

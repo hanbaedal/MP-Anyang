@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     registeredAt: String(form.get("registeredAt") || new Date().toISOString().slice(0, 10)),
     relations: rels,
     annualFee: Number(form.get("annualFee") || 0),
+    salePrice: Number(form.get("salePrice") || 0) || undefined,
     ...consent,
   });
 

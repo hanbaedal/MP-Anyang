@@ -12,6 +12,7 @@ export type AdminGraveRow = {
   type: string;
   capacity: string;
   annualFee: number;
+  salePrice: number;
   buriedAt: string;
   mapNote: string;
   mapImage: string;
@@ -78,7 +79,17 @@ function GraveFields({ tab, grave }: { tab: Tab; grave?: AdminGraveRow }) {
             type="number"
             min="0"
             defaultValue={grave?.annualFee || ""}
-            placeholder="비우면 요금표 적용"
+            placeholder="비우면 요금표"
+          />
+        </label>
+        <label>
+          분양가 (개별)
+          <input
+            name="salePrice"
+            type="number"
+            min="0"
+            defaultValue={grave?.salePrice || ""}
+            placeholder="비우면 요금표"
           />
         </label>
         <label>

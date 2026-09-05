@@ -12,6 +12,10 @@ export type TicketInput = {
   message: string;
   source?: TicketSource;
   userId?: string;
+  lotType?: string;
+  lotCapacity?: string;
+  estimatedAnnualFee?: number;
+  estimatedSalePrice?: number;
 };
 
 export type TicketRow = {
@@ -26,6 +30,10 @@ export type TicketRow = {
   userId?: string;
   assignee?: string;
   reply?: string;
+  lotType?: string;
+  lotCapacity?: string;
+  estimatedAnnualFee?: number;
+  estimatedSalePrice?: number;
   createdAt: string;
   updatedAt: string;
   repliedAt?: string;
@@ -76,6 +84,10 @@ function mapTicket(doc: Document): TicketRow {
     userId: doc.userId ? String(doc.userId) : undefined,
     assignee: doc.assignee ? String(doc.assignee) : undefined,
     reply: doc.reply ? String(doc.reply) : undefined,
+    lotType: doc.lotType ? String(doc.lotType) : undefined,
+    lotCapacity: doc.lotCapacity ? String(doc.lotCapacity) : undefined,
+    estimatedAnnualFee: doc.estimatedAnnualFee != null ? Number(doc.estimatedAnnualFee) : undefined,
+    estimatedSalePrice: doc.estimatedSalePrice != null ? Number(doc.estimatedSalePrice) : undefined,
     createdAt: String(doc.createdAt),
     updatedAt: String(doc.updatedAt || doc.createdAt),
     repliedAt: doc.repliedAt ? String(doc.repliedAt) : undefined,
@@ -213,6 +225,10 @@ export async function createTicket(input: TicketInput) {
     source: normalizeSource(input.source || "consult"),
     status: "pending" as TicketStatus,
     userId: input.userId,
+    lotType: input.lotType?.trim() || undefined,
+    lotCapacity: input.lotCapacity?.trim() || undefined,
+    estimatedAnnualFee: input.estimatedAnnualFee != null ? Number(input.estimatedAnnualFee) : undefined,
+    estimatedSalePrice: input.estimatedSalePrice != null ? Number(input.estimatedSalePrice) : undefined,
     createdAt: now,
     updatedAt: now,
   };

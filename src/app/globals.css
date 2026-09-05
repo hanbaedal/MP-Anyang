@@ -2745,6 +2745,89 @@ h3,
   margin: -4px 0 0;
 }
 
+.admin-price-tables {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.lot-fees-section {
+  margin-bottom: 16px;
+}
+
+.lot-fees-section h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.lot-fees-note h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.consult-fee-estimate {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.consult-fee-estimate-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.consult-fee-estimate-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+.consult-fee-estimate-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.consult-fee-estimate-list span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.consult-message-field {
+  grid-column: 1 / -1;
+}
+
+.member-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.member-cost-item h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.member-cost-amount {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sage-deep);
+}
+
+.member-cost-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+
 .admin-member-name .meta {
   display: block;
   margin-top: 2px;

@@ -154,6 +154,20 @@ export function AdminInquiriesClient({
                 <dt>분류</dt>
                 <dd>{selected.category}</dd>
               </div>
+              {(selected.estimatedSalePrice || selected.estimatedAnnualFee) && (
+                <div>
+                  <dt>참고 요금 (접수 시)</dt>
+                  <dd>
+                    {selected.estimatedSalePrice
+                      ? `분양가 ${selected.estimatedSalePrice.toLocaleString()}원`
+                      : null}
+                    {selected.estimatedSalePrice && selected.estimatedAnnualFee ? " · " : null}
+                    {selected.estimatedAnnualFee
+                      ? `연관리비 ${selected.estimatedAnnualFee.toLocaleString()}원`
+                      : null}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>문의 내용</dt>
                 <dd className="admin-inquiry-message">{selected.message}</dd>

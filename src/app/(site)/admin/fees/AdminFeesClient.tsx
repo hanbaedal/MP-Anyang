@@ -11,6 +11,7 @@ export type AdminFeeRow = {
   phone: string;
   plotNo: string;
   annualFee: number;
+  salePrice: number;
   feeStatus: string;
   feeHistory: FeeRecord[];
 };
@@ -32,7 +33,9 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
   const [editTarget, setEditTarget] = useState<AdminFeeRow | null>(null);
   const [historyRows, setHistoryRows] = useState<FeeRecord[]>([]);
   const [annualFeeEdit, setAnnualFeeEdit] = useState(0);
+  const [salePriceEdit, setSalePriceEdit] = useState(0);
   const [plotSuggestedFee, setPlotSuggestedFee] = useState<number | null>(null);
+  const [plotSuggestedSale, setPlotSuggestedSale] = useState<number | null>(null);
   const [plotFeeHint, setPlotFeeHint] = useState("");
 
   const stats = useMemo(() => {
@@ -56,8 +59,10 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
   const openEdit = async (member: AdminFeeRow) => {
     setEditTarget(member);
     setAnnualFeeEdit(member.annualFee);
+    setSalePriceEdit(member.salePrice);
     setPlotFeeHint("");
     setPlotSuggestedFee(null);
+    setPlotSuggestedSale(null);
     const rows = member.feeHistory.length ? member.feeHistory.map((r) => ({ ...r })) : [emptyHistoryRow()];
     setHistoryRows(rows);
 
@@ -67,9 +72,13 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
         const data = await res.json();
         if (data.found && data.annualFee) {
           const fee = Number(data.annualFee);
+          const sale = Number(data.salePrice) || 0;
           setPlotSuggestedFee(fee);
-          const src = data.feeSource === "plot" ? "묘역 개별 지정" : "형태별 요금표";
-          setPlotFeeHint(`${data.type} ${data.capacity} · ${src} → ${fee.toLocaleString()}원`);
+          setPlotSuggestedSale(sale > 0 ? sale : null);
+          const src = data.feeSource === "plot" ? "묘역 개별" : "요금표";
+          setPlotFeeHint(
+            `${data.type} ${data.capacity} · ${src} — 분양 ${sale.toLocaleString()}원 / 연 ${fee.toLocaleString()}원`,
+          );
         }
       } catch {
         /* ignore */
@@ -170,6 +179,16 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
 
               <div className="form-grid modal-form-compact">
                 <label>
+                  분양가 (원)
+                  <input
+                    name="salePrice"
+                    type="number"
+                    min="0"
+                    value={salePriceEdit}
+                    onChange={(e) => setSalePriceEdit(Number(e.target.value))}
+                  />
+                </label>
+                <label>
                   연간 관리비 (원)
                   <input
                     name="annualFee"
@@ -196,7 +215,12 @@ export function AdminFeesClient({ members, updateFeeAction }: Props) {
                   {plotFeeHint}
                   {plotSuggestedFee ? (
                     <button type="button" className="link-btn" onClick={() => setAnnualFeeEdit(plotSuggestedFee)}>
-                      이 금액 적용
+                      연관리비 적용
+                    </button>
+                  ) : null}
+                  {plotSuggestedSale ? (
+                    <button type="button" className="link-btn" onClick={() => setSalePriceEdit(plotSuggestedSale)}>
+                      분양가 적용
                     </button>
                   ) : null}
                 </p>
