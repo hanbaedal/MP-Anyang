@@ -38,8 +38,5 @@ export function stopIntroAudio(audio?: HTMLAudioElement | null) {
   if (audio) {
     audio.pause();
     audio.currentTime = 0;
-    audio.src = "";
-    audio.load();
   }
-  gesturePrimed = false;
 }
