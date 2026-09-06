@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ADMIN_MENU, MENU, adminNavActive, groupIdFromPath, memorialNavActive } from "../lib/menu";
+import { primeIntroAudio } from "../lib/intro-audio";
 import { MemorialMyLink } from "./MemorialMyLink";
 import { SideCta } from "./SideCta";
 import { Chevron, LogoMark } from "./icons";
@@ -68,7 +69,12 @@ export function SiteShell({ children, userName, userRole }: Props) {
           <button className="btn icon-btn menu-toggle" onClick={() => setMobileOpen((v) => !v)} aria-label="메뉴 열기">
             ≡
           </button>
-          <Link href="/?intro=1" className="logo-link" aria-label="인트로 화면으로">
+          <Link
+            href="/?intro=1"
+            className="logo-link"
+            aria-label="인트로 화면으로"
+            onClick={() => primeIntroAudio()}
+          >
             <LogoMark />
             <div className="logo-text">
               <strong>안양공원묘원</strong>
