@@ -2,9 +2,14 @@ import { randomBytes } from "crypto";
 import type { SessionUser } from "./auth";
 import { publicOrigin, redirectTo } from "./public-url";
 import { createOAuthMember, findUserByGoogle, findUserByKakao, toId } from "./store";
+import { isMemberProfileComplete } from "./member-profile";
 
 export function authBaseUrl(request: Request) {
   return publicOrigin(request);
+}
+
+export function memberLandingPath(doc: Record<string, unknown> | null | undefined) {
+  return isMemberProfileComplete(doc) ? "/mypage" : "/mypage?setup=1";
 }
 
 export async function completeOAuthLogin(input: {

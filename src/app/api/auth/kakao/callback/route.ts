@@ -1,6 +1,7 @@
-import { completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { completeOAuthLogin, memberLandingPath, oauthErrorRedirect } from "../../../../../lib/oauth";
 import { kakaoRedirectUri } from "../../../../../lib/oauth-redirect";
 import { redirectWithSession } from "../../../../../lib/auth";
+import { findUserById } from "../../../../../lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,8 @@ export async function GET(request: Request) {
       name: me.kakao_account?.profile?.nickname || "카카오회원",
       email: me.kakao_account?.email || "",
     });
-    return redirectWithSession(request, "/mypage", user);
+    const doc = await findUserById(user.id);
+    return redirectWithSession(request, memberLandingPath(doc), user);
   } catch (error) {
     console.error("[kakao/callback]", error);
     return oauthErrorRedirect(request, "kakao-server");

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -68,7 +68,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
           <button className="btn icon-btn menu-toggle" onClick={() => setMobileOpen((v) => !v)} aria-label="메뉴 열기">
             ≡
           </button>
-          <Link href="/" className="logo-link" aria-label="안양공원묘원 메인으로 이동">
+          <Link href="/?intro=1" className="logo-link" aria-label="인트로 화면으로">
             <LogoMark />
             <div className="logo-text">
               <strong>안양공원묘원</strong>

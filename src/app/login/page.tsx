@@ -127,6 +127,10 @@ function LoginForm() {
         <a className="btn oauth kakao" href="/api/auth/kakao">카카오로 로그인</a>
         <a className="btn oauth google" href="/api/auth/google">Google로 로그인</a>
       </div>
+      <p className="meta signup-oauth-note">
+        카카오·Google은 <strong>로그인만</strong> 간편합니다. 최초 이용 시{" "}
+        <Link href="/signup">회원가입</Link> 또는 내 정보에서 묘역·연락처 등록이 필요합니다.
+      </p>
 
       {modal === "reset" && (
         <div className="modal-backdrop" onClick={() => setModal("none")}>

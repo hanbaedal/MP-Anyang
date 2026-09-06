@@ -1,4 +1,4 @@
-﻿export type MenuChild = {
+export type MenuChild = {
   href: string;
   label: string;
 };

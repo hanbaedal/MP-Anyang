@@ -1,118 +1,85 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { MemberChargesView } from "../../../components/MemberChargesView";
+import { MyPageClient } from "../../../components/MyPageClient";
 import { guardMemberPage } from "../../../lib/auth";
+import { isMemberProfileComplete, memberProfileFromDoc } from "../../../lib/member-profile";
 import { listMemberCharges, syncMemberChargesFromLegacy } from "../../../lib/member-charges";
-import { formatPhone } from "../../../lib/phone";
-import { formatSmsConsentAt, smsConsentFromForm } from "../../../lib/sms-consent";
 import { findUserById, updateMember } from "../../../lib/store";
 import type { Relation } from "../../../lib/store";
+import { smsConsentFromForm } from "../../../lib/sms-consent";
 
 async function saveProfile(formData: FormData) {
   "use server";
   const user = await guardMemberPage();
+  const name = String(formData.get("name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const plotNo = String(formData.get("plotNo") || "").trim();
+  if (!name || !phone || !plotNo) {
+    redirect("/mypage?setup=1&error=required");
+  }
+
   const password = String(formData.get("password") || "");
+  const deceasedNames = formData.getAll("deceasedName").map(String);
+  const relations = formData.getAll("relation").map(String);
+  const plotNos = formData.getAll("relPlotNo").map(String);
   const data: Record<string, unknown> = {
-    name: String(formData.get("name") || ""),
-    phone: String(formData.get("phone") || ""),
+    name,
+    phone,
     email: String(formData.get("email") || ""),
-    plotNo: String(formData.get("plotNo") || ""),
+    plotNo,
     address: String(formData.get("address") || ""),
     emergencyPhone: String(formData.get("emergencyPhone") || ""),
     carNumber: String(formData.get("carNumber") || ""),
     contractNo: String(formData.get("contractNo") || ""),
     registeredAt: String(formData.get("registeredAt") || ""),
     annualFee: Number(formData.get("annualFee") || 0),
+    salePrice: Number(formData.get("salePrice") || 0) || undefined,
+    relations: deceasedNames
+      .map((deceasedName, i) => ({
+        deceasedName: deceasedName.trim(),
+        relation: (relations[i] || "").trim(),
+        plotNo: (plotNos[i] || "").trim(),
+      }))
+      .filter((row) => row.deceasedName || row.plotNo),
+    ...smsConsentFromForm(formData),
   };
-  const deceasedNames = formData.getAll("deceasedName").map(String);
-  const relations = formData.getAll("relation").map(String);
-  const plotNos = formData.getAll("relPlotNo").map(String);
-  data.relations = deceasedNames
-    .map((deceasedName, i) => ({
-      deceasedName: deceasedName.trim(),
-      relation: (relations[i] || "").trim(),
-      plotNo: (plotNos[i] || "").trim(),
-    }))
-    .filter((row) => row.deceasedName || row.plotNo);
   if (password) data.passwordHash = await hash(password, 12);
-  Object.assign(data, smsConsentFromForm(formData));
   await updateMember(user.id, data);
+  await syncMemberChargesFromLegacy(user.id);
   revalidatePath("/mypage");
+  revalidatePath("/admin/fees");
   redirect("/mypage?saved=1");
 }
 
-export default async function MyPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+export default async function MyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; setup?: string; error?: string }>;
+}) {
   const session = await guardMemberPage();
-  const { saved } = await searchParams;
+  const { saved, setup, error } = await searchParams;
   const doc = await findUserById(session.id);
   if (!doc) redirect("/login");
 
-  const relations = ((doc.relations as Relation[] | undefined) || []).slice(0, 8);
-  while (relations.length < 4) relations.push({ deceasedName: "", relation: "", plotNo: "" });
+  const profileComplete = isMemberProfileComplete(doc);
+  const setupRequired = setup === "1" || !profileComplete;
 
   await syncMemberChargesFromLegacy(session.id);
-  const charges = await listMemberCharges(session.id);
+  const charges = setupRequired ? [] : await listMemberCharges(session.id);
+
+  const smsConsentAt = doc.smsConsentAt ? String(doc.smsConsentAt) : null;
 
   return (
-    <article className="article">
-      <p className="kicker">회원</p>
-      <h1>내 정보</h1>
-      {saved && <p className="ok">정보가 저장되었습니다.</p>}
-
-      <section className="panel member-cost-panel">
-        <h2>비용 현황</h2>
-        <MemberChargesView charges={charges} />
-        {charges.length === 0 && (
-          <p className="meta">등록된 비용 내역이 없습니다. 관리자가 원장에 등록하면 여기에 표시됩니다.</p>
-        )}
-      </section>
-
-      <form action={saveProfile} className="panel form-grid">
-        <h2>회원 정보 수정</h2>
-        <label>아이디<input value={String(doc.username)} disabled /></label>
-        <label>새 비밀번호 (변경 시만)<input name="password" type="password" autoComplete="new-password" /></label>
-        <label>회원 이름<input name="name" defaultValue={String(doc.name || "")} required /></label>
-        <label>전화번호<input name="phone" defaultValue={formatPhone(String(doc.phone || ""))} required /></label>
-        <label>이메일<input name="email" type="email" defaultValue={String(doc.email || "")} /></label>
-        <label>주소<input name="address" defaultValue={String(doc.address || "")} /></label>
-        <label>비상 연락처<input name="emergencyPhone" defaultValue={formatPhone(String(doc.emergencyPhone || ""))} /></label>
-        <label>차량번호<input name="carNumber" defaultValue={String(doc.carNumber || "")} /></label>
-        <label>계약번호<input name="contractNo" defaultValue={String(doc.contractNo || "")} /></label>
-        <label>대표 묘역번호<input name="plotNo" defaultValue={String(doc.plotNo || "")} required /></label>
-        <label>등록시기<input name="registeredAt" type="date" defaultValue={String(doc.registeredAt || "")} /></label>
-        <label>연간 관리비<input name="annualFee" type="number" defaultValue={Number(doc.annualFee || 0)} readOnly /></label>
-
-        <h3>관계 / 망자</h3>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead><tr><th>망자</th><th>관계</th><th>묘역번호</th></tr></thead>
-            <tbody>
-              {relations.map((row, i) => (
-                <tr key={i}>
-                  <td><input name="deceasedName" defaultValue={row.deceasedName} /></td>
-                  <td><input name="relation" defaultValue={row.relation} /></td>
-                  <td><input name="relPlotNo" defaultValue={row.plotNo} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h3>SMS 수신 동의</h3>
-        <div className="consent-box">
-          <label className="consent-label">
-            <input name="smsConsent" type="checkbox" defaultChecked={Boolean(doc.smsConsent)} />
-            <span>[선택] SMS 서비스 알림 수신 (관리비·기일·운영 안내)</span>
-          </label>
-          <label className="consent-label">
-            <input name="marketingSmsConsent" type="checkbox" defaultChecked={Boolean(doc.marketingSmsConsent)} />
-            <span>[선택] 마케팅·홍보 SMS 수신</span>
-          </label>
-          <p className="meta">동의 일시: {formatSmsConsentAt(doc.smsConsentAt)}</p>
-        </div>
-        <button className="btn btn-primary" type="submit">저장</button>
-      </form>
-    </article>
+    <MyPageClient
+      username={String(doc.username || "")}
+      initial={memberProfileFromDoc(doc)}
+      charges={charges}
+      smsConsentAt={smsConsentAt}
+      setupRequired={setupRequired}
+      saved={saved === "1"}
+      saveProfile={saveProfile}
+      error={error === "required" ? "필수 항목(이름·전화·묘역번호)을 입력해 주세요." : null}
+    />
   );
 }

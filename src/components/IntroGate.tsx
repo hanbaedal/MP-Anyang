@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SocialBar } from "./SocialBar";
 import { VolumeIcon } from "./icons";
 
@@ -8,52 +9,145 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function IntroGate({ children }: Props) {
-  const [entered, setEntered] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const startedAt = useMemo(() => Date.now(), []);
+const INTRO_FADE_MS = 1400;
+const INTRO_VOLUME = 0.55;
 
-  const enter = async () => {
+export function IntroGate({ children }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const replayIntro = searchParams.get("intro") === "1";
+  const [entered, setEntered] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [awaitingMusic, setAwaitingMusic] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const enteringRef = useRef(false);
+  const musicStartedRef = useRef(false);
+
+  const finishEnter = useCallback(() => {
     setEntered(true);
-    const audio = audioRef.current;
-    if (!audio || muted) return;
-    try {
-      await audio.play();
-    } catch {
-      // 브라우저 자동재생 제한이 있어도 진입은 허용한다.
-    }
-  };
+    if (replayIntro) router.replace("/", { scroll: false });
+  }, [replayIntro, router]);
 
   useEffect(() => {
-    if (entered || Date.now() - startedAt > 9000) return;
-    const timer = setTimeout(() => setEntered(true), 8500);
-    return () => clearTimeout(timer);
-  }, [entered, startedAt]);
+    if (!replayIntro) return;
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setEntered(false);
+    setLeaving(false);
+    setAwaitingMusic(true);
+    enteringRef.current = false;
+    musicStartedRef.current = false;
+  }, [replayIntro]);
+
+  const startMusic = useCallback(async () => {
+    if (musicStartedRef.current || muted) return false;
+    const audio = audioRef.current;
+    if (!audio) return false;
+    musicStartedRef.current = true;
+    setAwaitingMusic(false);
+    audio.volume = INTRO_VOLUME;
+    audio.currentTime = 0;
+    try {
+      await audio.play();
+      return true;
+    } catch {
+      musicStartedRef.current = false;
+      setAwaitingMusic(true);
+      return false;
+    }
+  }, [muted]);
+
+  const enter = useCallback(() => {
+    if (enteringRef.current) return;
+    enteringRef.current = true;
+    setLeaving(true);
+
+    const audio = audioRef.current;
+    const finish = () => finishEnter();
+
+    if (!audio || muted || audio.paused || audio.ended) {
+      window.setTimeout(finish, 400);
+      return;
+    }
+
+    const startVol = audio.volume;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - t0) / INTRO_FADE_MS);
+      audio.volume = startVol * (1 - progress);
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      audio.pause();
+      audio.volume = startVol;
+      finish();
+    };
+    requestAnimationFrame(tick);
+  }, [muted, finishEnter]);
+
+  useEffect(() => {
+    if (entered) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onEnded = () => enter();
+    audio.addEventListener("ended", onEnded);
+    return () => audio.removeEventListener("ended", onEnded);
+  }, [entered, enter]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.muted = muted;
-    if (muted) audio.pause();
+    if (muted) {
+      audio.pause();
+      musicStartedRef.current = false;
+      return;
+    }
+    if (musicStartedRef.current) void audio.play().catch(() => undefined);
   }, [muted]);
 
   if (entered) return <>{children}</>;
 
   return (
-    <div className="intro" style={{ backgroundImage: "url(/images/intro-sky.png)" }}>
-      <audio ref={audioRef} src="/audio/intro.mp3" loop preload="auto" />
-      <div className="intro-body" onClick={enter}>
+    <div
+      className={`intro${leaving ? " intro-leaving" : ""}`}
+      style={{ backgroundImage: "url(/images/intro-sky.png)" }}
+    >
+      <audio ref={audioRef} src="/audio/intro.mp3" preload="auto" />
+      <div
+        className="intro-body"
+        onClick={() => {
+          if (!musicStartedRef.current) {
+            void startMusic();
+            return;
+          }
+          enter();
+        }}
+      >
         <h1>안양공원묘원</h1>
         <p>하늘이 고요해지는 시간, 그리움을 오래 품는 자리를 준비합니다.</p>
-        <div className="intro-hint">클릭하거나 잠시 기다리면 입장합니다</div>
+        <div className="intro-hint">
+          {awaitingMusic
+            ? "화면을 눌러 음악을 시작하세요"
+            : "음악이 끝나면 자동 입장 · 다시 누르면 건너뛰기"}
+        </div>
       </div>
       <button
         type="button"
         className="btn mute-toggle"
         onClick={(e) => {
           e.stopPropagation();
-          setMuted((v) => !v);
+          setMuted((v) => {
+            const next = !v;
+            if (!next) void startMusic();
+            return next;
+          });
         }}
       >
         <VolumeIcon muted={muted} />

@@ -1,6 +1,7 @@
-﻿import { IntroGate } from "../../components/IntroGate";
+import { Suspense } from "react";
+import { IntroGate } from "../../components/IntroGate";
 
-export default function HomePage() {
+function HomeContent() {
   return (
     <IntroGate>
       <div className="home-view">
@@ -12,5 +13,13 @@ export default function HomePage() {
         </section>
       </div>
     </IntroGate>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

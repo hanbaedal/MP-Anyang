@@ -1,6 +1,7 @@
-import { completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { completeOAuthLogin, memberLandingPath, oauthErrorRedirect } from "../../../../../lib/oauth";
 import { googleRedirectUri } from "../../../../../lib/oauth-redirect";
 import { redirectWithSession } from "../../../../../lib/auth";
+import { findUserById } from "../../../../../lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,8 @@ export async function GET(request: Request) {
       name: me.name || "구글회원",
       email: me.email || "",
     });
-    return redirectWithSession(request, "/mypage", user);
+    const doc = await findUserById(user.id);
+    return redirectWithSession(request, memberLandingPath(doc), user);
   } catch (error) {
     console.error("[google/callback]", error);
     return oauthErrorRedirect(request, "google-server");
