@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { consumePrimedIntroAudio, createIntroAudio } from "../lib/intro-audio";
+import {
+  consumeGesturePrimed,
+  consumePrimedIntroAudio,
+  createIntroAudio,
+  stopIntroAudio,
+} from "../lib/intro-audio";
 import { SocialBar } from "./SocialBar";
 import { VolumeIcon } from "./icons";
 
@@ -23,10 +28,16 @@ export function IntroGate({ children }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const enteringRef = useRef(false);
 
+  const haltAudio = useCallback(() => {
+    stopIntroAudio(audioRef.current);
+    audioRef.current = null;
+  }, []);
+
   const finishEnter = useCallback(() => {
+    haltAudio();
     setEntered(true);
     if (replayIntro) router.replace("/", { scroll: false });
-  }, [replayIntro, router]);
+  }, [haltAudio, replayIntro, router]);
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -35,17 +46,21 @@ export function IntroGate({ children }: Props) {
   }, []);
 
   const startPlayback = useCallback(() => {
-    if (muted) return;
+    if (muted || entered) return;
     const audio = ensureAudio();
     audio.volume = INTRO_VOLUME;
     audio.muted = false;
     if (audio.paused) {
       void audio.play().catch(() => {
+        if (consumeGesturePrimed()) {
+          void audio.play().catch(() => undefined);
+          return;
+        }
         audio.muted = true;
         void audio.play().catch(() => undefined);
       });
     }
-  }, [ensureAudio, muted]);
+  }, [ensureAudio, entered, muted]);
 
   useEffect(() => {
     if (entered) return;
@@ -53,14 +68,19 @@ export function IntroGate({ children }: Props) {
   }, [entered, startPlayback]);
 
   useEffect(() => {
-    if (!replayIntro || entered) return;
+    if (!replayIntro) return;
     setEntered(false);
     setLeaving(false);
     enteringRef.current = false;
-    const audio = audioRef.current;
-    if (audio) audio.currentTime = 0;
+    haltAudio();
     startPlayback();
-  }, [replayIntro, entered, startPlayback]);
+  }, [replayIntro, haltAudio, startPlayback]);
+
+  useEffect(() => {
+    if (entered) haltAudio();
+  }, [entered, haltAudio]);
+
+  useEffect(() => () => haltAudio(), [haltAudio]);
 
   const enter = useCallback(() => {
     if (enteringRef.current) return;
@@ -68,10 +88,7 @@ export function IntroGate({ children }: Props) {
     setLeaving(true);
 
     const audio = audioRef.current;
-    const finish = () => {
-      audio?.pause();
-      finishEnter();
-    };
+    const finish = () => finishEnter();
 
     if (!audio || muted || audio.paused || audio.ended) {
       window.setTimeout(finish, 400);
@@ -101,6 +118,7 @@ export function IntroGate({ children }: Props) {
   }, [entered, enter, ensureAudio]);
 
   useEffect(() => {
+    if (entered) return;
     const audio = audioRef.current;
     if (!audio) return;
     if (muted) {
@@ -110,7 +128,7 @@ export function IntroGate({ children }: Props) {
     audio.muted = false;
     audio.volume = INTRO_VOLUME;
     void audio.play().catch(() => undefined);
-  }, [muted]);
+  }, [entered, muted]);
 
   if (entered) return <>{children}</>;
 

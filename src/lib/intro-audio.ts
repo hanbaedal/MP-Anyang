@@ -1,20 +1,17 @@
-/** 인트로 BGM — 로고 클릭(사용자 제스처)에서 priming, IntroGate에서 이어받기 */
+/** 인트로 BGM — IntroGate에서만 재생·정지 */
 let primed: HTMLAudioElement | null = null;
+let gesturePrimed = false;
 
+/** 로고 클릭 등 — 재생은 IntroGate에서만 (다른 페이지에서 소리 나지 않음) */
 export function primeIntroAudio() {
   if (typeof window === "undefined") return;
-  if (!primed) {
-    primed = new Audio("/audio/intro.mp3");
-    primed.preload = "auto";
-  }
-  primed.volume = 0.55;
-  primed.muted = false;
-  primed.currentTime = 0;
-  void primed.play().catch(() => {
-    if (!primed) return;
-    primed.muted = true;
-    void primed.play().catch(() => undefined);
-  });
+  gesturePrimed = true;
+}
+
+export function consumeGesturePrimed() {
+  const v = gesturePrimed;
+  gesturePrimed = false;
+  return v;
 }
 
 export function consumePrimedIntroAudio(): HTMLAudioElement | null {
@@ -24,7 +21,22 @@ export function consumePrimedIntroAudio(): HTMLAudioElement | null {
 }
 
 export function createIntroAudio(): HTMLAudioElement {
-  const audio = new Audio("/audio/intro.mp3");
-  audio.preload = "auto";
-  return audio;
+  return new Audio("/audio/intro.mp3");
+}
+
+export function stopIntroAudio(audio?: HTMLAudioElement | null) {
+  if (primed) {
+    primed.pause();
+    primed.currentTime = 0;
+    primed.src = "";
+    primed.load();
+    primed = null;
+  }
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = "";
+    audio.load();
+  }
+  gesturePrimed = false;
 }
