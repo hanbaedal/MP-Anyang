@@ -21,7 +21,10 @@ export function consumePrimedIntroAudio(): HTMLAudioElement | null {
 }
 
 export function createIntroAudio(): HTMLAudioElement {
-  return new Audio("/audio/intro.mp3");
+  const audio = new Audio("/audio/intro.mp3");
+  audio.preload = "auto";
+  audio.setAttribute("playsinline", "true");
+  return audio;
 }
 
 export function stopIntroAudio(audio?: HTMLAudioElement | null) {
