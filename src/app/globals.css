@@ -1181,6 +1181,34 @@ h3,
   padding-bottom: 8px;
 }
 
+.identity-gate {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.identity-gate-title {
+  font-weight: 600;
+  color: var(--sage-deep);
+  margin-bottom: 4px;
+}
+
+.identity-gate-mode {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.identity-gate-required .btn {
+  margin-top: 8px;
+}
+
+.identity-verify-lead {
+  margin-bottom: 8px;
+}
+
+.identity-verify-form .btn-ghost {
+  margin-top: 4px;
+}
+
 .signup-oauth-bar {
   grid-column: 1 / -1;
   display: flex;

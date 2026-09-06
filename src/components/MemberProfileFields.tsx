@@ -13,9 +13,11 @@ type Props = {
   initial: MemberProfileInitial;
   /** 수정 모드: 요금은 조회만 */
   feesReadOnly?: boolean;
+  /** 본인인증 완료 시 이름·전화 수정 불가 */
+  identityLocked?: boolean;
 };
 
-export function MemberProfileFields({ initial, feesReadOnly = false }: Props) {
+export function MemberProfileFields({ initial, feesReadOnly = false, identityLocked = false }: Props) {
   const [plotNo, setPlotNo] = useState(initial.plotNo);
   const [annualFee, setAnnualFee] = useState(initial.annualFee);
   const [salePrice, setSalePrice] = useState(initial.salePrice);
@@ -113,11 +115,17 @@ export function MemberProfileFields({ initial, feesReadOnly = false }: Props) {
       <div className="signup-grid-basic">
         <label>
           회원 이름
-          <input name="name" defaultValue={initial.name} required />
+          <input name="name" defaultValue={initial.name} required readOnly={identityLocked} />
         </label>
         <label>
           전화번호
-          <input name="phone" defaultValue={initial.phone} required placeholder="01012345678" />
+          <input
+            name="phone"
+            defaultValue={initial.phone}
+            required
+            placeholder="01012345678"
+            readOnly={identityLocked}
+          />
         </label>
         <label>
           이메일

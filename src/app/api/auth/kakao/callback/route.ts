@@ -1,4 +1,5 @@
-import { completeOAuthLogin, memberLandingPath, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { completeOAuthLogin, oauthErrorRedirect } from "../../../../../lib/oauth";
+import { postAuthRedirectPath } from "../../../../../lib/identity-flow";
 import { kakaoRedirectUri } from "../../../../../lib/oauth-redirect";
 import { redirectWithSession } from "../../../../../lib/auth";
 import { findUserById } from "../../../../../lib/store";
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
       email: me.kakao_account?.email || "",
     });
     const doc = await findUserById(user.id);
-    return redirectWithSession(request, memberLandingPath(doc), user);
+    return redirectWithSession(request, postAuthRedirectPath(doc), user);
   } catch (error) {
     console.error("[kakao/callback]", error);
     return oauthErrorRedirect(request, "kakao-server");

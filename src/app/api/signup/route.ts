@@ -1,17 +1,25 @@
 import { hash } from "bcryptjs";
 import { syncMemberChargesFromLegacy } from "../../../lib/member-charges";
+import { clearIdentityCookie, identityFieldsFromPayload } from "../../../lib/identity-token";
+import { requireSignupIdentity } from "../../../lib/identity-complete";
 import { createMember, phoneExists, usernameExists } from "../../../lib/store";
 import type { Relation } from "../../../lib/store";
 import { redirectTo } from "../../../lib/public-url";
 import { smsConsentFromForm } from "../../../lib/sms-consent";
+import { normalizePhone } from "../../../lib/phone";
 
 export async function POST(request: Request) {
   const form = await request.formData();
+  const identityCheck = await requireSignupIdentity();
+  if (identityCheck && "error" in identityCheck) {
+    return redirectTo(request, `/signup?error=${identityCheck.error}`);
+  }
+
   const username = String(form.get("username") || "").trim();
   const password = String(form.get("password") || "");
   const password2 = String(form.get("password2") || "");
-  const name = String(form.get("name") || "").trim();
-  const phone = String(form.get("phone") || "");
+  const name = identityCheck?.payload?.name || String(form.get("name") || "").trim();
+  const phone = identityCheck?.payload?.phone || String(form.get("phone") || "");
   const email = String(form.get("email") || "").trim();
 
   if (!username || !password || !name || !phone) {
@@ -29,6 +37,9 @@ export async function POST(request: Request) {
   if (await phoneExists(phone)) {
     return redirectTo(request, "/signup?error=phone");
   }
+  if (identityCheck?.payload && normalizePhone(String(form.get("phone") || "")) !== identityCheck.payload.phone) {
+    return redirectTo(request, "/signup?error=identity");
+  }
 
   const deceasedNames = form.getAll("deceasedName").map(String);
   const relations = form.getAll("relation").map(String);
@@ -42,6 +53,7 @@ export async function POST(request: Request) {
     .filter((row) => row.deceasedName || row.plotNo);
 
   const consent = smsConsentFromForm(form);
+  const identityFields = identityCheck?.payload ? identityFieldsFromPayload(identityCheck.payload) : {};
 
   const memberId = await createMember({
     username,
@@ -59,7 +71,9 @@ export async function POST(request: Request) {
     annualFee: Number(form.get("annualFee") || 0),
     salePrice: Number(form.get("salePrice") || 0) || undefined,
     ...consent,
+    ...identityFields,
   });
+  if (identityCheck?.payload) await clearIdentityCookie();
   await syncMemberChargesFromLegacy(memberId);
 
   return redirectTo(request, `/login?signup=1&u=${encodeURIComponent(username)}`);

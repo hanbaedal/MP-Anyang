@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   consumeGesturePrimed,
   consumePrimedIntroAudio,
@@ -19,7 +19,6 @@ const INTRO_FADE_MS = 1400;
 const INTRO_VOLUME = 0.55;
 
 export function IntroGate({ children }: Props) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const replayIntro = searchParams.get("intro") === "1";
   const [entered, setEntered] = useState(false);
@@ -27,6 +26,7 @@ export function IntroGate({ children }: Props) {
   const [muted, setMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const enteringRef = useRef(false);
+  const wasReplayIntroRef = useRef(false);
 
   const haltAudio = useCallback(() => {
     stopIntroAudio(audioRef.current);
@@ -36,8 +36,10 @@ export function IntroGate({ children }: Props) {
   const finishEnter = useCallback(() => {
     haltAudio();
     setEntered(true);
-    if (replayIntro) router.replace("/", { scroll: false });
-  }, [haltAudio, replayIntro, router]);
+    if (replayIntro && typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", "/");
+    }
+  }, [haltAudio, replayIntro]);
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -68,7 +70,9 @@ export function IntroGate({ children }: Props) {
   }, [entered, startPlayback]);
 
   useEffect(() => {
-    if (!replayIntro) return;
+    const replayStarted = replayIntro && !wasReplayIntroRef.current;
+    wasReplayIntroRef.current = replayIntro;
+    if (!replayStarted) return;
     setEntered(false);
     setLeaving(false);
     enteringRef.current = false;

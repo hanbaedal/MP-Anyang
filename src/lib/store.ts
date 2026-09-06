@@ -316,6 +316,12 @@ export async function phoneExists(phone: string) {
   return Boolean(await db.collection("users").findOne({ phone: normalizePhone(phone) }));
 }
 
+export async function ciHashExists(ciHash: string) {
+  if (!ciHash.trim()) return false;
+  const db = await getDb();
+  return Boolean(await db.collection("users").findOne({ ciHash }));
+}
+
 export async function createMember(input: {
   username: string;
   passwordHash: string;
@@ -336,6 +342,10 @@ export async function createMember(input: {
   smsConsent?: boolean;
   marketingSmsConsent?: boolean;
   smsConsentAt?: Date | null;
+  birthDate?: string;
+  ciHash?: string;
+  identityProvider?: string;
+  identityVerifiedAt?: Date | null;
 }) {
   const db = await getDb();
   const result = await db.collection("users").insertOne({
@@ -348,6 +358,10 @@ export async function createMember(input: {
     smsConsent: Boolean(input.smsConsent),
     marketingSmsConsent: Boolean(input.marketingSmsConsent),
     smsConsentAt: input.smsConsentAt ?? null,
+    birthDate: input.birthDate || "",
+    ciHash: input.ciHash || "",
+    identityProvider: input.identityProvider || "",
+    identityVerifiedAt: input.identityVerifiedAt ?? null,
     createdAt: new Date(),
   });
   return result.insertedId.toString();
