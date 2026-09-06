@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   consumeGesturePrimed,
   consumePrimedIntroAudio,
@@ -19,14 +19,16 @@ const INTRO_FADE_MS = 1400;
 const INTRO_VOLUME = 0.55;
 
 export function IntroGate({ children }: Props) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const replayIntro = searchParams.get("intro") === "1";
+  const replayToken = replayIntro ? searchParams.get("r") || "0" : null;
   const [entered, setEntered] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [muted, setMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const enteringRef = useRef(false);
-  const wasReplayIntroRef = useRef(false);
+  const lastReplayTokenRef = useRef<string | null>(null);
 
   const haltAudio = useCallback(() => {
     stopIntroAudio(audioRef.current);
@@ -36,10 +38,10 @@ export function IntroGate({ children }: Props) {
   const finishEnter = useCallback(() => {
     haltAudio();
     setEntered(true);
-    if (replayIntro && typeof window !== "undefined") {
-      window.history.replaceState(window.history.state, "", "/");
+    if (replayIntro) {
+      router.replace("/", { scroll: false });
     }
-  }, [haltAudio, replayIntro]);
+  }, [haltAudio, replayIntro, router]);
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -70,15 +72,18 @@ export function IntroGate({ children }: Props) {
   }, [entered, startPlayback]);
 
   useEffect(() => {
-    const replayStarted = replayIntro && !wasReplayIntroRef.current;
-    wasReplayIntroRef.current = replayIntro;
-    if (!replayStarted) return;
+    if (!replayToken) {
+      lastReplayTokenRef.current = null;
+      return;
+    }
+    if (replayToken === lastReplayTokenRef.current) return;
+    lastReplayTokenRef.current = replayToken;
     setEntered(false);
     setLeaving(false);
     enteringRef.current = false;
     haltAudio();
     startPlayback();
-  }, [replayIntro, haltAudio, startPlayback]);
+  }, [replayToken, haltAudio, startPlayback]);
 
   useEffect(() => {
     if (entered) haltAudio();

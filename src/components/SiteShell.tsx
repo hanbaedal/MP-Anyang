@@ -62,6 +62,12 @@ export function SiteShell({ children, userName, userRole }: Props) {
     router.refresh();
   };
 
+  const goIntro = (e: React.MouseEvent) => {
+    e.preventDefault();
+    primeIntroAudio();
+    router.push(`/?intro=1&r=${Date.now()}`);
+  };
+
   return (
     <div className="shell">
       <header className="site-header">
@@ -73,7 +79,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
             href="/?intro=1"
             className="logo-link"
             aria-label="인트로 화면으로"
-            onClick={() => primeIntroAudio()}
+            onClick={goIntro}
           >
             <LogoMark />
             <div className="logo-text">
