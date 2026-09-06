@@ -18,8 +18,9 @@ export function IntroGate({ children }: Props) {
   const replayIntro = searchParams.get("intro") === "1";
   const [entered, setEntered] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [autoplayReady, setAutoplayReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const enteringRef = useRef(false);
   const musicStartedRef = useRef(false);
@@ -38,13 +39,38 @@ export function IntroGate({ children }: Props) {
     }
     setEntered(false);
     setLeaving(false);
-    setMusicPlaying(false);
+    setSoundOn(false);
+    setAutoplayReady(false);
     enteringRef.current = false;
     musicStartedRef.current = false;
   }, [replayIntro]);
 
-  /** 클릭/터치 제스처 안에서 동기적으로 play() 호출 (브라우저 자동재생 정책) */
-  const tryPlay = useCallback(() => {
+  /** 브라우저 정책: 무음 자동재생 시도 → 실패 시 클릭 후 재생 */
+  useEffect(() => {
+    if (entered) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = INTRO_VOLUME;
+    audio.currentTime = 0;
+
+    const startMuted = () => {
+      audio.muted = true;
+      return audio.play();
+    };
+
+    void startMuted()
+      .then(() => {
+        musicStartedRef.current = true;
+        setAutoplayReady(true);
+      })
+      .catch(() => {
+        audio.muted = false;
+        setAutoplayReady(false);
+      });
+  }, [entered, replayIntro]);
+
+  const enableSound = useCallback(() => {
     if (muted) return false;
     const audio = audioRef.current;
     if (!audio) return false;
@@ -54,18 +80,19 @@ export function IntroGate({ children }: Props) {
 
     if (!musicStartedRef.current) {
       audio.currentTime = 0;
+      const result = audio.play();
+      musicStartedRef.current = true;
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {
+          musicStartedRef.current = false;
+          setSoundOn(false);
+        });
+      }
+    } else {
+      void audio.play().catch(() => undefined);
     }
 
-    const result = audio.play();
-    musicStartedRef.current = true;
-    setMusicPlaying(true);
-
-    if (result && typeof result.catch === "function") {
-      result.catch(() => {
-        musicStartedRef.current = false;
-        setMusicPlaying(false);
-      });
-    }
+    setSoundOn(true);
     return true;
   }, [muted]);
 
@@ -104,19 +131,8 @@ export function IntroGate({ children }: Props) {
     if (!audio) return;
 
     const onEnded = () => enter();
-    const onPause = () => {
-      if (!audio.ended) setMusicPlaying(false);
-    };
-    const onPlay = () => setMusicPlaying(true);
-
     audio.addEventListener("ended", onEnded);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("play", onPlay);
-    return () => {
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("play", onPlay);
-    };
+    return () => audio.removeEventListener("ended", onEnded);
   }, [entered, enter]);
 
   useEffect(() => {
@@ -124,30 +140,36 @@ export function IntroGate({ children }: Props) {
     if (!audio) return;
     if (muted) {
       audio.pause();
-      setMusicPlaying(false);
+      setSoundOn(false);
       return;
     }
-    audio.muted = false;
-    if (musicStartedRef.current) {
-      void audio.play().then(() => setMusicPlaying(true)).catch(() => setMusicPlaying(false));
+    if (musicStartedRef.current && soundOn) {
+      audio.muted = false;
+      void audio.play().catch(() => undefined);
     }
-  }, [muted]);
+  }, [muted, soundOn]);
 
   const onIntroPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest(".mute-toggle")) return;
-    tryPlay();
+    if (!soundOn) enableSound();
   };
 
   const onIntroClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest(".mute-toggle")) return;
-    if (!musicStartedRef.current) {
-      tryPlay();
+    if (!soundOn) {
+      enableSound();
       return;
     }
     enter();
   };
 
   if (entered) return <>{children}</>;
+
+  const hint = !soundOn
+    ? autoplayReady
+      ? "화면을 눌러 소리를 켜 주세요"
+      : "화면을 눌러 음악을 시작하세요"
+    : "음악이 끝나면 자동 입장 · 다시 누르면 건너뛰기";
 
   return (
     <div
@@ -159,11 +181,7 @@ export function IntroGate({ children }: Props) {
       <div className="intro-body" onClick={onIntroClick}>
         <h1>안양공원묘원</h1>
         <p>하늘이 고요해지는 시간, 그리움을 오래 품는 자리를 준비합니다.</p>
-        <div className="intro-hint">
-          {musicPlaying
-            ? "음악이 끝나면 자동 입장 · 다시 누르면 건너뛰기"
-            : "화면을 눌러 음악을 시작하세요"}
-        </div>
+        <div className="intro-hint">{hint}</div>
       </div>
       <button
         type="button"
@@ -173,13 +191,13 @@ export function IntroGate({ children }: Props) {
           e.stopPropagation();
           setMuted((v) => {
             const next = !v;
-            if (!next) tryPlay();
+            if (!next) enableSound();
             return next;
           });
         }}
       >
-        <VolumeIcon muted={muted} />
-        {muted ? "음소거됨" : musicPlaying ? "재생 중" : "소리 켜짐"}
+        <VolumeIcon muted={muted || !soundOn} />
+        {muted ? "음소거됨" : soundOn ? "재생 중" : autoplayReady ? "소리 켜기" : "소리 켜짐"}
       </button>
       <footer className="intro-footer">
         <SocialBar />
