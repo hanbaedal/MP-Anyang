@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { MEMORIAL_VS_AGENCY } from "../lib/memorial-info";
+import { useI18n } from "./I18nProvider";
 import { MemorialMyLink } from "./MemorialMyLink";
 import { ChatIcon, MemorialIcon, SearchIcon } from "./icons";
 
@@ -11,6 +11,7 @@ type Props = {
 };
 
 export function SideCta({ loggedIn }: Props) {
+  const { t } = useI18n();
   const [memorialOpen, setMemorialOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
   const memorialRef = useRef<HTMLDivElement>(null);
@@ -40,14 +41,14 @@ export function SideCta({ loggedIn }: Props) {
       <div className="side-cta">
         <Link href="/consult?source=side-cta" className="side-cta-btn primary">
           <ChatIcon />
-          <span>상담신청</span>
+          <span>{t("cta.consult")}</span>
         </Link>
 
         {loggedIn && (
           <>
             <Link href="/grave-search" className="side-cta-btn">
               <SearchIcon />
-              <span>묘역찾기</span>
+              <span>{t("cta.search")}</span>
             </Link>
 
             <div className="side-cta-memorial" ref={memorialRef}>
@@ -59,7 +60,7 @@ export function SideCta({ loggedIn }: Props) {
                 onClick={() => setMemorialOpen((v) => !v)}
               >
                 <MemorialIcon />
-                <span>사이버 추모관</span>
+                <span>{t("cta.memorial")}</span>
               </button>
 
               {memorialOpen && (
@@ -69,13 +70,13 @@ export function SideCta({ loggedIn }: Props) {
                     className="side-cta-submenu-item"
                     onNavigate={() => setMemorialOpen(false)}
                   >
-                    내 추모관 보기
+                    {t("cta.myHall")}
                   </MemorialMyLink>
                   <Link href="/memorial/guide" className="side-cta-submenu-item" role="menuitem" onClick={() => setMemorialOpen(false)}>
-                    추모관 이용 방법
+                    {t("cta.memorialGuide")}
                   </Link>
                   <Link href="/memorial/plans" className="side-cta-submenu-item" role="menuitem" onClick={() => setMemorialOpen(false)}>
-                    요금·플랜
+                    {t("cta.memorialPlans")}
                   </Link>
                   <button
                     type="button"
@@ -86,7 +87,7 @@ export function SideCta({ loggedIn }: Props) {
                       setDiffOpen(true);
                     }}
                   >
-                    추모 대행과의 차이
+                    {t("cta.diff")}
                   </button>
                 </div>
               )}
@@ -98,24 +99,30 @@ export function SideCta({ loggedIn }: Props) {
       {diffOpen && (
         <div className="modal-backdrop" onClick={() => setDiffOpen(false)}>
           <div className="modal side-cta-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>추모 대행과의 차이</h2>
+            <h2>{t("cta.diff")}</h2>
             <dl className="memorial-diff-dl">
-              {MEMORIAL_VS_AGENCY.map((row) => (
-                <div key={row.label}>
-                  <dt>{row.label}</dt>
-                  <dd>{row.text}</dd>
-                </div>
-              ))}
+              <div>
+                <dt>{t("diff.agency")}</dt>
+                <dd>{t("diff.agencyText")}</dd>
+              </div>
+              <div>
+                <dt>{t("diff.hall")}</dt>
+                <dd>{t("diff.hallText")}</dd>
+              </div>
+              <div>
+                <dt>{t("diff.link")}</dt>
+                <dd>{t("diff.linkText")}</dd>
+              </div>
             </dl>
             <div className="memorial-modal-actions">
               <Link href="/services/memorial" className="btn btn-sm">
-                추모 대행 안내
+                {t("cta.agencyGuide")}
               </Link>
               <Link href="/memorial/plans" className="btn btn-sm">
-                요금·플랜
+                {t("cta.memorialPlans")}
               </Link>
               <button type="button" className="btn btn-sm" onClick={() => setDiffOpen(false)}>
-                닫기
+                {t("cta.close")}
               </button>
             </div>
           </div>

@@ -3,6 +3,9 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { getPage, slugsOf } from "../../../../lib/content";
+import { t } from "../../../../lib/i18n-messages";
+import { getLocale } from "../../../../lib/locale";
+import { MAP_EMBED_SRC, SITE } from "../../../../lib/site";
 import {
   createBoardPost, createFaq, createGalleryItem, createNotice,
   deleteBoardPost, deleteFaq, deleteGalleryItem, deleteNotice,
@@ -151,6 +154,7 @@ export default async function SectionPage({
 }) {
   const { section, slug } = await params;
   const { ok } = await searchParams;
+  const locale = await getLocale();
   const user = await readSession();
   const isAdmin = user?.role === "admin";
 
@@ -166,8 +170,8 @@ export default async function SectionPage({
     }
     return (
       <article className="article">
-        <p className="kicker">고객센터</p>
-        <h1>공지사항</h1>
+        <p className="kicker">{t(locale, "nav.support")}</p>
+        <h1>{t(locale, "nav.support.notices")}</h1>
         {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
@@ -216,8 +220,8 @@ export default async function SectionPage({
     }
     return (
       <article className="article">
-        <p className="kicker">고객센터</p>
-        <h1>자주묻는 질문</h1>
+        <p className="kicker">{t(locale, "nav.support")}</p>
+        <h1>{t(locale, "nav.support.faq")}</h1>
         {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
@@ -262,8 +266,8 @@ export default async function SectionPage({
     }
     return (
       <article className="article">
-        <p className="kicker">고객센터</p>
-        <h1>갤러리</h1>
+        <p className="kicker">{t(locale, "nav.support")}</p>
+        <h1>{t(locale, "nav.support.gallery")}</h1>
         {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {isAdmin && (
@@ -306,8 +310,8 @@ export default async function SectionPage({
     }
     return (
       <article className="article">
-        <p className="kicker">고객센터</p>
-        <h1>자유게시판</h1>
+        <p className="kicker">{t(locale, "nav.support")}</p>
+        <h1>{t(locale, "nav.support.board")}</h1>
         {loadError ? <p className="alert">목록을 불러오지 못했습니다. ({loadError})</p> : null}
 
         {user ? (
@@ -360,8 +364,8 @@ export default async function SectionPage({
     }
     return (
       <article className="article">
-        <p className="kicker">고객센터</p>
-        <h1>문의사항</h1>
+        <p className="kicker">{t(locale, "nav.support")}</p>
+        <h1>{t(locale, "nav.support.inquiry")}</h1>
         <p className="lead">
           분양·상조·추모 상담은 <Link href="/consult">상담신청</Link>과 동일하게 접수됩니다. 여기서는 일반 문의를
           남겨 주세요.
@@ -423,7 +427,7 @@ export default async function SectionPage({
   }
 
   /* ── 정적 페이지 (재단소개, 분양, 시설, 서비스) ── */
-  const page = getPage(section, slug);
+  const page = getPage(section, slug, locale);
   if (!page) notFound();
 
   return (
@@ -519,29 +523,29 @@ export default async function SectionPage({
       {section === "about" && slug === "location" ? (
         <section className="cards-3">
           <article className="card">
-            <h2>지도</h2>
+            <h2>{t(locale, "location.map")}</h2>
             <iframe
-              title="안양공원묘원 지도"
+              title={`${SITE.legalName} 지도`}
               className="map-frame"
               loading="lazy"
-              src="https://maps.google.com/maps?q=%EC%9D%98%EC%99%95%EC%8B%9C%20%EC%B2%AD%EA%B3%84%EB%8F%99%20%EC%82%B08-5&output=embed"
+              src={MAP_EMBED_SRC}
             />
-            <p>경기도 의왕시 청계동 산 8-5 일원</p>
+            <p>{SITE.address}</p>
           </article>
           <article className="card">
-            <h2>대중교통 이용</h2>
+            <h2>{t(locale, "location.transit")}</h2>
             <ul>
-              <li>지하철 4호선 인덕원역 하차 후 버스 환승</li>
-              <li>경유 정류장: 원터마을, 의왕청계영업소</li>
-              <li>주요 노선: 1303, 3330, 7002, 1650</li>
+              <li>{t(locale, "location.transit1")}</li>
+              <li>{t(locale, "location.transit2")}</li>
+              <li>{t(locale, "location.transit3")}</li>
             </ul>
           </article>
           <article className="card">
-            <h2>자차 이용</h2>
+            <h2>{t(locale, "location.car")}</h2>
             <ul>
-              <li>내비게이션: 안양시 청계공원묘지 또는 청계동 산 8-5</li>
-              <li>성묘철 임시 주차장 운영</li>
-              <li>주말 오전은 혼잡하니 9시 이전 도착 권장</li>
+              <li>{t(locale, "location.car1")}</li>
+              <li>{t(locale, "location.car2")}</li>
+              <li>{t(locale, "location.car3")}</li>
             </ul>
           </article>
         </section>

@@ -1,73 +1,87 @@
 import Link from "next/link";
-import { getFeeRatesMerged, getSaleRatesMerged } from "../../../../lib/store";
+import { t } from "../../../../lib/i18n-messages";
+import { getLocale } from "../../../../lib/locale";
+import { SITE } from "../../../../lib/site";
 
 export default async function LotFeesPage() {
-  const [annualFees, salePrices] = await Promise.all([getFeeRatesMerged(), getSaleRatesMerged()]);
+  const locale = await getLocale();
+  const { prices } = SITE;
 
   return (
     <article className="article lot-fees-page">
-      <p className="kicker">분양안내</p>
-      <h1>분양가·연관리비 (참고)</h1>
-      <p className="lead">
-        묘역 형태·기수별 <strong>임시</strong> 요금표입니다. 정확한 금액은 상담 후 계약서로 확정됩니다.
-      </p>
-      <p className="meta">
-        <Link href="/consult">상담신청</Link> 시 유형을 선택하면 아래 금액이 자동 표시됩니다.
-      </p>
+      <p className="kicker">{t(locale, "fees.kicker")}</p>
+      <h1>{t(locale, "fees.title")}</h1>
+      <p className="lead">{t(locale, "fees.lead")}</p>
+      <p className="meta">{t(locale, "fees.source", { asOf: prices.asOf, source: prices.source })}</p>
 
       <section className="panel lot-fees-section">
-        <h2>분양가 (1회)</h2>
+        <h2>{t(locale, "fees.priceInfo")}</h2>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>형태</th>
-                <th>기수·규모</th>
-                <th>분양가</th>
+                <th>{t(locale, "fees.item")}</th>
+                <th>{t(locale, "fees.amount")}</th>
               </tr>
             </thead>
             <tbody>
-              {salePrices.map((row) => (
-                <tr key={`sale-${row.type}-${row.capacity}`}>
-                  <td>{row.type}</td>
-                  <td>{row.capacity}</td>
-                  <td>{row.annualFee.toLocaleString()}원</td>
-                </tr>
-              ))}
+              <tr>
+                <td>{t(locale, "fees.saleItem")}</td>
+                <td>{prices.saleAmount.toLocaleString()}원</td>
+              </tr>
+              <tr>
+                <td>{t(locale, "fees.annualItem")}</td>
+                <td>{prices.annualAmount.toLocaleString()}원</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </section>
 
       <section className="panel lot-fees-section">
-        <h2>연간 관리비</h2>
+        <h2>{t(locale, "fees.items")}</h2>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>형태</th>
-                <th>기수·규모</th>
-                <th>연간 관리비</th>
+                <th>{t(locale, "fees.category")}</th>
+                <th>{t(locale, "fees.product")}</th>
+                <th>{t(locale, "fees.amount")}</th>
               </tr>
             </thead>
             <tbody>
-              {annualFees.map((row) => (
-                <tr key={`annual-${row.type}-${row.capacity}`}>
-                  <td>{row.type}</td>
-                  <td>{row.capacity}</td>
-                  <td>{row.annualFee.toLocaleString()}원</td>
-                </tr>
-              ))}
+              <tr>
+                <td>{prices.saleLabel}</td>
+                <td>{prices.saleItem}</td>
+                <td>{prices.saleAmount.toLocaleString()}원</td>
+              </tr>
+              <tr>
+                <td>{prices.annualLabel}</td>
+                <td>{prices.annualItem}</td>
+                <td>{prices.annualAmount.toLocaleString()}원</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </section>
 
       <section className="panel lot-fees-note">
-        <h2>사이버 추모관·기타</h2>
+        <h2>{t(locale, "fees.noteTitle")}</h2>
         <p>
-          사이버 추모관 연간권·상조·리모델링 등은{" "}
-          <Link href="/memorial/plans">추모관 요금</Link> 및 <Link href="/consult">상담</Link>을 통해 안내됩니다.
+          {t(locale, "fees.note1", { phone: SITE.phone }).split(SITE.phone).map((part, index, parts) =>
+            index < parts.length - 1 ? (
+              <span key={index}>
+                {part}
+                <a href={`tel:${SITE.phone.replace(/-/g, "")}`}>{SITE.phone}</a>
+              </span>
+            ) : (
+              <span key={index}>{part}</span>
+            ),
+          )}
+        </p>
+        <p>
+          {t(locale, "fees.note2")}{" "}
+          <Link href="/memorial/plans">{t(locale, "fees.memorialLink")}</Link>
         </p>
       </section>
     </article>

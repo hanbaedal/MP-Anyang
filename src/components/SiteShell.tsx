@@ -5,6 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ADMIN_MENU, MENU, adminNavActive, groupIdFromPath, memorialNavActive } from "../lib/menu";
 import { primeIntroAudio } from "../lib/intro-audio";
+import { navKey } from "../lib/i18n";
+import { SITE, telHref } from "../lib/site";
+import { useI18n } from "./I18nProvider";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MemorialMyLink } from "./MemorialMyLink";
 import { SideCta } from "./SideCta";
 import { Chevron, LogoMark } from "./icons";
@@ -23,9 +27,12 @@ type Props = {
   userRole?: "admin" | "member";
 };
 
-const slogan = "추억과 그리움이 머무는 자리, 안양공원묘원";
+function itemLabelKey(href: string) {
+  return href === "/memorial" ? "nav.memorial.intro" : navKey(href);
+}
 
 export function SiteShell({ children, userName, userRole }: Props) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,39 +79,40 @@ export function SiteShell({ children, userName, userRole }: Props) {
     <div className="shell">
       <header className="site-header">
         <div className="logo">
-          <button className="btn icon-btn menu-toggle" onClick={() => setMobileOpen((v) => !v)} aria-label="메뉴 열기">
+          <button className="btn icon-btn menu-toggle" onClick={() => setMobileOpen((v) => !v)} aria-label={t("header.menu")}>
             ≡
           </button>
           <Link
             href="/?intro=1"
             className="logo-link"
-            aria-label="인트로 화면으로"
+            aria-label={t("header.intro")}
             onClick={goIntro}
           >
             <LogoMark />
             <div className="logo-text">
-              <strong>안양공원묘원</strong>
-              <span>ANYANG MEMORIAL PARK</span>
+              <strong>{SITE.shortName}</strong>
+              <span>{SITE.englishName}</span>
             </div>
           </Link>
         </div>
-        <p className="slogan">{slogan}</p>
+        <p className="slogan">{t("header.slogan")}</p>
         <div className="header-actions">
+          <LanguageSwitcher />
           {loggedIn ? (
             <>
               {activeUserRole === "member" ? (
-                <Link className="btn btn-sm" href="/mypage">내정보</Link>
+                <Link className="btn btn-sm" href="/mypage">{t("header.mypage")}</Link>
               ) : activeUserRole === "admin" ? (
-                <Link className="btn btn-sm" href="/admin">사이트맵</Link>
+                <Link className="btn btn-sm" href="/admin">{t("header.sitemap")}</Link>
               ) : null}
               <span className="meta">{activeUserName}</span>
               <button className="btn" onClick={onLogout}>
-                로그아웃
+                {t("header.logout")}
               </button>
             </>
           ) : (
             <Link className="btn" href="/login">
-              로그인
+              {t("header.login")}
             </Link>
           )}
         </div>
@@ -122,7 +130,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
                 onClick={() => setOpened((prev) => ({ ...prev, [group.id]: !prev[group.id] }))}
               >
                 <Chevron open={Boolean(opened[group.id])} />
-                {group.label}
+                {t(`nav.${group.id}`)}
               </button>
               {opened[group.id] && (
                 <div className="nav-children">
@@ -139,7 +147,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
                           className={`nav-link ${active ? "active" : ""}`}
                           onNavigate={() => setMobileOpen(false)}
                         >
-                          {child.label}
+                          {t(itemLabelKey(child.href))}
                         </MemorialMyLink>
                       );
                     }
@@ -150,7 +158,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
                         className={`nav-link ${active ? "active" : ""}`}
                         onClick={() => setMobileOpen(false)}
                       >
-                        {child.label}
+                        {t(itemLabelKey(child.href))}
                       </Link>
                     );
                   })}
@@ -161,7 +169,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
 
           {activeUserRole === "admin" && (
             <div className="nav-group admin-nav">
-              <div className="nav-group-btn static">관리자</div>
+              <div className="nav-group-btn static">{t("nav.admin")}</div>
               <div className="nav-children">
                 {ADMIN_MENU.map((child) => (
                   <Link
@@ -170,7 +178,7 @@ export function SiteShell({ children, userName, userRole }: Props) {
                     className={`nav-link ${adminNavActive(pathname, child.href) ? "active" : ""}`}
                     onClick={() => setMobileOpen(false)}
                   >
-                    {child.label}
+                    {t(itemLabelKey(child.href))}
                   </Link>
                 ))}
               </div>
@@ -184,11 +192,15 @@ export function SiteShell({ children, userName, userRole }: Props) {
           <footer className="page-footer">
             <SocialBar light />
             <div className="footer-info">
-              <p className="footer-name">안양공원묘원</p>
-              <p>경기도 의왕시 청계동 산 8-5 일원</p>
-              <p>관리사무실: 031-421-9165 | 긴급연락: 010-9111-0107</p>
-              <p>운영시간: 매일 08:00 – 18:00 (동절기 08:00 – 17:30)</p>
-              <p className="footer-copy">&copy; {new Date().getFullYear()} 안양공원묘원. All rights reserved.</p>
+              <p className="footer-name">{SITE.legalName}</p>
+              <p>{SITE.address}</p>
+              <p>
+                {t("footer.office")}: <a href={telHref()}>{SITE.phone}</a>
+              </p>
+              <p>
+                {t("footer.hours")}: {SITE.hoursDisplay}
+              </p>
+              <p className="footer-copy">&copy; {new Date().getFullYear()} {SITE.legalName}. All rights reserved.</p>
             </div>
           </footer>
         </main>

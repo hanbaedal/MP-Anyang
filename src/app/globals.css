@@ -60,7 +60,7 @@ h3,
 .site-header {
   height: var(--header-h);
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(0, 2.2fr) minmax(140px, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 0 22px;
@@ -127,7 +127,72 @@ h3,
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.lang-flag {
+  width: 32px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.lang-flag svg {
+  width: 22px;
+  height: 15px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(42, 38, 34, 0.16);
+  display: block;
+}
+
+.lang-flag:hover {
+  border-color: var(--sage);
+}
+
+.lang-flag.active {
+  border-color: var(--sage);
+  background: rgba(95, 112, 89, 0.1);
+}
+
+.auth-lang-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.92);
+}
+
+.auth-lang-home {
+  font-family: "Noto Serif KR", "Noto Serif SC", "Noto Serif JP", serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+html[lang^="zh"] body {
+  font-family: "Noto Sans SC", "Noto Sans KR", sans-serif;
+}
+
+html[lang="ja"] body {
+  font-family: "Noto Sans JP", "Noto Sans KR", sans-serif;
 }
 
 .btn {
@@ -3522,6 +3587,16 @@ h3,
   margin: 0;
 }
 
+.footer-info a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-info a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
 .footer-name {
   font-family: "Noto Serif KR", serif;
   font-size: 15px;
@@ -3568,6 +3643,16 @@ h3,
   .header-actions .btn {
     padding: 7px 11px;
     font-size: 13px;
+  }
+
+  .lang-flag {
+    width: 28px;
+    height: 22px;
+  }
+
+  .lang-flag svg {
+    width: 20px;
+    height: 13px;
   }
 
   .header-actions .meta {

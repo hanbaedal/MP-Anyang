@@ -1,4 +1,8 @@
-﻿export type ContentBlock =
+﻿import { localizePage } from "./i18n-pages";
+import type { Locale } from "./i18n";
+import { SITE } from "./site";
+
+export type ContentBlock =
   | { type: "p"; text: string }
   | { type: "list"; items: string[] }
   | { type: "quote"; text: string; cite?: string }
@@ -27,12 +31,12 @@ const pages: StaticPage[] = [
     slug: "intro",
     kicker: "재단소개",
     title: "안양공원 소개",
-    lead: "청계산 자락, 하늘과 가까운 자리에서 고인을 모시고 유가족을 받듭니다.",
-    image: { src: "/images/park-panorama.png", alt: "안양공원묘원 전경" },
+    lead: "안산 상록구 양상동, 하늘과 가까운 자리에서 고인을 모시고 유가족을 받듭니다.",
+    image: { src: "/images/park-panorama.png", alt: `${SITE.shortName} 전경` },
     blocks: [
       {
         type: "p",
-        text: "안양공원묘원은 경기도 의왕시 청계동 산 8-5 일원에 자리한 추모공원입니다. 안양과 맞닿은 청계산 기슭의 수려한 숲과 바람을 배경으로, 고인의 평안과 남겨진 분의 마음을 함께 살핍니다.",
+        text: `${SITE.legalName}은 ${SITE.address}에 자리한 사설 추모공원입니다. 안산 상록구 양상동의 숲과 바람을 배경으로, 고인의 평안과 남겨진 분의 마음을 함께 살핍니다.`,
       },
       {
         type: "p",
@@ -41,9 +45,9 @@ const pages: StaticPage[] = [
       {
         type: "list",
         items: [
-          "위치: 경기도 의왕시 청계동 산 8-5 일원 (안양 인접)",
-          "안내전화: 031-421-9165",
-          "조성 면적: 약 27만 ㎡의 숲과 묘역",
+          `위치: ${SITE.address}`,
+          `안내전화: ${SITE.phone}`,
+          "구분: 사설 공원묘원",
           "안장 형태: 봉안묘, 수목장, 매장묘, 평장묘",
         ],
       },
@@ -58,8 +62,8 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "quote",
-        text: "떠나신 분을 모시는 일은 산 사람의 마음을 돌보는 일과 같습니다. 안양공원묘원은 그 마음을 서두르지 않고, 그러나 소홀히 하지 않겠습니다.",
-        cite: "안양공원묘원 이사장",
+        text: `떠나신 분을 모시는 일은 산 사람의 마음을 돌보는 일과 같습니다. ${SITE.legalName}은 그 마음을 서두르지 않고, 그러나 소홀히 하지 않겠습니다.`,
+        cite: `${SITE.legalName} 이사장`,
       },
       {
         type: "p",
@@ -83,7 +87,7 @@ const pages: StaticPage[] = [
         items: [
           {
             year: "1987",
-            text: "청계 일원이 묘지공원으로 지정되며, 안양 시민과 가까운 추모 공간이 자리 잡기 시작했습니다.",
+            text: "안산 상록구 양상동 일원에 공원묘원이 자리하며, 안산·안양 생활권과 가까운 추모 공간이 이어져 왔습니다.",
           },
           {
             year: "1990s",
@@ -114,14 +118,14 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "p",
-        text: "관리사무실은 매일 열며, 묘역은 일출부터 일몰까지 출입할 수 있습니다. 명절과 한식에는 안내 인원을 늘리고, 주차 유도에 힘을 씁니다.",
+        text: "관리사무실은 매일 열며, 묘역은 일출부터 일몰까지 출입할 수 있습니다. 명절과 한식에는 안내 인원을 늘립니다. 전용 주차장은 없으므로 인근 도로변 주차 후 방문해 주세요.",
       },
       {
         type: "list",
         items: [
-          "운영시간: 매일 08:00–18:00 (동절기 08:00–17:30)",
-          "관리사무실: 031-421-9165",
-          "주차: 공원 하단 주차장 이용, 성묘철 임시 주차 운영",
+          `운영시간: ${SITE.hours}`,
+          `관리사무실: ${SITE.phone}`,
+          "주차: 전용 주차장 미보유 (인근 도로변 이용)",
           "제례: 개별 묘역 및 공동 참배 공간 이용",
           "반입: 일회용 제수용품은 지정 수거함에, 화환은 사무실에 문의",
           "금지: 취사, 묘역 내 음주, 무단 촬영·상업 촬영",
@@ -142,13 +146,13 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "p",
-        text: "안양공원묘원은 경기도 의왕시 청계동 산 8-5 일원에 있습니다. 인덕원 생활권에서 접근하기 좋고, 성묘철에는 임시 주차장과 안내 인력을 늘립니다.",
+        text: `${SITE.legalName}은 ${SITE.address}에 있습니다. 지하철 중앙역에서 버스로 환승하면 양상동입구에 닿습니다.`,
       },
       {
         type: "list",
         items: [
-          "대표 안내 전화: 031-421-9165",
-          "주소: 경기도 의왕시 청계동 산 8-5",
+          `대표 안내 전화: ${SITE.phone}`,
+          `주소: ${SITE.address}`,
           "성묘철 혼잡 시간: 오전 10시~오후 1시",
         ],
       },
@@ -237,7 +241,7 @@ const pages: StaticPage[] = [
       },
       {
         type: "cta",
-        phone: "031-421-9165",
+        phone: SITE.phone,
         links: [{ href: "/consult", label: "상담신청", primary: true }],
       },
     ],
@@ -299,7 +303,7 @@ const pages: StaticPage[] = [
     blocks: [
       {
         type: "p",
-        text: "매장묘는 봉분을 갖춘 전통 묘역입니다. 청계 능선의 향과 바람을 받도록 자리를 나누었으며, 벌초와 석물 관리는 연간 계약으로 맡기실 수 있습니다.",
+        text: "매장묘는 봉분을 갖춘 전통 묘역입니다. 양상동 능선의 향과 바람을 받도록 자리를 나누었으며, 벌초와 석물 관리는 연간 계약으로 맡기실 수 있습니다.",
       },
       {
         type: "list",
@@ -415,7 +419,7 @@ const pages: StaticPage[] = [
       },
       {
         type: "list",
-        items: ["단체 예약: 사무실 031-421-9165", "좌석 약 80석", "성묘철 대기 번호 운영"],
+        items: [`단체 예약: 사무실 ${SITE.phone}`, "좌석 약 80석", "성묘철 대기 번호 운영"],
       },
     ],
   },
@@ -434,8 +438,8 @@ const pages: StaticPage[] = [
       {
         type: "list",
         items: [
-          "전화: 031-421-9165",
-          "운영: 매일 08:00–18:00",
+          `전화: ${SITE.phone}`,
+          `운영: ${SITE.hours}`,
           "준비물: 신분증, 고인과의 관계 서류(이장·합장 시)",
         ],
       },
@@ -515,8 +519,9 @@ const pages: StaticPage[] = [
   },
 ];
 
-export function getPage(section: string, slug: string): StaticPage | undefined {
-  return pages.find((page) => page.section === section && page.slug === slug);
+export function getPage(section: string, slug: string, locale: Locale = "ko"): StaticPage | undefined {
+  const page = pages.find((item) => item.section === section && item.slug === slug);
+  return page ? localizePage(page, locale) : undefined;
 }
 
 export function slugsOf(section: string): { slug: string }[] {

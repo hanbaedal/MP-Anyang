@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { AuthLangBar } from "../../components/AuthLangBar";
 import { CompactFooter } from "../../components/CompactFooter";
+import { useI18n } from "../../components/I18nProvider";
 import { PasswordInput } from "../../components/PasswordInput";
 import { GOOGLE_REDIRECT_URI_HINT, KAKAO_REDIRECT_URI_HINT, oauthErrorMessage } from "../../lib/oauth-errors";
 
 function LoginForm() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const [modal, setModal] = useState<"none" | "reset">("none");
   const [step, setStep] = useState<1 | 2>(1);
@@ -107,25 +110,25 @@ function LoginForm() {
 
       <form className="panel form-grid" action="/api/login" method="POST">
         <label>
-          아이디
+          {t("login.id")}
           <input name="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </label>
         <label>
-          비밀번호
+          {t("login.password")}
           <PasswordInput name="password" value={password} onChange={setPassword} required />
         </label>
         <div className="login-links">
           <button type="button" className="link-btn" onClick={() => { setModal("reset"); setStep(1); setMsg(""); }}>
-            비밀번호 찾기
+            {t("login.findPw")}
           </button>
-          <Link href="/signup">회원 가입</Link>
+          <Link href="/signup">{t("login.signup")}</Link>
         </div>
-        <button className="btn btn-primary" type="submit">로그인</button>
+        <button className="btn btn-primary" type="submit">{t("login.submit")}</button>
       </form>
 
       <div className="oauth-row">
-        <a className="btn oauth kakao" href="/api/auth/kakao">카카오로 로그인</a>
-        <a className="btn oauth google" href="/api/auth/google">Google로 로그인</a>
+        <a className="btn oauth kakao" href="/api/auth/kakao">{t("login.kakao")}</a>
+        <a className="btn oauth google" href="/api/auth/google">{t("login.google")}</a>
       </div>
       <p className="meta signup-oauth-note">
         카카오·Google은 <strong>로그인만</strong> 간편합니다. 최초 이용 시{" "}
@@ -160,16 +163,20 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
   return (
     <div className="auth-screen">
+      <AuthLangBar />
       <main className="article login-page">
-        <p className="kicker">계정</p>
-        <h1>로그인</h1>
-        <p className="lead">회원 또는 관리자 계정으로 로그인하세요.</p>
-        <Suspense fallback={<p className="meta">로딩 중...</p>}>
+        <p className="kicker">{t("login.kicker")}</p>
+        <h1>{t("login.title")}</h1>
+        <p className="lead">{t("login.lead")}</p>
+        <Suspense fallback={<p className="meta">{t("login.loading")}</p>}>
           <LoginForm />
         </Suspense>
-        <p className="meta">로그인 후 <Link href="/">홈으로</Link> 이동할 수 있습니다.</p>
+        <p className="meta">
+          {t("login.after")} <Link href="/">{t("footer.home")}</Link>
+        </p>
       </main>
       <CompactFooter light />
     </div>

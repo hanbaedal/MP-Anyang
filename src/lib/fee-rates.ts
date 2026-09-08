@@ -1,4 +1,5 @@
 import { GRAVE_TYPE_SPECS, type GraveTypeKey } from "./plot-specs";
+import { SITE } from "./site";
 
 export type FeeRateRow = {
   type: string;
@@ -6,49 +7,17 @@ export type FeeRateRow = {
   annualFee: number;
 };
 
-/** 형태·기수별 기본 연간 관리비 (원) — DB 미설정 시 사용 */
-export const DEFAULT_FEE_RATES: FeeRateRow[] = [
-  { type: "봉안묘", capacity: "2기", annualFee: 120_000 },
-  { type: "봉안묘", capacity: "4기", annualFee: 180_000 },
-  { type: "봉안묘", capacity: "8기", annualFee: 280_000 },
-  { type: "봉안묘", capacity: "16기", annualFee: 420_000 },
-  { type: "봉안묘", capacity: "24기", annualFee: 560_000 },
-  { type: "봉안묘", capacity: "32기", annualFee: 680_000 },
-  { type: "매장묘", capacity: "단장형", annualFee: 150_000 },
-  { type: "매장묘", capacity: "합장형", annualFee: 220_000 },
-  { type: "매장묘", capacity: "쌍분형", annualFee: 240_000 },
-  { type: "평장묘", capacity: "4위", annualFee: 200_000 },
-  { type: "평장묘", capacity: "6위", annualFee: 260_000 },
-  { type: "평장묘", capacity: "8위", annualFee: 320_000 },
-  { type: "평장묘", capacity: "16위", annualFee: 480_000 },
-  { type: "수목장", capacity: "1기", annualFee: 100_000 },
-  { type: "수목장", capacity: "2기", annualFee: 160_000 },
-  { type: "복합묘", capacity: "16기", annualFee: 500_000 },
-  { type: "복합묘", capacity: "20기", annualFee: 580_000 },
-  { type: "복합묘", capacity: "24기", annualFee: 650_000 },
-];
+function unitRates(amount: number): FeeRateRow[] {
+  return Object.entries(GRAVE_TYPE_SPECS).flatMap(([type, spec]) =>
+    spec.variants.map((capacity) => ({ type, capacity, annualFee: amount })),
+  );
+}
 
-/** 형태·기수별 임시 분양가 (원) — DB 미설정 시 사용 */
-export const DEFAULT_SALE_RATES: FeeRateRow[] = [
-  { type: "봉안묘", capacity: "2기", annualFee: 2_800_000 },
-  { type: "봉안묘", capacity: "4기", annualFee: 4_200_000 },
-  { type: "봉안묘", capacity: "8기", annualFee: 6_500_000 },
-  { type: "봉안묘", capacity: "16기", annualFee: 9_800_000 },
-  { type: "봉안묘", capacity: "24기", annualFee: 12_500_000 },
-  { type: "봉안묘", capacity: "32기", annualFee: 15_000_000 },
-  { type: "매장묘", capacity: "단장형", annualFee: 3_500_000 },
-  { type: "매장묘", capacity: "합장형", annualFee: 5_200_000 },
-  { type: "매장묘", capacity: "쌍분형", annualFee: 5_800_000 },
-  { type: "평장묘", capacity: "4위", annualFee: 4_800_000 },
-  { type: "평장묘", capacity: "6위", annualFee: 6_200_000 },
-  { type: "평장묘", capacity: "8위", annualFee: 7_500_000 },
-  { type: "평장묘", capacity: "16위", annualFee: 11_000_000 },
-  { type: "수목장", capacity: "1기", annualFee: 2_200_000 },
-  { type: "수목장", capacity: "2기", annualFee: 3_600_000 },
-  { type: "복합묘", capacity: "16기", annualFee: 10_500_000 },
-  { type: "복합묘", capacity: "20기", annualFee: 12_000_000 },
-  { type: "복합묘", capacity: "24기", annualFee: 13_500_000 },
-];
+/** 평당 연간 관리비 — 신고가. 형태별 총액은 상담으로 확정 */
+export const DEFAULT_FEE_RATES: FeeRateRow[] = unitRates(SITE.prices.annualAmount);
+
+/** 평당 사용료 — 신고가. 형태별 총액은 상담으로 확정 */
+export const DEFAULT_SALE_RATES: FeeRateRow[] = unitRates(SITE.prices.saleAmount);
 
 export function allFeeRateSlots(): FeeRateRow[] {
   return Object.entries(GRAVE_TYPE_SPECS).flatMap(([type, spec]) =>

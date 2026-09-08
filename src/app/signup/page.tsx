@@ -2,7 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { AuthLangBar } from "../../components/AuthLangBar";
 import { CompactFooter } from "../../components/CompactFooter";
+import { useI18n } from "../../components/I18nProvider";
 import { IdentityVerificationGate } from "../../components/IdentityVerificationGate";
 import { MemberProfileFields } from "../../components/MemberProfileFields";
 import { PasswordInput } from "../../components/PasswordInput";
@@ -110,11 +112,13 @@ function SignupForm() {
 }
 
 export default function SignupPage() {
+  const { t } = useI18n();
   return (
     <div className="auth-screen auth-screen-compact">
+      <AuthLangBar />
       <main className="article signup-page">
-        <p className="kicker">계정</p>
-        <h1>회원 가입</h1>
+        <p className="kicker">{t("signup.kicker")}</p>
+        <h1>{t("signup.title")}</h1>
         <Suspense fallback={<p className="meta">로딩 중…</p>}>
           <SignupForm />
         </Suspense>

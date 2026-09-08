@@ -62,7 +62,7 @@ export async function ensureSampleData(db: Db) {
   if ((await db.collection("faqs").countDocuments()) === 0) {
     await db.collection("faqs").insertMany([
       { question: "봉안묘 분양 절차는 어떻게 되나요?", answer: "전화 또는 방문 상담 후 계약을 진행합니다. 상담신청 페이지를 이용해 주세요.", order: 1 },
-      { question: "주차 공간이 있나요?", answer: "네, 무료 주차장을 운영하고 있습니다.", order: 2 },
+      { question: "주차 공간이 있나요?", answer: "전용 주차장은 없습니다. 인근 도로변에 주차하신 뒤 방문해 주세요.", order: 2 },
       { question: "운영시간은 어떻게 되나요?", answer: "매일 08:00~18:00 (동절기 08:00~17:30) 입니다.", order: 3 },
     ]);
   }
@@ -231,7 +231,7 @@ async function ensureDemoMemorialInner(db: Db) {
       hallCode: "DEMO-A101",
       type: "text",
       title: "아버지를 그리며",
-      body: "demo:intro-text\n청계산 자락을 함께 걸으며 나누었던 이야기들. 사이버 추모관에 마음을 모아 둡니다.",
+      body: "demo:intro-text\n양상동 숲길을 함께 걸으며 나누었던 이야기들. 사이버 추모관에 마음을 모아 둡니다.",
       authorName: "최창길",
       daysAgo: 120,
     },

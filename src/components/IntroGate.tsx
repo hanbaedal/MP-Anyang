@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { consumeGesturePrimed, primeIntroAudio, stopIntroAudio } from "../lib/intro-audio";
+import { SITE } from "../lib/site";
+import { useI18n } from "./I18nProvider";
 import { SocialBar } from "./SocialBar";
 import { VolumeIcon } from "./icons";
 
@@ -15,6 +17,7 @@ const INTRO_LEAVE_MS = 400;
 const INTRO_SKIP_KEY = "ap_intro_skipped";
 
 export function IntroGate({ children }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const replayIntro = searchParams.get("intro") === "1";
@@ -159,9 +162,8 @@ export function IntroGate({ children }: Props) {
     });
   }, [entered, userMuted]);
 
-  const hint = awaitingSoundUnlock ? "클릭하여 음악 시작 · 다시 클릭하면 입장" : "클릭하면 입장";
-
-  const muteLabel = userMuted ? "음소거됨" : awaitingSoundUnlock ? "소리 꺼짐" : "소리 켜짐";
+  const hint = awaitingSoundUnlock ? t("intro.hintSound") : t("intro.hintEnter");
+  const muteLabel = userMuted ? t("intro.muteOn") : awaitingSoundUnlock ? t("intro.soundOff") : t("intro.soundOn");
 
   if (!hydrated) return null;
   if (entered) return <>{children}</>;
@@ -181,8 +183,8 @@ export function IntroGate({ children }: Props) {
         muted={awaitingSoundUnlock || userMuted}
       />
       <div className="intro-body" onClick={onIntroClick}>
-        <h1>안양공원묘원</h1>
-        <p>하늘이 고요해지는 시간, 그리움을 오래 품는 자리를 준비합니다.</p>
+        <h1>{SITE.shortName}</h1>
+        <p>{t("intro.tagline")}</p>
         <div className="intro-hint">{hint}</div>
       </div>
       <button
@@ -203,7 +205,7 @@ export function IntroGate({ children }: Props) {
       <footer className="intro-footer">
         <SocialBar />
         <p className="intro-footer-info">
-          경기도 의왕시 청계동 산 8-5 일원 · 관리사무실 031-421-9165
+          {SITE.addressShort} · {t("footer.office")} {SITE.phone}
         </p>
       </footer>
     </div>
