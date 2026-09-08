@@ -32,7 +32,7 @@ function itemLabelKey(href: string) {
 }
 
 export function SiteShell({ children, userName, userRole }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -90,8 +90,8 @@ export function SiteShell({ children, userName, userRole }: Props) {
           >
             <LogoMark />
             <div className="logo-text">
-              <strong>{SITE.shortName}</strong>
-              <span>{SITE.englishName}</span>
+              <strong>{t("site.shortName")}</strong>
+              <span>{t("site.logoSub")}</span>
             </div>
           </Link>
         </div>
@@ -192,15 +192,20 @@ export function SiteShell({ children, userName, userRole }: Props) {
           <footer className="page-footer">
             <SocialBar light />
             <div className="footer-info">
-              <p className="footer-name">{SITE.legalName}</p>
-              <p>{SITE.address}</p>
-              <p>
+              <p className="footer-name">{t("site.legalName")}</p>
+              <p>{t("site.address")}</p>
+              {locale !== "ko" ? (
+                <p className="footer-official">
+                  {SITE.legalName} · {SITE.addressShort}
+                </p>
+              ) : null}
+              <p className="footer-home-hide">
                 {t("footer.office")}: <a href={telHref()}>{SITE.phone}</a>
               </p>
-              <p>
-                {t("footer.hours")}: {SITE.hoursDisplay}
+              <p className="footer-home-hide">
+                {t("footer.hours")}: {t("site.hoursDisplay")}
               </p>
-              <p className="footer-copy">&copy; {new Date().getFullYear()} {SITE.legalName}. All rights reserved.</p>
+              <p className="footer-copy footer-home-hide">&copy; {new Date().getFullYear()} {SITE.legalName}. All rights reserved.</p>
             </div>
           </footer>
         </main>

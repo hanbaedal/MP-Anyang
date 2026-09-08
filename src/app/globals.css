@@ -525,7 +525,7 @@ html[lang="ja"] body {
   padding: 12px 20px 14px;
 }
 
-.shell:has(.home-view) .footer-info p:nth-child(n + 3) {
+.shell:has(.home-view) .footer-home-hide {
   display: none;
 }
 
@@ -3603,6 +3603,30 @@ html[lang="ja"] body {
   font-weight: 600;
   color: var(--ink);
   margin-bottom: 6px !important;
+}
+
+.footer-official,
+.compact-footer-official,
+.intro-footer-official {
+  margin-top: 4px !important;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.intro-footer-official {
+  color: rgba(255, 253, 248, 0.7);
+}
+
+html[lang="zh-CN"] .logo-text strong,
+html[lang="zh-CN"] .footer-name,
+html[lang="zh-CN"] .intro-body h1 {
+  font-family: "Noto Serif SC", serif;
+}
+
+html[lang="ja"] .logo-text strong,
+html[lang="ja"] .footer-name,
+html[lang="ja"] .intro-body h1 {
+  font-family: "Noto Serif JP", serif;
 }
 
 .footer-copy {

@@ -6,13 +6,16 @@ import { useI18n } from "./I18nProvider";
 import { SocialBar } from "./SocialBar";
 
 export function CompactFooter({ light = false }: { light?: boolean }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <footer className={`compact-footer ${light ? "light" : ""}`}>
       <SocialBar light={light} />
       <p className="compact-footer-info">
-        {SITE.addressShort} · {t("footer.office")} {SITE.phone}
+        {t("site.addressShort")} · {t("footer.office")} {SITE.phone}
       </p>
+      {locale !== "ko" ? (
+        <p className="compact-footer-official">{SITE.addressShort}</p>
+      ) : null}
       <p className="compact-footer-home">
         <Link href="/">{t("footer.home")}</Link>
       </p>

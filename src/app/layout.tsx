@@ -3,13 +3,13 @@ import { I18nProvider } from "../components/I18nProvider";
 import { LOCALE_META } from "../lib/i18n";
 import { t } from "../lib/i18n-messages";
 import { getLocale } from "../lib/locale";
-import { SITE } from "../lib/site";
+import { siteDisplay } from "../lib/site";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
-    title: SITE.legalName,
+    title: siteDisplay(locale).legalName,
     description: t(locale, "header.slogan"),
   };
 }

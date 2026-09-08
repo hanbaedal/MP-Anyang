@@ -525,12 +525,13 @@ export default async function SectionPage({
           <article className="card">
             <h2>{t(locale, "location.map")}</h2>
             <iframe
-              title={`${SITE.legalName} 지도`}
+              title={t(locale, "site.legalName")}
               className="map-frame"
               loading="lazy"
               src={MAP_EMBED_SRC}
             />
-            <p>{SITE.address}</p>
+            <p>{t(locale, "site.address")}</p>
+            {locale !== "ko" ? <p className="footer-official">{SITE.address}</p> : null}
           </article>
           <article className="card">
             <h2>{t(locale, "location.transit")}</h2>

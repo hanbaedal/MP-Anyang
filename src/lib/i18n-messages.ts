@@ -1,9 +1,29 @@
 import type { Locale } from "./i18n";
-import { SITE } from "./site";
+import { SITE, siteDisplay } from "./site";
 
 type Dict = Record<string, string>;
 
+function siteKeys(locale: Locale): Dict {
+  const s = siteDisplay(locale);
+  return {
+    "site.shortName": s.shortName,
+    "site.legalName": s.legalName,
+    "site.address": s.address,
+    "site.addressShort": s.addressShort,
+    "site.hours": s.hours,
+    "site.hoursDisplay": s.hoursDisplay,
+    "site.logoSub": locale === "ko" ? SITE.englishName : SITE.legalName,
+    "fees.saleLabel": s.saleLabel,
+    "fees.saleUnit": s.saleItem,
+    "fees.annualLabel": s.annualLabel,
+    "fees.annualUnit": s.annualItem,
+    "fees.asOf": s.asOf,
+    "fees.sourceName": s.source,
+  };
+}
+
 const ko: Dict = {
+  ...siteKeys("ko"),
   "header.menu": "메뉴 열기",
   "header.intro": "인트로 화면으로",
   "header.login": "로그인",
@@ -65,7 +85,7 @@ const ko: Dict = {
   "intro.muteOn": "음소거됨",
   "intro.soundOff": "소리 꺼짐",
   "intro.soundOn": "소리 켜짐",
-  "home.heroTitle": `${SITE.shortName} 전경`,
+  "home.heroTitle": `${siteDisplay("ko").shortName} 전경`,
   "cta.consult": "상담신청",
   "cta.search": "묘역찾기",
   "cta.memorial": "사이버 추모관",
@@ -121,6 +141,7 @@ const ko: Dict = {
   "location.transit3": "주요 노선: 안산 3번, 7번",
   "location.car": "자차 이용",
   "location.car1": `내비게이션: ${SITE.legalName} 또는 오리골길 41`,
+  "location.official": "공식 주소",
   "location.car2": "전용 주차장 미보유 — 인근 도로변 주차 후 방문",
   "location.car3": "주말 오전은 혼잡하니 9시 이전 도착 권장",
   "login.kicker": "계정",
@@ -150,6 +171,7 @@ const ko: Dict = {
 };
 
 const en: Dict = {
+  ...siteKeys("en"),
   "header.menu": "Open menu",
   "header.intro": "Go to intro",
   "header.login": "Log in",
@@ -211,7 +233,7 @@ const en: Dict = {
   "intro.muteOn": "Muted",
   "intro.soundOff": "Sound off",
   "intro.soundOn": "Sound on",
-  "home.heroTitle": `${SITE.shortName} panorama`,
+  "home.heroTitle": `${siteDisplay("en").shortName} panorama`,
   "cta.consult": "Consultation",
   "cta.search": "Find a plot",
   "cta.memorial": "Memorial Hall",
@@ -267,6 +289,7 @@ const en: Dict = {
   "location.transit3": "Buses: Ansan 3 and 7",
   "location.car": "By car",
   "location.car1": `Navigation: ${SITE.legalName} or 41 Origol-gil`,
+  "location.official": "Official address",
   "location.car2": "No dedicated parking — park on nearby roads",
   "location.car3": "Weekday mornings before 9 a.m. are less crowded",
   "login.kicker": "Account",
@@ -296,6 +319,7 @@ const en: Dict = {
 };
 
 const zh: Dict = {
+  ...siteKeys("zh"),
   "header.menu": "打开菜单",
   "header.intro": "返回片头",
   "header.login": "登录",
@@ -357,7 +381,7 @@ const zh: Dict = {
   "intro.muteOn": "已静音",
   "intro.soundOff": "声音关闭",
   "intro.soundOn": "声音开启",
-  "home.heroTitle": `${SITE.shortName} 全景`,
+  "home.heroTitle": `${siteDisplay("zh").shortName} 全景`,
   "cta.consult": "咨询申请",
   "cta.search": "查找墓位",
   "cta.memorial": "网络纪念馆",
@@ -413,6 +437,7 @@ const zh: Dict = {
   "location.transit3": "主要线路：安山3路、7路",
   "location.car": "自驾",
   "location.car1": `导航：${SITE.legalName} 或 梧里谷路41`,
+  "location.official": "登记地址",
   "location.car2": "无专用停车场 — 请停靠附近路边",
   "location.car3": "周末上午较拥挤，建议9点前到达",
   "login.kicker": "账户",
@@ -442,6 +467,7 @@ const zh: Dict = {
 };
 
 const ja: Dict = {
+  ...siteKeys("ja"),
   "header.menu": "メニューを開く",
   "header.intro": "イントロへ",
   "header.login": "ログイン",
@@ -503,7 +529,7 @@ const ja: Dict = {
   "intro.muteOn": "ミュート中",
   "intro.soundOff": "音声オフ",
   "intro.soundOn": "音声オン",
-  "home.heroTitle": `${SITE.shortName} 全景`,
+  "home.heroTitle": `${siteDisplay("ja").shortName} 全景`,
   "cta.consult": "相談申込",
   "cta.search": "墓域検索",
   "cta.memorial": "サイバー追悼館",
@@ -559,6 +585,7 @@ const ja: Dict = {
   "location.transit3": "主な路線：安山3番、7番",
   "location.car": "お車で",
   "location.car1": `ナビ：${SITE.legalName} または オリゴルギル41`,
+  "location.official": "公式住所",
   "location.car2": "専用駐車場なし — 近隣路上に駐車",
   "location.car3": "週末午前は混雑するため9時前の到着をおすすめします",
   "login.kicker": "アカウント",

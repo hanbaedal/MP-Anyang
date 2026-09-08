@@ -12,7 +12,7 @@ export default async function LotFeesPage() {
       <p className="kicker">{t(locale, "fees.kicker")}</p>
       <h1>{t(locale, "fees.title")}</h1>
       <p className="lead">{t(locale, "fees.lead")}</p>
-      <p className="meta">{t(locale, "fees.source", { asOf: prices.asOf, source: prices.source })}</p>
+      <p className="meta">{t(locale, "fees.source", { asOf: t(locale, "fees.asOf"), source: t(locale, "fees.sourceName") })}</p>
 
       <section className="panel lot-fees-section">
         <h2>{t(locale, "fees.priceInfo")}</h2>
@@ -51,13 +51,13 @@ export default async function LotFeesPage() {
             </thead>
             <tbody>
               <tr>
-                <td>{prices.saleLabel}</td>
-                <td>{prices.saleItem}</td>
+                <td>{t(locale, "fees.saleLabel")}</td>
+                <td>{t(locale, "fees.saleUnit")}</td>
                 <td>{prices.saleAmount.toLocaleString()}원</td>
               </tr>
               <tr>
-                <td>{prices.annualLabel}</td>
-                <td>{prices.annualItem}</td>
+                <td>{t(locale, "fees.annualLabel")}</td>
+                <td>{t(locale, "fees.annualUnit")}</td>
                 <td>{prices.annualAmount.toLocaleString()}원</td>
               </tr>
             </tbody>

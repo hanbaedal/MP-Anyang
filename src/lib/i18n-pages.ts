@@ -1,5 +1,5 @@
 import type { Locale } from "./i18n";
-import { SITE } from "./site";
+import { SITE, siteDisplay } from "./site";
 import type { ContentBlock, StaticPage } from "./content";
 
 type PageCopy = {
@@ -15,11 +15,11 @@ const en: Record<string, PageCopy> = {
     kicker: "About",
     title: "About Anyang Memorial Park",
     lead: "In Yangsang-dong, Sangnok-gu, Ansan, we care for the departed and the families who remain.",
-    alt: `${SITE.shortName} panorama`,
+    alt: `{shortName} panorama`,
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName} is a private memorial park at ${SITE.address}. Among the woods and wind of Yangsang-dong, we look after both the peace of the departed and the hearts of those left behind.`,
+        text: `{legalName} is a private memorial park at {address}. Among the woods and wind of Yangsang-dong, we look after both the peace of the departed and the hearts of those left behind.`,
       },
       {
         type: "p",
@@ -28,7 +28,8 @@ const en: Record<string, PageCopy> = {
       {
         type: "list",
         items: [
-          `Location: ${SITE.address}`,
+          `Location: {address}`,
+          `Official address: ${SITE.address}`,
           `Phone: ${SITE.phone}`,
           "Type: Private cemetery park",
           "Burial types: columbarium, tree burial, traditional grave, lawn grave",
@@ -43,8 +44,8 @@ const en: Record<string, PageCopy> = {
     blocks: [
       {
         type: "quote",
-        text: `Caring for those who have gone is also caring for the living. ${SITE.legalName} will not hurry that work, and will not neglect it.`,
-        cite: `Chair, ${SITE.legalName}`,
+        text: `Caring for those who have gone is also caring for the living. {legalName} will not hurry that work, and will not neglect it.`,
+        cite: `Chair, {legalName}`,
       },
       {
         type: "p",
@@ -85,7 +86,7 @@ const en: Record<string, PageCopy> = {
       {
         type: "list",
         items: [
-          `Hours: ${SITE.hours}`,
+          `Hours: {hours}`,
           `Office: ${SITE.phone}`,
           "Parking: none on site (use nearby roads)",
           "Rites: individual plots and a shared memorial space",
@@ -106,13 +107,14 @@ const en: Record<string, PageCopy> = {
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName} is at ${SITE.address}. From Jungang Station, transfer to a bus toward Yangsang-dong Entrance.`,
+        text: `{legalName} is at {address}. From Jungang Station, transfer to a bus toward Yangsang-dong Entrance.`,
       },
       {
         type: "list",
         items: [
           `Main phone: ${SITE.phone}`,
-          `Address: ${SITE.address}`,
+          `Address: {address}`,
+          `Official address: ${SITE.address}`,
           "Busy hours during memorial seasons: 10 a.m.–1 p.m.",
         ],
       },
@@ -356,7 +358,7 @@ const en: Record<string, PageCopy> = {
         type: "list",
         items: [
           `Phone: ${SITE.phone}`,
-          `Hours: ${SITE.hours}`,
+          `Hours: {hours}`,
           "Please bring ID and, for relocation or joint burial, documents showing your relationship",
         ],
       },
@@ -433,11 +435,11 @@ const zh: Record<string, PageCopy> = {
     kicker: "机构介绍",
     title: "安养公园介绍",
     lead: "在安山市常绿区阳上洞，我们在靠近天空的地方安奉先人、陪伴遺族。",
-    alt: `${SITE.shortName} 全景`,
+    alt: `{shortName} 全景`,
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName}位于${SITE.address}，为私立纪念公园。以阳上洞的林木与清风为背景，我们同时照看先人的安宁与生者的心意。`,
+        text: `{legalName}位于{address}，为私立纪念公园。以阳上洞的林木与清风为背景，我们同时照看先人的安宁与生者的心意。`,
       },
       {
         type: "p",
@@ -445,7 +447,7 @@ const zh: Record<string, PageCopy> = {
       },
       {
         type: "list",
-        items: [`位置：${SITE.address}`, `电话：${SITE.phone}`, "性质：私立公园墓园", "安葬形式：奉安墓、树木葬、土葬墓、平葬墓"],
+        items: [`位置：{address}`, `登记地址：${SITE.address}`, `电话：${SITE.phone}`, "性质：私立公园墓园", "安葬形式：奉安墓、树木葬、土葬墓、平葬墓"],
       },
     ],
   },
@@ -456,8 +458,8 @@ const zh: Record<string, PageCopy> = {
     blocks: [
       {
         type: "quote",
-        text: `安奉离去的人，也是照看活着的人。${SITE.legalName}不急不缓，也绝不错过。`,
-        cite: `${SITE.legalName} 理事长`,
+        text: `安奉离去的人，也是照看活着的人。{legalName}不急不缓，也绝不错过。`,
+        cite: `{legalName} 理事长`,
       },
       {
         type: "p",
@@ -498,7 +500,7 @@ const zh: Record<string, PageCopy> = {
       {
         type: "list",
         items: [
-          `开放时间：${SITE.hours}`,
+          `开放时间：{hours}`,
           `管理办公室：${SITE.phone}`,
           "停车：无专用停车场（使用附近路边）",
           "祭礼：可使用个别墓域及共同参拜空间",
@@ -519,11 +521,11 @@ const zh: Record<string, PageCopy> = {
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName}位于${SITE.address}。在地铁中央站换乘公交，可到达阳上洞入口。`,
+        text: `{legalName}位于{address}。在地铁中央站换乘公交，可到达阳上洞入口。`,
       },
       {
         type: "list",
-        items: [`代表电话：${SITE.phone}`, `地址：${SITE.address}`, "祭扫高峰：上午10时至下午1时"],
+        items: [`代表电话：${SITE.phone}`, `地址：{address}`, `登记地址：${SITE.address}`, "祭扫高峰：上午10时至下午1时"],
       },
     ],
   },
@@ -649,7 +651,7 @@ const zh: Record<string, PageCopy> = {
     alt: "管理办公室",
     blocks: [
       { type: "p", text: "管理办公室位于公园入口道路起点。墓位确认、使用费、开葬申报以及网上咨询的后续联系均在此办理。" },
-      { type: "list", items: [`电话：${SITE.phone}`, `开放：${SITE.hours}`, "请携带身份证，迁葬·合葬时还需关系证明"] },
+      { type: "list", items: [`电话：${SITE.phone}`, `开放：{hours}`, "请携带身份证，迁葬·合葬时还需关系证明"] },
     ],
   },
   "services/memorial": {
@@ -696,11 +698,11 @@ const ja: Record<string, PageCopy> = {
     kicker: "財団紹介",
     title: "安養公園のご案内",
     lead: "安山市常緑区陽上洞、空に近い場所で故人をお守りし、ご遺族に寄り添います。",
-    alt: `${SITE.shortName} 全景`,
+    alt: `{shortName} 全景`,
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName}は${SITE.address}にある私立の追悼公園です。陽上洞の森と風を背景に、故人の安らぎと残された方の心をともに見守ります。`,
+        text: `{legalName}は{address}にある私立の追悼公園です。陽上洞の森と風を背景に、故人の安らぎと残された方の心をともに見守ります。`,
       },
       {
         type: "p",
@@ -708,7 +710,7 @@ const ja: Record<string, PageCopy> = {
       },
       {
         type: "list",
-        items: [`所在地：${SITE.address}`, `電話：${SITE.phone}`, "区分：私立公園墓園", "埋葬形態：奉安墓、樹木葬、埋葬墓、平葬墓"],
+        items: [`所在地：{address}`, `公式住所：${SITE.address}`, `電話：${SITE.phone}`, "区分：私立公園墓園", "埋葬形態：奉安墓、樹木葬、埋葬墓、平葬墓"],
       },
     ],
   },
@@ -719,8 +721,8 @@ const ja: Record<string, PageCopy> = {
     blocks: [
       {
         type: "quote",
-        text: `旅立たれた方をお守りすることは、生きる人の心を守ることでもあります。${SITE.legalName}はその心を急がず、なお疎かにしません。`,
-        cite: `${SITE.legalName} 理事長`,
+        text: `旅立たれた方をお守りすることは、生きる人の心を守ることでもあります。{legalName}はその心を急がず、なお疎かにしません。`,
+        cite: `{legalName} 理事長`,
       },
       {
         type: "p",
@@ -761,7 +763,7 @@ const ja: Record<string, PageCopy> = {
       {
         type: "list",
         items: [
-          `開園時間：${SITE.hours}`,
+          `開園時間：{hours}`,
           `管理事務所：${SITE.phone}`,
           "駐車：専用駐車場なし（近隣路上を利用）",
           "祭祀：各墓域および共同参拝空間",
@@ -782,11 +784,11 @@ const ja: Record<string, PageCopy> = {
     blocks: [
       {
         type: "p",
-        text: `${SITE.legalName}は${SITE.address}にあります。地下鉄中央駅からバスに乗り換えると陽上洞入口に着きます。`,
+        text: `{legalName}は{address}にあります。地下鉄中央駅からバスに乗り換えると陽上洞入口に着きます。`,
       },
       {
         type: "list",
-        items: [`代表電話：${SITE.phone}`, `住所：${SITE.address}`, "墓参期の混雑：午前10時〜午後1時"],
+        items: [`代表電話：${SITE.phone}`, `住所：{address}`, `公式住所：${SITE.address}`, "墓参期の混雑：午前10時〜午後1時"],
       },
     ],
   },
@@ -912,7 +914,7 @@ const ja: Record<string, PageCopy> = {
     alt: "管理事務所",
     blocks: [
       { type: "p", text: "管理事務所は公園入口道路の手前にあります。墓域位置、使用料、開葬届出、オンライン相談の後続連絡をここで行います。" },
-      { type: "list", items: [`電話：${SITE.phone}`, `開園：${SITE.hours}`, "身分証、改葬・合葬時は関係書類をご持参ください"] },
+      { type: "list", items: [`電話：${SITE.phone}`, `開園：{hours}`, "身分証、改葬・合葬時は関係書類をご持参ください"] },
     ],
   },
   "services/memorial": {
@@ -954,7 +956,32 @@ const ja: Record<string, PageCopy> = {
   },
 };
 
-const COPIES: Partial<Record<Locale, Record<string, PageCopy>>> = { en, zh, ja };
+function fillSite(locale: Locale, pages: Record<string, PageCopy>): Record<string, PageCopy> {
+  const s = siteDisplay(locale);
+  const replace = (value: string) =>
+    value
+      .replaceAll("{legalName}", s.legalName)
+      .replaceAll("{address}", s.address)
+      .replaceAll("{hours}", s.hours)
+      .replaceAll("{shortName}", s.shortName);
+
+  const walk = (value: unknown): unknown => {
+    if (typeof value === "string") return replace(value);
+    if (Array.isArray(value)) return value.map(walk);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, walk(nested)]));
+    }
+    return value;
+  };
+
+  return walk(pages) as Record<string, PageCopy>;
+}
+
+const COPIES: Partial<Record<Locale, Record<string, PageCopy>>> = {
+  en: fillSite("en", en),
+  zh: fillSite("zh", zh),
+  ja: fillSite("ja", ja),
+};
 
 export function localizePage(page: StaticPage, locale: Locale): StaticPage {
   if (locale === "ko") return page;

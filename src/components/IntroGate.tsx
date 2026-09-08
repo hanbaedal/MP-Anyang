@@ -17,7 +17,7 @@ const INTRO_LEAVE_MS = 400;
 const INTRO_SKIP_KEY = "ap_intro_skipped";
 
 export function IntroGate({ children }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const replayIntro = searchParams.get("intro") === "1";
@@ -183,7 +183,7 @@ export function IntroGate({ children }: Props) {
         muted={awaitingSoundUnlock || userMuted}
       />
       <div className="intro-body" onClick={onIntroClick}>
-        <h1>{SITE.shortName}</h1>
+        <h1>{t("site.shortName")}</h1>
         <p>{t("intro.tagline")}</p>
         <div className="intro-hint">{hint}</div>
       </div>
@@ -205,8 +205,11 @@ export function IntroGate({ children }: Props) {
       <footer className="intro-footer">
         <SocialBar />
         <p className="intro-footer-info">
-          {SITE.addressShort} · {t("footer.office")} {SITE.phone}
+          {t("site.addressShort")} · {t("footer.office")} {SITE.phone}
         </p>
+        {locale !== "ko" ? (
+          <p className="intro-footer-official">{SITE.addressShort}</p>
+        ) : null}
       </footer>
     </div>
   );
