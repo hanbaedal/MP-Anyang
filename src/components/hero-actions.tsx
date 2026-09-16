@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { MapPin, Phone } from "lucide-react";
 import { SITE, socialHref } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-const btn =
+const logoBtn =
   "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-black/10 transition hover:scale-[1.04] hover:bg-white";
 
 function FacebookMark() {
@@ -64,7 +65,7 @@ function NaverCafeMark() {
   );
 }
 
-function Action({
+function SocialLink({
   href,
   label,
   children,
@@ -74,14 +75,13 @@ function Action({
   children: React.ReactNode;
 }) {
   const external = href.startsWith("http") || href.startsWith("tel:");
-  const className = cn(btn);
   if (external) {
     return (
       <a
         href={href}
         aria-label={label}
         title={label}
-        className={className}
+        className={cn(logoBtn)}
         {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
       >
         {children}
@@ -89,13 +89,13 @@ function Action({
     );
   }
   return (
-    <Link href={href} aria-label={label} title={label} className={className}>
+    <Link href={href} aria-label={label} title={label} className={cn(logoBtn)}>
       {children}
     </Link>
   );
 }
 
-export function HeroActions() {
+export function SocialActions() {
   const items = [
     { href: socialHref("FACEBOOK", SITE.phoneTel), label: "전화 상담", icon: <FacebookMark /> },
     { href: socialHref("INSTAGRAM", "/intro/directions"), label: "오시는 길", icon: <InstagramMark /> },
@@ -104,12 +104,33 @@ export function HeroActions() {
   ];
 
   return (
-    <nav aria-label="바로 가기" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+    <nav aria-label="소셜 바로 가기" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
       {items.map((item) => (
-        <Action key={item.label} href={item.href} label={item.label}>
+        <SocialLink key={item.label} href={item.href} label={item.label}>
           {item.icon}
-        </Action>
+        </SocialLink>
       ))}
+    </nav>
+  );
+}
+
+export function HeroCallActions() {
+  return (
+    <nav aria-label="바로 가기" className="flex flex-wrap justify-end gap-2 sm:gap-3">
+      <a
+        href={SITE.phoneTel}
+        className="inline-flex items-center gap-2 rounded-2xl bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-[#dce8e0] sm:px-5"
+      >
+        <Phone className="size-4" aria-hidden />
+        {SITE.phone}
+      </a>
+      <Link
+        href="/intro/directions"
+        className="inline-flex items-center gap-2 rounded-2xl border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-white hover:text-primary sm:px-5"
+      >
+        <MapPin className="size-4" aria-hidden />
+        오시는 길
+      </Link>
     </nav>
   );
 }

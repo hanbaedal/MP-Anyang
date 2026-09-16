@@ -1,21 +1,29 @@
+import { SocialActions } from "@/components/hero-actions";
 import { SITE } from "@/lib/site";
 
 export function SiteFooter() {
   return (
-    <footer className="shrink-0 border-t border-primary-foreground/20 bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground sm:px-6">
-      <p className="font-serif text-base">{SITE.legalName}</p>
-      <p className="mt-1 text-primary-foreground/85">
-        방문: {SITE.address} ({SITE.visitName})
-        <br />
-        {SITE.addressAlt}
-        <br />
-        전화{" "}
-        <a className="underline-offset-4 hover:underline" href={SITE.phoneTel}>
-          {SITE.phone}
-        </a>
-        {" · "}
-        {SITE.postalCode}
-      </p>
+    <footer className="shrink-0 border-t border-primary-foreground/20 bg-primary text-sm leading-6 text-primary-foreground">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:pl-36 lg:pr-6">
+        <div className="min-w-0">
+          <p className="font-serif text-base">{SITE.legalName}</p>
+          <p className="mt-1 text-primary-foreground/85">
+            방문: {SITE.address} ({SITE.visitName})
+            <br />
+            {SITE.addressAlt}
+            <br />
+            전화{" "}
+            <a className="underline-offset-4 hover:underline" href={SITE.phoneTel}>
+              {SITE.phone}
+            </a>
+            {" · "}
+            {SITE.postalCode}
+          </p>
+        </div>
+        <div className="flex shrink-0 justify-end">
+          <SocialActions />
+        </div>
+      </div>
     </footer>
   );
 }
