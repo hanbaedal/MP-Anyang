@@ -18,6 +18,13 @@ export default async function NoticesPage() {
     <>
       <PageHero kicker="고객센터" title="공지사항" lead="명절 교통, 벌초, 휴무처럼 지금 필요한 글만 올립니다." />
       <div className="mx-auto max-w-6xl px-4 py-12">
+        <p className="mb-6 text-sm text-muted-foreground">
+          상담은{" "}
+          <Link href="/support/inquiry" className="font-medium text-primary underline-offset-4 hover:underline">
+            문의·상담
+          </Link>
+          또는 전화 031-482-2949로 남겨 주세요.
+        </p>
         {notices.length === 0 ? (
           <p className="text-muted-foreground">등록된 공지가 없습니다. 급하신 일은 031-482-2949로 전화 주세요.</p>
         ) : (

@@ -49,19 +49,21 @@ export function SiteHeader() {
                 {item.label}
               </Link>
               {item.children ? (
-                <div className="invisible absolute left-0 top-full z-20 min-w-44 rounded-md border bg-card py-2 opacity-0 shadow-md transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={cn(
-                        "block px-3 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-primary",
-                        isActive(pathname, child.href) && "text-primary",
-                      )}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
+                <div className="absolute left-0 top-full z-20 hidden min-w-44 pt-1 group-hover:block group-focus-within:block">
+                  <div className="rounded-md border bg-card py-2 shadow-md">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={cn(
+                          "block px-3 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-primary",
+                          isActive(pathname, child.href) && "text-primary",
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>
