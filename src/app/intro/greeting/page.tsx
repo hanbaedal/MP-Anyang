@@ -1,5 +1,5 @@
 import { PageHero, Prose } from "@/components/page-hero";
-import { GREETING, SITE } from "@/lib/site";
+import { GREETING } from "@/lib/site";
 
 export const metadata = { title: "인사말" };
 
@@ -13,7 +13,7 @@ export default function GreetingPage() {
             <p key={p}>{p}</p>
           ))}
           <p>감사합니다.</p>
-          <p className="font-medium text-primary">{SITE.shortName}묘원 임직원 일동</p>
+          <p className="font-medium text-primary">안양공원묘원 임직원 일동</p>
         </Prose>
       </article>
     </>
