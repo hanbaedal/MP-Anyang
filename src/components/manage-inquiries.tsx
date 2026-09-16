@@ -3,7 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { Inquiry } from "@/lib/inquiries";
+
+type Inquiry = {
+  id: string;
+  name: string;
+  phone: string;
+  message: string;
+  createdAt: string;
+  status: "new" | "answered";
+  answer: string;
+  answeredAt?: string;
+  answeredBy?: string;
+};
 
 const area =
   "min-h-28 w-full rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";

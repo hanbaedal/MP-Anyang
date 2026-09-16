@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { CmsItem, CmsPage, CmsSlug } from "@/lib/cms";
+import type { CmsItem, CmsPage, CmsSlug } from "@/lib/cms-types";
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";

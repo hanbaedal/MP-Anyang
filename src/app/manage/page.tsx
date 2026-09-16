@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
-import { CMS_SLUGS } from "@/lib/cms";
+import { CMS_SLUGS } from "@/lib/cms-types";
 import { listInquiries } from "@/lib/inquiries";
 import { requireStaff } from "@/lib/auth";
 

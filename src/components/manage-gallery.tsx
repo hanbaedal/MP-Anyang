@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GALLERY_TAGS, type GalleryPhoto } from "@/lib/gallery";
+import { GALLERY_TAGS, type GalleryPhoto } from "@/lib/gallery-types";
 import type { GalleryTag } from "@/lib/content";
 
 const field =

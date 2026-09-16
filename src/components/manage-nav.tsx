@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CMS_SLUGS } from "@/lib/cms";
+import { CMS_SLUGS } from "@/lib/cms-types";
 import type { SessionUser } from "@/lib/auth-types";
 
 const LINKS = [

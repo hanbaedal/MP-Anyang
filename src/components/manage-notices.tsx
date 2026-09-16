@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { Notice } from "@/lib/notices";
+
+type Notice = {
+  slug: string;
+  title: string;
+  body: string;
+  publishedAt: string;
+  pinned?: boolean;
+};
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";

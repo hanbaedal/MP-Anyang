@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { FaqItem } from "@/lib/faq";
+
+type FaqItem = {
+  id: string;
+  name: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+  public: boolean;
+};
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";

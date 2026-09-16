@@ -1,17 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { GALLERY, type GalleryTag } from "./content";
+import { GALLERY } from "./content";
+import type { GalleryTag } from "./content";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
+import { GALLERY_TAGS, type GalleryPhoto } from "./gallery-types";
 
-export type GalleryPhoto = {
-  id: string;
-  src: string;
-  alt: string;
-  tags: GalleryTag[];
-};
+export type { GalleryPhoto } from "./gallery-types";
+export { GALLERY_TAGS } from "./gallery-types";
 
 const localFile = dataFile("gallery.local.json");
-const GALLERY_TAGS: GalleryTag[] = ["전경", "매장묘", "평장묘", "봉안묘", "리모델링"];
 
 export function defaultGallery(): GalleryPhoto[] {
   return GALLERY.map((item, index) => ({
@@ -107,5 +104,3 @@ export async function deleteGalleryPhoto(id: string) {
   await persist(next);
   return { ok: true as const };
 }
-
-export { GALLERY_TAGS };
