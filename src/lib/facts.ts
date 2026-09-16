@@ -2,14 +2,6 @@
 
 export const UNCONFIRMED = "확인 필요";
 
-export const HOURS = {
-  placeholder: true,
-  label: "임시 상담 시간 (확인 필요 · 실제 운영시간이 아닐 수 있습니다)",
-  weekday: "평일 09:00–18:00",
-  weekend: "주말 09:00–17:00",
-  holiday: "명절·한식은 별도 공지",
-} as const;
-
 export const BANK = {
   bank: UNCONFIRMED,
   account: UNCONFIRMED,

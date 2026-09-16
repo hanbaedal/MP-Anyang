@@ -19,6 +19,22 @@ export const SITE = {
 
 export const DEFAULT_SITE_URL = "https://mp-anyang.onrender.com";
 
+/** 소셜 URL. 값이 생기면 여기 또는 환경변수에 넣고, 비어 있으면 홈 버튼은 기존 안내 경로를 씁니다. 지어낸 주소는 넣지 않습니다. */
+export const SOCIAL_URLS = {
+  FACEBOOK: "",
+  INSTAGRAM: "",
+  YOUTUBE: "",
+  CAFE: "",
+} as const;
+
+export type SocialKey = keyof typeof SOCIAL_URLS;
+
+export function socialHref(key: SocialKey, fallback: string) {
+  const fromEnv = process.env[`NEXT_PUBLIC_${key}_URL`]?.trim() || process.env[`${key}_URL`]?.trim();
+  const fromConfig = SOCIAL_URLS[key].trim();
+  return fromEnv || fromConfig || fallback;
+}
+
 export function siteUrl() {
   const raw = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
   return raw.replace(/\/$/, "");
