@@ -2,7 +2,7 @@ import { PageHero } from "@/components/page-hero";
 import { AuthForm } from "@/components/auth-form";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readSession } from "@/lib/members";
+import { afterLoginPath, readSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function generateMetadata() {
 
 export default async function LoginPage() {
   const session = await readSession();
-  if (session) redirect("/account");
+  if (session) redirect(afterLoginPath(session));
   const locale = await readLocale();
   return (
     <>

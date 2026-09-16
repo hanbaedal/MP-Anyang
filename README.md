@@ -1,8 +1,8 @@
 # (재)안양공원묘원 홈페이지
 
-경기 안산시 상록구 양상동 **(재)안양공원묘원** 공식 사이트입니다. 안양공원.com·PPT 안내(청약서 절차, PPT·라이브 위수, 관리비·리모델링·서비스, 분양가 10% 계약금)를 휴대폰과 PC에서 같이 보도록 만들었습니다.
+경기 안산시 상록구 양상동 **(재)안양공원묘원** 공식 사이트입니다. 안양공원.com·PPT 안내(청약서 절차, PPT·라이브 위수, 관리비·리모델링·서비스)를 휴대폰과 PC에서 같이 보도록 만들었습니다.
 
-커스텀 도메인이 생기기 전 `SITE_URL` 기본값은 Render 주소 `https://mp-anyang.onrender.com` 입니다. 가짜 브랜드 도메인을 넣지 않습니다. 분양가·계좌·카카오채널 URL처럼 출처에 없는 숫자는 **확인 필요**로 두고, 지어내지 않습니다.
+커스텀 도메인이 생기기 전 `SITE_URL` 기본값은 Render 주소 `https://mp-anyang.onrender.com` 입니다. 가짜 브랜드 도메인을 넣지 않습니다. 분양가·계좌처럼 출처에 없는 숫자는 **확인 필요**로 두고, 관리자가 원 단위를 넣으면 그 값만 보여 줍니다.
 
 ## 로컬에서 보기
 
@@ -11,33 +11,40 @@ Node **20**이 필요합니다. (Render도 20으로 고정합니다. 26은 쓰�
 ```bash
 npm ci
 cp .env.example .env.local
+# SUPERVISOR_ID / SUPERVISOR_PASSWORD / ADMIN_SEED / AUTH_SECRET 를 .env.local에 넣습니다.
 npm run dev
 ```
 
 브라우저에서 [http://127.0.0.1:43123](http://127.0.0.1:43123) 을 엽니다.
 
-헤더 오른쪽의 **KR / US / JP / CN** 국기를 누르면 한국어·영어·일본어·중국어(간체, `zh-CN`)로 바뀝니다. 선택은 `locale` 쿠키(1년)에 남고, 주소는 바꾸지 않습니다. 메뉴는 왼쪽 **탐색기** 트리입니다. 행 사이·그룹 사이에 구분선이 있고, 탐색기와 본문은 각각 스크롤됩니다. 헤더에는 상호명과 국기만 둡니다(전화·주소 없음). **사이트맵**(`/sitemap`)은 상위 메뉴마다 카드 하나(작은 사진 + 하위 메뉴)입니다. 전화 `031-482-2949`는 첫 화면 히어로·오시는 길·문의·푸터에 있습니다.
+헤더 오른쪽은 **KR / US / JP / CN** 국기와 **로그인 아이콘**입니다. 감독·관리자로 로그인하면 **관리** 링크가 붙습니다. 메뉴는 왼쪽 **탐색기**입니다. 1차 메뉴 다섯 개(공원소개·분양안내·이용안내·둘러보기·고객센터) 사이만 세로 간격이 넓고, 서브메뉴는 촘촘합니다. 탐색기와 본문은 각각 스크롤됩니다.
+
+로그인(아이디·비밀번호) 뒤에는 **사이트맵**(`/sitemap`)으로 갑니다. 카카오·구글 로그인은 클라이언트 ID가 생길 때까지 준비 중입니다.
 
 ## 환경 변수
 
 | 이름 | 설명 |
 | --- | --- |
-| `MONGODB_URI` | Atlas 연결 문자열. 없으면 공지·묻고답하기는 JSON, 문의·벌초·회원은 로컬 파일 |
+| `MONGODB_URI` | Atlas 연결 문자열. 없으면 JSON/로컬 파일 폴백 |
 | `MONGODB_DB` | 기본값 `MP-Anyang` |
 | `SITE_URL` | 커스텀 도메인 전 기본값 `https://mp-anyang.onrender.com` |
-| `INQUIRY_INBOX` | 문의 수신 메일. 없어도 문의는 DB/파일에 저장됩니다 |
-| `IMAGE_CDN_BASE` / `NEXT_PUBLIC_IMAGE_CDN_BASE` | 선택. 이미지 CDN 오리진. 비우면 `/images` 와 `/images/thumbs` |
-| `AUTH_SECRET` | 회원 세션 서명. 공개 서비스에서는 꼭 넣으세요 |
+| `INQUIRY_INBOX` | 문의 수신 메일(선택). 관리 답변 메모는 메일 발송이 아닙니다 |
+| `IMAGE_CDN_BASE` / `NEXT_PUBLIC_IMAGE_CDN_BASE` | 선택. 이미지 CDN |
+| `AUTH_SECRET` | 세션 서명. 공개 서비스에서는 꼭 넣으세요 |
+| `SUPERVISOR_ID` / `SUPERVISOR_PASSWORD` | 감독 시드. git에 값을 넣지 마세요 |
+| `ADMIN_SEED` | `아이디:비밀번호,아이디:비밀번호` 형식의 관리자 시드 |
 
-비밀값은 git에 넣지 마세요. 운영자 사진 업로드 API는 없습니다.
+비밀값은 git에 넣지 마세요. 갤러리 업로드는 `public/uploads`이며 Render 재배포 때 파일이 사라질 수 있습니다.
 
 ## MongoDB 초기화
 
-**기존 컬렉션을 지우고** `notices`, `inquiries`, `faq`, `weeding`, `members`를 만듭니다. 복구할 수 없으니 URI가 이 공원 DB가 맞는지 확인하세요.
+**기존 컬렉션을 지우고** `notices`, `inquiries`, `faq`, `members`, `staff`, `cms`, `gallery`를 만듭니다. 복구할 수 없으니 URI가 이 공원 DB가 맞는지 확인하세요. 직원 비번은 bcrypt 해시로만 저장합니다.
 
 ```bash
 MONGODB_URI="mongodb+srv://..." npm run seed
 ```
+
+URI가 없어도, `.env.local`에 감독/관리자 시드가 있으면 첫 로그인 때 로컬 직원 파일을 만듭니다.
 
 ## Render
 

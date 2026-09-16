@@ -122,8 +122,6 @@ export const NAV: NavItem[] = [
       { href: "/guide/fees", label: "관리비", i18n: "nav.fees" },
       { href: "/guide/services", label: "서비스", i18n: "nav.services" },
       { href: "/guide/funeral", label: "장례·안치", i18n: "nav.funeral" },
-      { href: "/guide/weeding", label: "벌초 신청", i18n: "nav.weeding" },
-      { href: "/pay", label: "결제", i18n: "nav.pay" },
     ],
   },
   {
@@ -144,8 +142,6 @@ export const NAV: NavItem[] = [
       { href: "/support/notices", label: "공지사항", i18n: "nav.notices" },
       { href: "/support/inquiry", label: "문의·상담", i18n: "nav.inquiry" },
       { href: "/support/faq", label: "묻고답하기", i18n: "nav.faq" },
-      { href: "/support/kakao", label: "카카오채널", i18n: "nav.kakao" },
-      { href: "/account/login", label: "회원", i18n: "nav.account" },
     ],
   },
   {

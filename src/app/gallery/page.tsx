@@ -1,7 +1,10 @@
 import { GalleryGrid } from "@/components/gallery-grid";
 import { PageHero } from "@/components/page-hero";
+import { listGallery } from "@/lib/gallery";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
   const locale = await readLocale();
@@ -10,6 +13,7 @@ export async function generateMetadata() {
 
 export default async function GalleryPage() {
   const locale = await readLocale();
+  const items = await listGallery();
   return (
     <>
       <PageHero
@@ -19,7 +23,7 @@ export default async function GalleryPage() {
         image={{ src: "/images/park-overview.jpg", alt: t(locale, "gallery.title") }}
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <GalleryGrid />
+        <GalleryGrid items={items} />
       </div>
     </>
   );

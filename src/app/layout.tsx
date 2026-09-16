@@ -7,6 +7,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { SITE, metadataBase } from "@/lib/site";
 import { LOCALE_HTML, t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { isStaffRole, readSession } from "@/lib/auth";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await readLocale();
+  const session = await readSession();
   return (
     <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full overflow-hidden`}>
       <body className="flex h-dvh flex-col overflow-hidden antialiased">
@@ -45,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           >
             {t(locale, "skip")}
           </a>
-          <SiteHeader />
+          <SiteHeader signedIn={Boolean(session)} staff={isStaffRole(session?.role)} />
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <SiteSidebar />
             <div id="content" className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">

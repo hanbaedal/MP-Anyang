@@ -5,7 +5,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/components/locale-provider";
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({
+  mode,
+  defaults,
+}: {
+  mode: "login" | "register" | "complete";
+  defaults?: { username?: string; name?: string; phone?: string; email?: string; title?: string };
+}) {
   const t = useT();
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -14,16 +20,31 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    const username = String(data.username ?? "").trim();
     const name = String(data.name ?? "").trim();
     const phone = String(data.phone ?? "").trim();
+    const email = String(data.email ?? "").trim();
+    const title = String(data.title ?? "").trim();
     const password = String(data.password ?? "");
     const password2 = String(data.password2 ?? "");
-    if (mode === "register") {
+    if (mode !== "login") {
+      if (username.length < 4) {
+        setStatus("error");
+        setMessage(t("account.errUsername"));
+        return;
+      }
       if (name.length < 2) {
         setStatus("error");
         setMessage(t("form.errName"));
         return;
       }
+      if (!email.includes("@")) {
+        setStatus("error");
+        setMessage(t("account.errEmail"));
+        return;
+      }
+    }
+    if (mode === "register") {
       if (password !== password2) {
         setStatus("error");
         setMessage(t("account.errMatch"));
@@ -37,19 +58,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     }
     setStatus("loading");
     setMessage("");
+    const url = mode === "login" ? "/api/auth/login" : mode === "register" ? "/api/auth/register" : "/api/auth/profile";
     try {
-      const res = await fetch(mode === "login" ? "/api/auth/login" : "/api/auth/register", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, password, password2 }),
+        body: JSON.stringify({ username, name, phone, email, title, password, password2 }),
       });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
+      const json = (await res.json()) as { ok?: boolean; error?: string; redirect?: string };
       if (!res.ok || !json.ok) {
         setStatus("error");
         setMessage(json.error || t("form.errSave"));
         return;
       }
-      window.location.href = "/account";
+      window.location.href = json.redirect || "/sitemap";
     } catch {
       setStatus("error");
       setMessage(t("form.errNetwork"));
@@ -61,34 +83,64 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form noValidate onSubmit={onSubmit} className="max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-sm">
-      {mode === "register" ? (
-        <div className="space-y-2">
-          <label htmlFor="auth-name" className="text-sm font-medium">
-            {t("form.name")}
-          </label>
-          <input id="auth-name" name="name" required maxLength={40} autoComplete="name" className={field} />
-        </div>
-      ) : null}
       <div className="space-y-2">
-        <label htmlFor="auth-phone" className="text-sm font-medium">
-          {t("form.phone")}
-        </label>
-        <input id="auth-phone" name="phone" required type="tel" autoComplete="tel" className={field} />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="auth-password" className="text-sm font-medium">
-          {t("account.password")}
+        <label htmlFor="auth-username" className="text-sm font-medium">
+          {t("account.username")}
         </label>
         <input
-          id="auth-password"
-          name="password"
-          type="password"
+          id="auth-username"
+          name="username"
           required
-          minLength={6}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          autoComplete="username"
           className={field}
+          defaultValue={defaults?.username}
+          readOnly={mode === "complete" && Boolean(defaults?.username)}
         />
       </div>
+      {mode !== "login" ? (
+        <>
+          <div className="space-y-2">
+            <label htmlFor="auth-name" className="text-sm font-medium">
+              {t("form.name")}
+            </label>
+            <input id="auth-name" name="name" required maxLength={40} autoComplete="name" className={field} defaultValue={defaults?.name} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="auth-phone" className="text-sm font-medium">
+              {t("form.phone")}
+            </label>
+            <input id="auth-phone" name="phone" required type="tel" autoComplete="tel" className={field} defaultValue={defaults?.phone} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="auth-email" className="text-sm font-medium">
+              {t("account.email")}
+            </label>
+            <input id="auth-email" name="email" required type="email" autoComplete="email" className={field} defaultValue={defaults?.email} />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="auth-title" className="text-sm font-medium">
+              {t("account.titleField")}
+            </label>
+            <input id="auth-title" name="title" maxLength={40} className={field} defaultValue={defaults?.title} />
+          </div>
+        </>
+      ) : null}
+      {mode !== "complete" ? (
+        <div className="space-y-2">
+          <label htmlFor="auth-password" className="text-sm font-medium">
+            {t("account.password")}
+          </label>
+          <input
+            id="auth-password"
+            name="password"
+            type="password"
+            required
+            minLength={6}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            className={field}
+          />
+        </div>
+      ) : null}
       {mode === "register" ? (
         <div className="space-y-2">
           <label htmlFor="auth-password2" className="text-sm font-medium">
@@ -98,19 +150,38 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
       ) : null}
       <Button type="submit" disabled={status === "loading"}>
-        {status === "loading" ? t("form.sending") : mode === "login" ? t("account.submitLogin") : t("account.submitRegister")}
+        {status === "loading"
+          ? t("form.sending")
+          : mode === "login"
+            ? t("account.submitLogin")
+            : mode === "register"
+              ? t("account.submitRegister")
+              : t("account.submitComplete")}
       </Button>
-      <p className="text-sm">
-        {mode === "login" ? (
-          <Link href="/account/register" className="text-primary underline-offset-4 hover:underline">
-            {t("account.toRegister")}
-          </Link>
-        ) : (
-          <Link href="/account/login" className="text-primary underline-offset-4 hover:underline">
-            {t("account.toLogin")}
-          </Link>
-        )}
-      </p>
+      {mode !== "complete" ? (
+        <>
+          <div className="grid gap-2">
+            <Button type="button" variant="outline" disabled>
+              {t("account.kakao")}
+            </Button>
+            <Button type="button" variant="outline" disabled>
+              {t("account.google")}
+            </Button>
+            <p className="text-xs text-muted-foreground">{t("account.socialSoon")}</p>
+          </div>
+          <p className="text-sm">
+            {mode === "login" ? (
+              <Link href="/account/register" className="text-primary underline-offset-4 hover:underline">
+                {t("account.toRegister")}
+              </Link>
+            ) : (
+              <Link href="/account/login" className="text-primary underline-offset-4 hover:underline">
+                {t("account.toLogin")}
+              </Link>
+            )}
+          </p>
+        </>
+      ) : null}
       {message ? (
         <p className="text-sm text-destructive" role="status">
           {message}

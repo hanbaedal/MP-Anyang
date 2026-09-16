@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { CircleUserRound, Menu, X } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -10,7 +10,7 @@ import { FlagSwitcher } from "@/components/flag-switcher";
 import { NavTree } from "@/components/nav-tree";
 import { useT } from "@/components/locale-provider";
 
-export function SiteHeader() {
+export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -46,8 +46,24 @@ export function SiteHeader() {
           <p className="truncate font-serif text-base leading-none text-primary sm:text-lg">{SITE.legalName}</p>
         </Link>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-0.5">
           <FlagSwitcher />
+          {staff ? (
+            <Link
+              href="/manage"
+              className="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-accent"
+            >
+              {t("header.manage")}
+            </Link>
+          ) : null}
+          <Link
+            href={signedIn ? "/account" : "/account/login"}
+            aria-label={signedIn ? t("account.myTitle") : t("header.login")}
+            title={signedIn ? t("account.myTitle") : t("header.login")}
+            className="inline-flex size-9 items-center justify-center rounded-md text-primary hover:bg-accent"
+          >
+            <CircleUserRound className="size-5" aria-hidden />
+          </Link>
         </div>
       </div>
     </header>

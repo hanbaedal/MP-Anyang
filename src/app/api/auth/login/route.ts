@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { encodeSession, loginMember, sessionCookieOptions, MEMBER_COOKIE } from "@/lib/members";
+import { encodeSession, loginAccount, sessionCookieOptions, SESSION_COOKIE } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  let body: { phone?: string; password?: string };
+  let body: { username?: string; password?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -10,10 +10,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await loginMember({ phone: body.phone ?? "", password: body.password ?? "" });
+    const result = await loginAccount({
+      username: body.username ?? "",
+      password: body.password ?? "",
+    });
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set(MEMBER_COOKIE, encodeSession(result.member), sessionCookieOptions());
+    const res = NextResponse.json({ ok: true, redirect: result.redirect });
+    res.cookies.set(SESSION_COOKIE, encodeSession(result.user), sessionCookieOptions());
     return res;
   } catch (err) {
     console.error("[auth/login]", err);

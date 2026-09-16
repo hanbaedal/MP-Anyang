@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { GALLERY, type GalleryTag } from "@/lib/content";
+import { GALLERY, type GalleryItem, type GalleryTag } from "@/lib/content";
 import { mediaUrl, thumbUrl } from "@/lib/media";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -17,17 +17,17 @@ const TAGS: Array<{ value: "전체" | GalleryTag; key: string }> = [
   { value: "리모델링", key: "gallery.tag.remodel" },
 ];
 
-export function GalleryGrid({ preview }: { preview?: number }) {
+export function GalleryGrid({ preview, items = GALLERY }: { preview?: number; items?: GalleryItem[] }) {
   const t = useT();
   const [tag, setTag] = useState<(typeof TAGS)[number]["value"]>("전체");
   const [open, setOpen] = useState<string | null>(null);
 
-  const items = useMemo(() => {
-    const filtered = tag === "전체" ? GALLERY : GALLERY.filter((item) => item.tags.includes(tag));
+  const itemsFiltered = useMemo(() => {
+    const filtered = tag === "전체" ? items : items.filter((item) => item.tags.includes(tag));
     return typeof preview === "number" ? filtered.slice(0, preview) : filtered;
-  }, [tag, preview]);
+  }, [tag, preview, items]);
 
-  const current = GALLERY.find((item) => item.src === open);
+  const current = items.find((item) => item.src === open);
 
   return (
     <div>
@@ -47,7 +47,7 @@ export function GalleryGrid({ preview }: { preview?: number }) {
         </div>
       )}
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
+        {itemsFiltered.map((item) => (
           <li key={item.src}>
             <button
               type="button"
@@ -60,7 +60,7 @@ export function GalleryGrid({ preview }: { preview?: number }) {
           </li>
         ))}
       </ul>
-      {items.length === 0 ? <p className="text-sm text-muted-foreground">{t("gallery.empty")}</p> : null}
+      {itemsFiltered.length === 0 ? <p className="text-sm text-muted-foreground">{t("gallery.empty")}</p> : null}
       <Dialog open={Boolean(open)} onOpenChange={(next) => !next && setOpen(null)}>
         <DialogContent className="max-w-4xl border-none bg-transparent p-0 shadow-none">
           <DialogTitle className="sr-only">{current?.alt ?? t("photo")}</DialogTitle>

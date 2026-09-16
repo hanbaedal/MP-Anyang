@@ -57,7 +57,10 @@ export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: bo
           const currentLeaf = !hasChildren && isNavActive(pathname, item.href);
 
           return (
-            <li key={item.i18n} className="border-b border-border select-none">
+            <li
+              key={item.i18n}
+              className={cn("border-b border-border select-none", hasChildren && "mb-5 last:mb-0")}
+            >
               {hasChildren ? (
                 <button
                   type="button"

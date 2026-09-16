@@ -38,6 +38,12 @@ data/inquiries.local.json
 data/faq.local.json
 data/weeding.local.json
 data/members.local.json
+data/staff.local.json
+data/cms.local.json
+data/gallery.local.json
+data/notices.local.json
+public/uploads/*
+!public/uploads/.gitkeep
 
 # vercel
 .vercel

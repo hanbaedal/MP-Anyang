@@ -74,16 +74,6 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/pay">
-                {t(locale, "nav.pay")}
-              </Link>
-            </li>
-            <li>
-              <Link className="hover:underline" href="/account/login">
-                {t(locale, "nav.account")}
-              </Link>
-            </li>
-            <li>
               <a className="hover:underline" href={SITE.phoneTel}>
                 {t(locale, "phone")} {SITE.phone}
               </a>

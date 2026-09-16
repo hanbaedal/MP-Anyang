@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, MapPin, Trees, Landmark, Hammer, ClipboardList } from "lucide-react";
+import { Phone, MapPin, Trees, Landmark, ClipboardList, MessageSquare } from "lucide-react";
 import { DirectionsMap } from "@/components/directions-map";
 import { GalleryGrid } from "@/components/gallery-grid";
 import { Photo } from "@/components/page-hero";
@@ -7,11 +7,13 @@ import { SaleSteps } from "@/components/sale-steps";
 import { Button } from "@/components/ui/button";
 import { FEATURES, SITE } from "@/lib/site";
 import { PRODUCT_OVERVIEW } from "@/lib/content";
+import { listGallery } from "@/lib/gallery";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
 export default async function HomePage() {
   const locale = await readLocale();
+  const photos = await listGallery();
   return (
     <>
       <section className="relative min-h-[72vh] overflow-hidden bg-primary text-primary-foreground">
@@ -58,7 +60,7 @@ export default async function HomePage() {
             { href: "/intro/directions", label: t(locale, "nav.directions"), icon: MapPin },
             { href: "/lots/prices", label: t(locale, "nav.prices"), icon: Landmark },
             { href: "/guide/fees", label: t(locale, "nav.fees"), icon: ClipboardList },
-            { href: "/guide/weeding", label: t(locale, "nav.weeding"), icon: Hammer },
+            { href: "/support/inquiry", label: t(locale, "nav.inquiry"), icon: MessageSquare },
           ].map((item) => {
             const Icon = item.icon;
             const className =
@@ -140,7 +142,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="mt-8">
-            <GalleryGrid preview={6} />
+            <GalleryGrid preview={6} items={photos} />
           </div>
         </div>
       </section>

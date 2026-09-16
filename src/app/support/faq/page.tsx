@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
-import { FaqForm } from "@/components/faq-form";
-import { listFaq } from "@/lib/faq";
+import { listPublicFaq } from "@/lib/faq";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -13,11 +13,11 @@ export async function generateMetadata() {
 
 export default async function FaqPage() {
   const locale = await readLocale();
-  const items = await listFaq();
+  const items = await listPublicFaq();
   return (
     <>
       <PageHero kicker={t(locale, "faq.kicker")} title={t(locale, "faq.title")} lead={t(locale, "faq.lead")} />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 py-12">
         {items.length === 0 ? (
           <p className="text-muted-foreground">{t(locale, "faq.empty")}</p>
         ) : (
@@ -30,15 +30,14 @@ export default async function FaqPage() {
             ))}
           </ul>
         )}
-        <div>
-          <Prose>
-            <h2 className="text-xl">{t(locale, "faq.ask")}</h2>
-            <p>{t(locale, "faq.askLead")}</p>
-          </Prose>
-          <div className="mt-4">
-            <FaqForm />
-          </div>
-        </div>
+        <Prose>
+          <p>{t(locale, "faq.askClosed")}</p>
+          <p>
+            <Link href="/support/inquiry" className="text-primary underline-offset-4 hover:underline">
+              {t(locale, "nav.inquiry")}
+            </Link>
+          </p>
+        </Prose>
       </div>
     </>
   );

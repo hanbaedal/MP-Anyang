@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readSession } from "@/lib/members";
+import { isStaffRole, profileIncomplete, readSession } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function AccountPage() {
       </>
     );
   }
+  if (profileIncomplete(session)) redirect("/account/complete");
 
   return (
     <>
@@ -37,8 +39,19 @@ export default async function AccountPage() {
         <Prose>
           <p>{t(locale, "account.hello", { name: session.name })}</p>
           <p>
-            {t(locale, "form.phone")}: {session.phone}
+            {t(locale, "account.username")}: {session.username}
           </p>
+          <p>
+            {t(locale, "form.phone")}: {session.phone || "—"}
+          </p>
+          <p>
+            {t(locale, "account.email")}: {session.email || "—"}
+          </p>
+          {session.title ? (
+            <p>
+              {t(locale, "account.titleField")}: {session.title}
+            </p>
+          ) : null}
           <p>
             {t(locale, "phone")}{" "}
             <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
@@ -47,12 +60,18 @@ export default async function AccountPage() {
           </p>
         </Prose>
         <div className="flex flex-wrap gap-3">
-          <Button asChild variant="outline">
-            <Link href="/support/inquiry">{t(locale, "nav.inquiry")}</Link>
+          <Button asChild>
+            <Link href="/sitemap">{t(locale, "account.gotoSitemap")}</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/guide/weeding">{t(locale, "nav.weeding")}</Link>
-          </Button>
+          {isStaffRole(session.role) ? (
+            <Button asChild variant="outline">
+              <Link href="/manage">{t(locale, "header.manage")}</Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link href="/support/inquiry">{t(locale, "nav.inquiry")}</Link>
+            </Button>
+          )}
           <LogoutButton />
         </div>
       </div>

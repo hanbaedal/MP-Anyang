@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
-import { encodeSession, registerMember, sessionCookieOptions, validateRegister, MEMBER_COOKIE } from "@/lib/members";
+import { afterLoginPath, encodeSession, sessionCookieOptions, SESSION_COOKIE, usernameTaken } from "@/lib/auth";
+import { ensureAuthSeed, findStaffByUsername } from "@/lib/staff";
+import { memberSession, registerMember, validateRegister } from "@/lib/members";
 
 export async function POST(request: Request) {
-  let body: { name?: string; phone?: string; password?: string; password2?: string };
+  let body: {
+    username?: string;
+    password?: string;
+    password2?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    title?: string;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -13,14 +23,23 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ ok: false, error }, { status: 400 });
 
   try {
+    await ensureAuthSeed();
+    const username = body.username!.trim();
+    if ((await findStaffByUsername(username)) || (await usernameTaken(username))) {
+      return NextResponse.json({ ok: false, error: "이미 있는 아이디입니다." }, { status: 400 });
+    }
     const result = await registerMember({
+      username,
+      password: body.password!,
       name: body.name!,
       phone: body.phone!,
-      password: body.password!,
+      email: body.email!,
+      title: body.title,
     });
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set(MEMBER_COOKIE, encodeSession(result.member), sessionCookieOptions());
+    const user = memberSession(result.member);
+    const res = NextResponse.json({ ok: true, redirect: afterLoginPath(user) });
+    res.cookies.set(SESSION_COOKIE, encodeSession(user), sessionCookieOptions());
     return res;
   } catch (err) {
     console.error("[auth/register]", err);

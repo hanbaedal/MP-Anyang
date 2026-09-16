@@ -25,7 +25,12 @@ const nextConfig: NextConfig = {
     remotePatterns: cdnPatterns(),
   },
   async redirects() {
-    return [{ source: "/support/contact", destination: "/support/inquiry", permanent: false }];
+    return [
+      { source: "/support/contact", destination: "/support/inquiry", permanent: false },
+      { source: "/guide/weeding", destination: "/guide/services", permanent: false },
+      { source: "/pay", destination: "/guide/procedure", permanent: false },
+      { source: "/support/kakao", destination: "/support/inquiry", permanent: false },
+    ];
   },
 };
 
