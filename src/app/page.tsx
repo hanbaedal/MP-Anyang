@@ -19,7 +19,8 @@ export default function HomePage() {
         <div className="relative mx-auto flex min-h-[72vh] max-w-6xl flex-col justify-end px-4 py-16 md:py-24">
           <p className="text-sm tracking-wide text-primary-foreground/80">{SITE.region}</p>
           <h1 className="mt-2 max-w-3xl font-serif text-3xl leading-tight text-primary-foreground md:text-5xl">
-            {SITE.heroLine}
+            수도권 서남부, 고인을 편안하게 모시는
+            <span className="mt-1 block">(재)안양공원묘원</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-primary-foreground/90">
             매장·평장·봉안과 이미 모신 자리의 관리까지, 전화 한 통과 방문으로 안내합니다.
