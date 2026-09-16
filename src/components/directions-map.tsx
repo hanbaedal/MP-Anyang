@@ -26,7 +26,7 @@ export function DirectionsMap({ compact = false }: { compact?: boolean }) {
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        {SITE.address} · {SITE.visitName} · {t("phone")}{" "}
+        {SITE.addressAlt} · {t("phone")}{" "}
         <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
           {SITE.phone}
         </a>

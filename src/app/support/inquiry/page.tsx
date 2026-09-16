@@ -24,9 +24,6 @@ export default async function InquiryPage() {
               {SITE.phone}
             </a>
           </p>
-          <p>
-            {t(locale, "footer.visit")}: {SITE.address} ({SITE.visitName})
-          </p>
           <p>{SITE.addressAlt}</p>
         </Prose>
         <InquiryForm />

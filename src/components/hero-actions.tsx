@@ -116,7 +116,7 @@ export function SocialActions() {
 
 export function HeroCallActions() {
   return (
-    <nav aria-label="바로 가기" className="flex flex-wrap justify-end gap-2 sm:gap-3">
+    <nav aria-label="바로 가기" className="flex flex-wrap justify-center gap-2 sm:gap-3 md:justify-end">
       <a
         href={SITE.phoneTel}
         className="inline-flex items-center gap-2 rounded-2xl bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-[#dce8e0] sm:px-5"

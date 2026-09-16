@@ -16,10 +16,10 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
 
   return (
     <header className="z-40 h-12 shrink-0 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
-      <div className="flex h-full items-center gap-2 px-2 sm:px-3">
+      <div className="flex h-full min-w-0 items-center gap-1 px-1 sm:gap-2 sm:px-3">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button size="icon-sm" variant="outline" className="lg:hidden" aria-label={t("menu")}>
+            <Button size="icon-xs" variant="outline" className="lg:hidden" aria-label={t("menu")}>
               <Menu />
             </Button>
           </SheetTrigger>
@@ -42,11 +42,11 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="min-w-0 shrink">
-          <p className="truncate font-serif text-base leading-none text-primary sm:text-lg">{SITE.legalName}</p>
+        <Link href="/" className="shrink-0">
+          <p className="whitespace-nowrap font-serif text-[11px] leading-none text-primary lg:text-lg">{SITE.legalName}</p>
         </Link>
 
-        <div className="ml-auto flex items-center gap-0.5">
+        <div className="ml-auto flex shrink-0 items-center gap-0">
           <FlagSwitcher />
           {staff ? (
             <Link
@@ -60,9 +60,9 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
             href={signedIn ? "/account" : "/account/login"}
             aria-label={signedIn ? t("account.myTitle") : t("header.login")}
             title={signedIn ? t("account.myTitle") : t("header.login")}
-            className="inline-flex size-9 items-center justify-center rounded-md text-primary hover:bg-accent"
+            className="inline-flex size-7 items-center justify-center rounded-md text-primary hover:bg-accent lg:size-9"
           >
-            <CircleUserRound className="size-5" aria-hidden />
+            <CircleUserRound className="size-4 lg:size-5" aria-hidden />
           </Link>
         </div>
       </div>
