@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f1ea;
+  --foreground: #1c1915;
+  --card: #fffcf7;
+  --card-foreground: #1c1915;
+  --popover: #fffcf7;
+  --popover-foreground: #1c1915;
+  --primary: #002b50;
+  --primary-foreground: #f7f4ee;
+  --secondary: #e4eee7;
+  --secondary-foreground: #1e3a2f;
+  --muted: #ebe4d8;
+  --muted-foreground: #5c564c;
+  --accent: #d7e4db;
+  --accent-foreground: #002b50;
+  --destructive: #8f2d2d;
+  --border: #d9d0c3;
+  --input: #d9d0c3;
+  --ring: #3f5d4a;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), "Noto Sans KR", sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif), "Noto Serif KR", serif;
+    letter-spacing: -0.02em;
+    color: var(--primary);
+  }
+}

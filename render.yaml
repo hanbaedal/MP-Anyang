@@ -1,0 +1,23 @@
+# (재)안양공원묘원 — Render 참고
+# 대시보드에서 기존 서비스 srv-dacn4vfqj5pc73dg8i5g 설정을 이 값에 맞추면 됩니다.
+# 비밀값(MONGODB_URI, INQUIRY_INBOX, SITE_URL)은 대시보드에만 넣으세요.
+
+services:
+  - type: web
+    name: mp-anyang
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: MONGODB_DB
+        value: MP-Anyang
+      - key: MONGODB_URI
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: INQUIRY_INBOX
+        sync: false
