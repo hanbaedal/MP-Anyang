@@ -19,9 +19,11 @@ function groupOpen(pathname: string, href: string, children?: { href: string }[]
   return isNavActive(pathname, href);
 }
 
-const row = "flex h-6 w-full items-center gap-0.5 px-1 text-left hover:bg-accent";
-
-export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
+export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: boolean }) {
+  const row = cn(
+    "flex h-6 items-center gap-0.5 px-1 text-left hover:bg-accent",
+    fit ? "w-max max-w-full whitespace-nowrap" : "w-full",
+  );
   const pathname = usePathname();
   const t = useT();
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -39,14 +41,14 @@ export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
   }, [pathname]);
 
   return (
-    <nav aria-label={t("explorer")} className="text-[12px] leading-none">
+    <nav aria-label={t("explorer")} className={cn("text-[12px] leading-none", fit && "w-max")}>
       <Link
         href="/"
         onClick={onNavigate}
         className={cn(row, "border-b border-border", pathname === "/" && "bg-accent font-medium text-primary")}
       >
         <Home className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="truncate">{t("home")}</span>
+        <span className={cn(!fit && "truncate")}>{t("home")}</span>
       </Link>
       <ul>
         {NAV.map((item) => {
@@ -72,7 +74,7 @@ export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
                   ) : (
                     <Folder className="size-3 shrink-0 text-primary/80" aria-hidden />
                   )}
-                  <span className="truncate font-medium">{t(item.i18n)}</span>
+                  <span className={cn("font-medium", !fit && "truncate")}>{t(item.i18n)}</span>
                 </button>
               ) : (
                 <Link
@@ -82,7 +84,7 @@ export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
                   className={cn(row, currentLeaf && "bg-accent font-medium text-primary")}
                 >
                   <Map className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="truncate font-medium">{t(item.i18n)}</span>
+                  <span className={cn("font-medium", !fit && "truncate")}>{t(item.i18n)}</span>
                 </Link>
               )}
               {hasChildren && expanded ? (
@@ -98,7 +100,7 @@ export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
                           className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                         >
                           <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                          <span className="truncate">{t(child.i18n)}</span>
+                          <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
                         </Link>
                       </li>
                     );

@@ -23,17 +23,21 @@ export function SiteHeader() {
               <Menu />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" showCloseButton={false} className="flex w-36 max-w-36 flex-col gap-0 bg-card p-0 sm:max-w-36">
-            <SheetHeader className="flex-row items-center justify-between space-y-0 border-b p-1">
-              <SheetTitle className="font-serif text-left text-xs leading-tight">{t("explorer")}</SheetTitle>
+          <SheetContent
+            side="left"
+            showCloseButton={false}
+            className="flex h-full w-max max-w-[90vw] flex-col gap-0 bg-card p-0 sm:max-w-[90vw]"
+          >
+            <SheetHeader className="w-max flex-row items-center gap-0.5 space-y-0 border-b p-1">
+              <SheetTitle className="font-serif text-left text-xs leading-tight whitespace-nowrap">{t("explorer")}</SheetTitle>
               <SheetClose asChild>
-                <Button size="icon-xs" variant="ghost" aria-label={t("close")}>
+                <Button size="icon-xs" variant="ghost" className="shrink-0" aria-label={t("close")}>
                   <X />
                 </Button>
               </SheetClose>
             </SheetHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-              <NavTree onNavigate={() => setOpen(false)} />
+            <div className="min-h-0 w-max flex-1 overflow-y-auto overscroll-y-contain">
+              <NavTree fit onNavigate={() => setOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
