@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
-import { hashPassword } from "./passwords";
+import { hashPassword, verifyPassword } from "./passwords";
 import type { Role } from "./auth-types";
 
 export type Staff = {
@@ -17,6 +17,20 @@ export type Staff = {
 };
 
 const localFile = dataFile("staff.local.json");
+
+function sameUsername(a: string, b: string) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+async function staffDb() {
+  if (!hasMongo()) return null;
+  try {
+    return await getDb();
+  } catch {
+    console.error("[staff] mongo unavailable, using local file");
+    return null;
+  }
+}
 
 function fromDoc(doc: Record<string, unknown>): Staff {
   return {
@@ -58,12 +72,10 @@ export function parseAdminSeed(raw: string | undefined) {
 }
 
 export async function listStaff(): Promise<Staff[]> {
-  if (hasMongo()) {
-    const db = await getDb();
-    if (db) {
-      const rows = await db.collection("staff").find({}).sort({ role: -1, username: 1 }).toArray();
-      return rows.map((row) => fromDoc(row as Record<string, unknown>));
-    }
+  const db = await staffDb();
+  if (db) {
+    const rows = await db.collection("staff").find({}).sort({ role: -1, username: 1 }).toArray();
+    return rows.map((row) => fromDoc(row as Record<string, unknown>));
   }
   return readLocal();
 }
@@ -71,33 +83,29 @@ export async function listStaff(): Promise<Staff[]> {
 export async function findStaffByUsername(username: string): Promise<Staff | null> {
   const key = username.trim();
   if (!key) return null;
-  if (hasMongo()) {
-    const db = await getDb();
-    if (db) {
-      const row = await db.collection("staff").findOne({ username: key });
-      return row ? fromDoc(row as Record<string, unknown>) : null;
-    }
+  const db = await staffDb();
+  if (db) {
+    const rows = await db.collection("staff").find({}).toArray();
+    const row = rows.find((item) => sameUsername(String((item as { username?: string }).username ?? ""), key));
+    if (row) return fromDoc(row as Record<string, unknown>);
   }
   const all = await readLocal();
-  return all.find((item) => item.username === key) ?? null;
+  return all.find((item) => sameUsername(item.username, key)) ?? null;
 }
 
 export async function findStaffById(id: string): Promise<Staff | null> {
-  if (hasMongo()) {
-    const db = await getDb();
-    if (db) {
-      const row = await db.collection("staff").findOne({ id });
-      return row ? fromDoc(row as Record<string, unknown>) : null;
-    }
+  const db = await staffDb();
+  if (db) {
+    const row = await db.collection("staff").findOne({ id });
+    if (row) return fromDoc(row as Record<string, unknown>);
   }
   const all = await readLocal();
   return all.find((item) => item.id === id) ?? null;
 }
 
 async function insertStaff(staff: Staff) {
-  if (hasMongo()) {
-    const db = await getDb();
-    if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
+  const db = await staffDb();
+  if (db) {
     await db.collection("staff").insertOne({ ...staff, createdAt: new Date(staff.createdAt) });
     return;
   }
@@ -123,7 +131,11 @@ export async function ensureAuthSeed() {
         role: "supervisor",
         createdAt: new Date().toISOString(),
       });
+    } else if (!(await verifyPassword(supervisorPassword, existing.passwordHash))) {
+      await updateStaff(existing.id, { password: supervisorPassword });
     }
+  } else {
+    console.error("[staff] supervisor seed skipped: SUPERVISOR_ID or SUPERVISOR_PASSWORD is empty");
   }
 
   for (const row of parseAdminSeed(process.env.ADMIN_SEED)) {
@@ -208,9 +220,8 @@ export async function updateStaff(
     email: input.email !== undefined ? input.email.trim() : current.email,
     passwordHash: input.password ? await hashPassword(input.password) : current.passwordHash,
   };
-  if (hasMongo()) {
-    const db = await getDb();
-    if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
+  const db = await staffDb();
+  if (db) {
     await db.collection("staff").updateOne({ id }, { $set: { ...next, createdAt: new Date(next.createdAt) } });
   } else {
     const all = await readLocal();
@@ -223,9 +234,8 @@ export async function deleteAdmin(id: string) {
   const current = await findStaffById(id);
   if (!current) return { ok: false as const, error: "계정을 찾지 못했습니다." };
   if (current.role === "supervisor") return { ok: false as const, error: "감독 계정은 삭제할 수 없습니다." };
-  if (hasMongo()) {
-    const db = await getDb();
-    if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
+  const db = await staffDb();
+  if (db) {
     await db.collection("staff").deleteOne({ id, role: "admin" as Role });
   } else {
     const all = await readLocal();

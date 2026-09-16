@@ -1,4 +1,3 @@
-import { PageHero } from "@/components/page-hero";
 import { AuthForm } from "@/components/auth-form";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -15,13 +14,9 @@ export async function generateMetadata() {
 export default async function LoginPage() {
   const session = await readSession();
   if (session) redirect(afterLoginPath(session));
-  const locale = await readLocale();
   return (
-    <>
-      <PageHero kicker={t(locale, "nav.account")} title={t(locale, "account.loginTitle")} lead={t(locale, "account.loginLead")} />
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <AuthForm mode="login" />
-      </div>
-    </>
+    <div className="mx-auto flex min-h-full max-w-6xl items-start px-4 py-10 sm:py-16">
+      <AuthForm mode="login" />
+    </div>
   );
 }

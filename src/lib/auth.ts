@@ -77,7 +77,12 @@ export async function readSession(): Promise<SessionUser | null> {
 }
 
 export async function loginAccount(input: { username: string; password: string }) {
-  await ensureAuthSeed();
+  try {
+    await ensureAuthSeed();
+  } catch (err) {
+    console.error("[auth] seed failed; trying existing staff records");
+    console.error(err);
+  }
   const username = input.username.trim();
   const password = input.password;
   if (!username || !password) return { ok: false as const, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
