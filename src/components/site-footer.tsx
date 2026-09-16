@@ -64,6 +64,11 @@ export async function SiteFooter() {
           <p className="mb-2 font-medium">{t(locale, "footer.info")}</p>
           <ul className="space-y-1 text-primary-foreground/80">
             <li>
+              <Link className="hover:underline" href="/sitemap">
+                {t(locale, "footer.sitemap")}
+              </Link>
+            </li>
+            <li>
               <Link className="hover:underline" href="/privacy">
                 {t(locale, "footer.privacy")}
               </Link>

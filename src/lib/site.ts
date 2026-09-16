@@ -38,14 +38,53 @@ export const MAP = {
   osmEmbed: `https://www.openstreetmap.org/export/embed.html?bbox=${SITE.lng - 0.012}%2C${SITE.lat - 0.008}%2C${SITE.lng + 0.012}%2C${SITE.lat + 0.008}&layer=mapnik&marker=${SITE.lat}%2C${SITE.lng}`,
 };
 
+export type NavTone = "home" | "intro" | "lots" | "guide" | "gallery" | "support" | "more";
 export type NavChild = { href: string; label: string; i18n: string; hint?: string };
-export type NavItem = { href: string; label: string; i18n: string; children?: NavChild[] };
+export type NavItem = { href: string; label: string; i18n: string; tone: NavTone; children?: NavChild[] };
+
+export const NAV_TONE_CLASS: Record<NavTone, string> = {
+  home: "bg-[#eef3e8] hover:bg-[#e3eadc] border-[#d5e0c8]",
+  intro: "bg-[#e7f3ee] hover:bg-[#d9ebe3] border-[#c5ddd3]",
+  lots: "bg-[#f8eedd] hover:bg-[#f0e2c9] border-[#ead7b4]",
+  guide: "bg-[#e7eef8] hover:bg-[#d7e3f3] border-[#c4d4ea]",
+  gallery: "bg-[#eee8f7] hover:bg-[#e3daf0] border-[#d4c8e6]",
+  support: "bg-[#f8e8e6] hover:bg-[#f0d9d5] border-[#e6c9c4]",
+  more: "bg-[#e8f3f1] hover:bg-[#d7eae6] border-[#c3ddd8]",
+};
+
+export type SitemapCard = { href: string; i18n: string };
+export type SitemapSection = { titleI18n: string; tone: NavTone; items: SitemapCard[] };
+
+export function sitemapSections(): SitemapSection[] {
+  const sections: SitemapSection[] = [
+    { titleI18n: "home", tone: "home", items: [{ href: "/", i18n: "home" }] },
+  ];
+  for (const item of NAV) {
+    if (item.children?.length) {
+      sections.push({
+        titleI18n: item.i18n,
+        tone: item.tone,
+        items: item.children.map((child) => ({ href: child.href, i18n: child.i18n })),
+      });
+    }
+  }
+  sections.push({
+    titleI18n: "sitemap.etc",
+    tone: "more",
+    items: [
+      { href: "/sitemap", i18n: "nav.sitemap" },
+      { href: "/privacy", i18n: "footer.privacy" },
+    ],
+  });
+  return sections;
+}
 
 export const NAV: NavItem[] = [
   {
     href: "/intro/greeting",
     label: "공원소개",
     i18n: "nav.intro",
+    tone: "intro",
     children: [
       { href: "/intro/greeting", label: "인사말", i18n: "nav.greeting" },
       { href: "/intro/features", label: "공원 특징", i18n: "nav.features" },
@@ -56,6 +95,7 @@ export const NAV: NavItem[] = [
     href: "/lots/burial",
     label: "분양안내",
     i18n: "nav.lots",
+    tone: "lots",
     children: [
       { href: "/lots/burial", label: "매장묘", i18n: "nav.burial" },
       { href: "/lots/lawn", label: "평장묘", i18n: "nav.lawn" },
@@ -68,6 +108,7 @@ export const NAV: NavItem[] = [
     href: "/guide/procedure",
     label: "이용안내",
     i18n: "nav.guide",
+    tone: "guide",
     children: [
       { href: "/guide/procedure", label: "분양 절차", i18n: "nav.procedure" },
       { href: "/guide/fees", label: "관리비", i18n: "nav.fees" },
@@ -77,11 +118,18 @@ export const NAV: NavItem[] = [
       { href: "/pay", label: "결제", i18n: "nav.pay" },
     ],
   },
-  { href: "/gallery", label: "둘러보기", i18n: "nav.gallery", children: [{ href: "/gallery", label: "공원 갤러리", i18n: "gallery.title" }] },
+  {
+    href: "/gallery",
+    label: "둘러보기",
+    i18n: "nav.gallery",
+    tone: "gallery",
+    children: [{ href: "/gallery", label: "공원 갤러리", i18n: "gallery.title" }],
+  },
   {
     href: "/support/notices",
     label: "고객센터",
     i18n: "nav.support",
+    tone: "support",
     children: [
       { href: "/support/notices", label: "공지사항", i18n: "nav.notices" },
       { href: "/support/inquiry", label: "문의·상담", i18n: "nav.inquiry" },
@@ -89,6 +137,12 @@ export const NAV: NavItem[] = [
       { href: "/support/kakao", label: "카카오채널", i18n: "nav.kakao" },
       { href: "/account/login", label: "회원", i18n: "nav.account" },
     ],
+  },
+  {
+    href: "/sitemap",
+    label: "사이트맵",
+    i18n: "nav.sitemap",
+    tone: "more",
   },
 ];
 

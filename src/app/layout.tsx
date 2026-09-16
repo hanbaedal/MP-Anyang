@@ -36,8 +36,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await readLocale();
   return (
-    <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full`}>
-      <body className="flex min-h-full flex-col antialiased">
+    <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full overflow-hidden`}>
+      <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <LocaleProvider locale={locale}>
           <a
             href="#content"
@@ -46,12 +46,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {t(locale, "skip")}
           </a>
           <SiteHeader />
-          <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 flex-1 overflow-hidden">
             <SiteSidebar />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <div id="content" className="flex-1">
-                {children}
-              </div>
+            <div id="content" className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
+              {children}
               <SiteFooter />
             </div>
           </div>
