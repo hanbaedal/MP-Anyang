@@ -11,12 +11,17 @@ export async function generateMetadata() {
   return { title: t(locale, "account.loginTitle") };
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await readSession();
   if (session) redirect(afterLoginPath(session));
+  const params = await searchParams;
   return (
     <div className="mx-auto flex min-h-full max-w-6xl items-start px-4 py-10 sm:py-16">
-      <AuthForm mode="login" />
+      <AuthForm mode="login" oauthError={params.error === "oauth"} />
     </div>
   );
 }

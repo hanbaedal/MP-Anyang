@@ -21,7 +21,14 @@ npm run dev
 
 헤더 오른쪽은 **KR / US / JP / CN** 국기와 **로그인 아이콘**입니다. 감독·관리자로 로그인하면 **관리** 링크가 붙습니다. 메뉴는 왼쪽 **탐색기**입니다. 1차 메뉴 다섯 개(공원소개·분양안내·이용안내·둘러보기·고객센터) 사이만 세로 간격이 넓고, 서브메뉴는 촘촘합니다. 탐색기와 본문은 각각 스크롤됩니다.
 
-로그인(아이디·비밀번호) 뒤에는 **사이트맵**(`/sitemap`)으로 갑니다. 카카오·구글 로그인은 클라이언트 ID가 생길 때까지 준비 중입니다.
+로그인(아이디·비밀번호) 뒤에는 **사이트맵**(`/sitemap`)으로 갑니다. 카카오·구글 **간편가입/로그인**은 Render에 넣은 키로 `/api/auth/oauth/kakao`, `/api/auth/oauth/google` 이 콜백을 받습니다.
+
+카카오·구글 콘솔에 등록할 콜백(비밀값 없음):
+
+- `https://mp-anyang.onrender.com/api/auth/callback/kakao`
+- `https://mp-anyang.onrender.com/api/auth/callback/google`
+
+`SITE_URL`을 바꾸면 콜백 호스트도 그 주소를 따릅니다. 키는 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, `KAKAO_REST_API_KEY`(또는 `KAKAO_CLIENT_ID`) / `KAKAO_CLIENT_SECRET` 및 Auth.js 별칭(`AUTH_GOOGLE_ID` 등)을 읽습니다. git에 넣지 마세요.
 
 ## 환경 변수
 
@@ -34,7 +41,8 @@ npm run dev
 | `IMAGE_CDN_BASE` / `NEXT_PUBLIC_IMAGE_CDN_BASE` | 선택. 이미지 CDN |
 | `AUTH_SECRET` | 세션 서명. 공개 서비스에서는 꼭 넣으세요 |
 | `SUPERVISOR_ID` / `SUPERVISOR_PASSWORD` | 감독 시드. git에 값을 넣지 마세요 |
-| `ADMIN_SEED` | `아이디:비밀번호,아이디:비밀번호` 형식의 관리자 시드 |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 간편로그인. Auth.js 별칭 `AUTH_GOOGLE_ID` 등도 읽습니다 |
+| `KAKAO_REST_API_KEY` 또는 `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | 카카오 간편로그인. `AUTH_KAKAO_ID` 별칭도 읽습니다 |
 | `FACEBOOK` / `INSTAGRAM` / `YOUTUBE` / `CAFE` | 소셜 프로필. 비우면 홈 로고는 전화·오시는 길·분양가·관리비로 갑니다 |
 | `NEXT_PUBLIC_FACEBOOK_URL` 등 | 위와 같음. 클라이언트에서 바꿀 때 사용 |
 

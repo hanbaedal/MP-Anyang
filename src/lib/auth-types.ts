@@ -22,7 +22,9 @@ export function profileIncomplete(user: {
   email?: string;
 }) {
   if (user.role !== "member") return false;
-  return !user.username?.trim() || !user.name?.trim() || !user.phone?.trim() || !user.email?.trim();
+  const phone = (user.phone ?? "").replace(/[^\d]/g, "");
+  const phoneOk = phone.length >= 9 && phone.length <= 11 && phone.startsWith("0");
+  return !user.username?.trim() || !user.name?.trim() || !phoneOk || !user.email?.includes("@");
 }
 
 export function afterLoginPath(user: SessionUser) {

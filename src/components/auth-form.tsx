@@ -8,9 +8,11 @@ import { useT } from "@/components/locale-provider";
 export function AuthForm({
   mode,
   defaults,
+  oauthError,
 }: {
   mode: "login" | "register" | "complete";
   defaults?: { username?: string; name?: string; phone?: string; email?: string; title?: string };
+  oauthError?: boolean;
 }) {
   const t = useT();
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -161,13 +163,12 @@ export function AuthForm({
       {mode !== "complete" ? (
         <>
           <div className="grid gap-2">
-            <Button type="button" variant="outline" disabled>
-              {t("account.kakao")}
+            <Button asChild>
+              <a href="/api/auth/oauth/kakao">{t("account.kakao")}</a>
             </Button>
-            <Button type="button" variant="outline" disabled>
-              {t("account.google")}
+            <Button asChild variant="outline">
+              <a href="/api/auth/oauth/google">{t("account.google")}</a>
             </Button>
-            <p className="text-xs text-muted-foreground">{t("account.socialSoon")}</p>
           </div>
           <p className="text-sm">
             {mode === "login" ? (
@@ -181,6 +182,11 @@ export function AuthForm({
             )}
           </p>
         </>
+      ) : null}
+      {oauthError ? (
+        <p className="text-sm text-destructive" role="status">
+          {t("account.oauthError")}
+        </p>
       ) : null}
       {message ? (
         <p className="text-sm text-destructive" role="status">

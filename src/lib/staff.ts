@@ -93,6 +93,19 @@ export async function findStaffByUsername(username: string): Promise<Staff | nul
   return all.find((item) => sameUsername(item.username, key)) ?? null;
 }
 
+export async function findStaffByEmail(email: string): Promise<Staff | null> {
+  const key = email.trim().toLowerCase();
+  if (!key || !key.includes("@")) return null;
+  const db = await staffDb();
+  if (db) {
+    const rows = await db.collection("staff").find({}).toArray();
+    const row = rows.find((item) => String((item as { email?: string }).email ?? "").trim().toLowerCase() === key);
+    if (row) return fromDoc(row as Record<string, unknown>);
+  }
+  const all = await readLocal();
+  return all.find((item) => item.email.trim().toLowerCase() === key) ?? null;
+}
+
 export async function findStaffById(id: string): Promise<Staff | null> {
   const db = await staffDb();
   if (db) {

@@ -2,9 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { afterLoginPath, isStaffRole, type SessionUser } from "./auth-types";
-import { findMemberByUsername, loginMember, memberSession } from "./members";
-import { ensureAuthSeed, findStaffByUsername } from "./staff";
+import { findMemberByUsername, loginMember, memberSession, upsertOAuthMember } from "./members";
+import { ensureAuthSeed, findStaffByEmail, findStaffByUsername } from "./staff";
 import { verifyPassword } from "./passwords";
+import type { OAuthProfile } from "./oauth";
 
 export { isStaffRole, profileIncomplete, afterLoginPath } from "./auth-types";
 export type { Role, SessionUser } from "./auth-types";
@@ -107,6 +108,33 @@ export async function loginAccount(input: { username: string; password: string }
   const result = await loginMember({ login: username, password });
   if (!result.ok) return { ok: false as const, error: result.error };
   const user = memberSession(result.member);
+  return { ok: true as const, user, redirect: afterLoginPath(user) };
+}
+
+export async function finishOAuthLogin(profile: OAuthProfile) {
+  try {
+    await ensureAuthSeed();
+  } catch (err) {
+    console.error("[auth] seed failed; continuing oauth login");
+    console.error(err);
+  }
+  if (profile.email) {
+    const staff = await findStaffByEmail(profile.email);
+    if (staff) {
+      const user: SessionUser = {
+        id: staff.id,
+        username: staff.username,
+        name: staff.name,
+        role: staff.role,
+        phone: staff.phone,
+        email: staff.email,
+        title: staff.title,
+      };
+      return { ok: true as const, user, redirect: afterLoginPath(user) };
+    }
+  }
+  const member = await upsertOAuthMember(profile);
+  const user = memberSession(member);
   return { ok: true as const, user, redirect: afterLoginPath(user) };
 }
 

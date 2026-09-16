@@ -13,6 +13,8 @@ export type Member = {
   title: string;
   passwordHash: string;
   createdAt: string;
+  oauthProvider?: string;
+  oauthId?: string;
 };
 
 const localFile = dataFile("members.local.json");
@@ -31,6 +33,8 @@ function fromDoc(doc: Record<string, unknown>): Member {
     title: String(doc.title ?? ""),
     passwordHash: String(doc.passwordHash ?? ""),
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : String(doc.createdAt ?? ""),
+    oauthProvider: doc.oauthProvider ? String(doc.oauthProvider) : "",
+    oauthId: doc.oauthId ? String(doc.oauthId) : "",
   };
 }
 
@@ -72,6 +76,45 @@ export async function findMemberByPhone(phone: string): Promise<Member | null> {
 
 export async function findMemberByLogin(login: string): Promise<Member | null> {
   return (await findMemberByUsername(login)) ?? (await findMemberByPhone(login));
+}
+
+export async function findMemberByEmail(email: string): Promise<Member | null> {
+  const key = email.trim().toLowerCase();
+  if (!key || !key.includes("@")) return null;
+  if (hasMongo()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const row = await db.collection("members").findOne({ email: key });
+        if (row) return fromDoc(row as Record<string, unknown>);
+        const rows = await db.collection("members").find({}).toArray();
+        const match = rows.find((item) => String((item as { email?: string }).email ?? "").trim().toLowerCase() === key);
+        return match ? fromDoc(match as Record<string, unknown>) : null;
+      }
+    } catch {
+      console.error("[members] mongo unavailable, using local file");
+    }
+  }
+  const all = await readLocal();
+  return all.find((item) => item.email.trim().toLowerCase() === key) ?? null;
+}
+
+export async function findMemberByOAuth(provider: string, oauthId: string): Promise<Member | null> {
+  const id = oauthId.trim();
+  if (!provider || !id) return null;
+  if (hasMongo()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const row = await db.collection("members").findOne({ oauthProvider: provider, oauthId: id });
+        return row ? fromDoc(row as Record<string, unknown>) : null;
+      }
+    } catch {
+      console.error("[members] mongo unavailable, using local file");
+    }
+  }
+  const all = await readLocal();
+  return all.find((item) => item.oauthProvider === provider && item.oauthId === id) ?? null;
 }
 
 export async function findMemberById(id: string): Promise<Member | null> {
@@ -212,4 +255,77 @@ export async function updateMemberProfile(
     await writeLocal(all.map((item) => (item.id === id ? next : item)));
   }
   return { ok: true as const, member: next };
+}
+
+function oauthUsername(provider: string, oauthId: string) {
+  const raw = `${provider}_${oauthId}`.replace(/[^a-zA-Z0-9._-]/g, "");
+  const base = raw.slice(0, 28) || `${provider}user`;
+  return base.length >= 4 ? base : `${base}user`.slice(0, 32);
+}
+
+async function saveMember(member: Member, isNew: boolean) {
+  if (hasMongo()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const doc = { ...member, createdAt: new Date(member.createdAt) };
+        if (isNew) await db.collection("members").insertOne(doc);
+        else await db.collection("members").updateOne({ id: member.id }, { $set: doc });
+        return;
+      }
+    } catch {
+      console.error("[members] mongo unavailable, using local file");
+    }
+  }
+  const all = await readLocal();
+  if (isNew) {
+    all.unshift(member);
+    await writeLocal(all);
+    return;
+  }
+  await writeLocal(all.map((item) => (item.id === member.id ? member : item)));
+}
+
+export async function upsertOAuthMember(input: {
+  provider: "kakao" | "google";
+  oauthId: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+}): Promise<Member> {
+  const existing =
+    (await findMemberByOAuth(input.provider, input.oauthId)) ??
+    (input.email ? await findMemberByEmail(input.email) : null);
+  if (existing) {
+    const next: Member = {
+      ...existing,
+      name: existing.name.trim() || input.name?.trim() || existing.name,
+      email: existing.email.trim() || input.email?.trim() || existing.email,
+      phone: existing.phone.trim() || input.phone?.trim() || existing.phone,
+      oauthProvider: existing.oauthProvider || input.provider,
+      oauthId: existing.oauthId || input.oauthId,
+    };
+    await saveMember(next, false);
+    return next;
+  }
+
+  let username = oauthUsername(input.provider, input.oauthId);
+  if (await findMemberByUsername(username)) {
+    username = `${username.slice(0, 24)}${randomBytes(2).toString("hex")}`.slice(0, 32);
+  }
+
+  const member: Member = {
+    id: randomBytes(12).toString("hex"),
+    username,
+    name: input.name?.trim() ?? "",
+    phone: input.phone?.trim() || "",
+    email: input.email?.trim() ?? "",
+    title: "",
+    passwordHash: await hashPassword(randomBytes(24).toString("hex")),
+    createdAt: new Date().toISOString(),
+    oauthProvider: input.provider,
+    oauthId: input.oauthId,
+  };
+  await saveMember(member, true);
+  return member;
 }
