@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SiteSidebar } from "@/components/site-sidebar";
 import { LocaleProvider } from "@/components/locale-provider";
 import { SITE, metadataBase } from "@/lib/site";
 import { LOCALE_HTML, t } from "@/lib/i18n";
@@ -45,10 +46,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {t(locale, "skip")}
           </a>
           <SiteHeader />
-          <div id="content" className="flex-1">
-            {children}
+          <div className="flex min-h-0 flex-1">
+            <SiteSidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div id="content" className="flex-1">
+                {children}
+              </div>
+              <SiteFooter />
+            </div>
           </div>
-          <SiteFooter />
         </LocaleProvider>
       </body>
     </html>

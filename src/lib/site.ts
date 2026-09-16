@@ -77,7 +77,7 @@ export const NAV: NavItem[] = [
       { href: "/pay", label: "결제", i18n: "nav.pay" },
     ],
   },
-  { href: "/gallery", label: "둘러보기", i18n: "nav.gallery" },
+  { href: "/gallery", label: "둘러보기", i18n: "nav.gallery", children: [{ href: "/gallery", label: "공원 갤러리", i18n: "gallery.title" }] },
   {
     href: "/support/notices",
     label: "고객센터",

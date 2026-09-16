@@ -1,138 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, MapPin } from "lucide-react";
-import { NAV, SITE } from "@/lib/site";
+import { Menu } from "lucide-react";
+import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FlagSwitcher } from "@/components/flag-switcher";
+import { NavTree } from "@/components/nav-tree";
 import { useT } from "@/components/locale-provider";
 
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function sectionActive(pathname: string, href: string, children?: { href: string }[]) {
-  if (isActive(pathname, href)) return true;
-  return children?.some((child) => isActive(pathname, child.href)) ?? false;
-}
-
 export function SiteHeader() {
-  const pathname = usePathname();
   const t = useT();
+  const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 md:py-4">
+    <header className="sticky top-0 z-40 h-14 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
+      <div className="flex h-full items-center gap-2 px-3 sm:px-4">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button size="icon" variant="outline" className="lg:hidden" aria-label={t("menu")}>
+              <Menu />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 bg-card p-0">
+            <SheetHeader className="border-b">
+              <SheetTitle className="font-serif text-left text-base">{t("explorer")}</SheetTitle>
+            </SheetHeader>
+            <div className="overflow-y-auto px-3 py-3">
+              <NavTree onNavigate={() => setOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
         <Link href="/" className="min-w-0 shrink">
-          <p className="font-serif text-lg leading-tight text-primary md:text-xl">{SITE.legalName}</p>
-          <p className="truncate text-xs text-muted-foreground">{SITE.region}</p>
+          <p className="truncate font-serif text-base leading-tight text-primary sm:text-lg">{SITE.legalName}</p>
         </Link>
 
-        <nav className="ml-6 hidden flex-1 items-center gap-1 lg:flex" aria-label={t("menu")}>
-          {NAV.map((item) => (
-            <div key={item.i18n} className="group relative">
-              <Link
-                href={item.href}
-                className={cn(
-                  "inline-flex h-10 items-center rounded-md px-3 text-sm font-medium text-foreground/80 hover:bg-accent hover:text-primary",
-                  sectionActive(pathname, item.href, item.children) && "text-primary",
-                )}
-              >
-                {t(item.i18n)}
-              </Link>
-              {item.children ? (
-                <div className="absolute left-0 top-full z-20 hidden min-w-44 pt-1 group-hover:block group-focus-within:block">
-                  <div className="rounded-md border bg-card py-2 shadow-md">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={cn(
-                          "block px-3 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-primary",
-                          isActive(pathname, child.href) && "text-primary",
-                        )}
-                      >
-                        {t(child.i18n)}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </nav>
-
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto">
           <FlagSwitcher />
-          <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
-            <Link href="/intro/directions">
-              <MapPin />
-              {t("directions")}
-            </Link>
-          </Button>
-          <Button asChild size="icon" variant="outline" className="sm:hidden" aria-label={t("directions")}>
-            <Link href="/intro/directions">
-              <MapPin />
-            </Link>
-          </Button>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button size="icon" variant="outline" className="lg:hidden" aria-label={t("menu")}>
-                <Menu />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <SheetHeader>
-                <SheetTitle className="font-serif text-left">{SITE.legalName}</SheetTitle>
-              </SheetHeader>
-              <nav className="mt-4 flex flex-col gap-4 px-4 pb-8">
-                <SheetClose asChild>
-                  <Link href="/" className="text-sm font-medium text-primary">
-                    {t("home")}
-                  </Link>
-                </SheetClose>
-                {NAV.map((item) => (
-                  <div key={item.i18n}>
-                    <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">{t(item.i18n)}</p>
-                    {item.children ? (
-                      <div className="flex flex-col">
-                        {item.children.map((child) => (
-                          <SheetClose asChild key={child.href}>
-                            <Link href={child.href} className="rounded-md py-2 text-sm hover:text-primary">
-                              {t(child.i18n)}
-                            </Link>
-                          </SheetClose>
-                        ))}
-                      </div>
-                    ) : (
-                      <SheetClose asChild>
-                        <Link href={item.href} className="rounded-md py-2 text-sm hover:text-primary">
-                          {t(item.i18n)}
-                        </Link>
-                      </SheetClose>
-                    )}
-                  </div>
-                ))}
-                <p className="text-xs text-muted-foreground">
-                  {t("hoursNote")}
-                  <br />
-                  {t("hoursWeekday")} · {t("hoursWeekend")}
-                </p>
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </header>
