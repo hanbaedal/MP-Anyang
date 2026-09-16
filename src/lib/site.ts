@@ -15,9 +15,11 @@ export const SITE = {
     "경기 안산시 상록구 양상동에 있는 (재)안양공원묘원. 매장묘·평장묘·봉안묘 안내, 청약서 분양 절차, 관리비·리모델링·이장·개장 안내.",
 } as const;
 
+/** Render 기본 주소. 커스텀 도메인이 생기기 전까지 SITE_URL 기본값. */
+export const DEFAULT_SITE_URL = "https://mp-anyang.onrender.com";
+
 export function siteUrl() {
-  const raw = process.env.SITE_URL?.trim();
-  if (!raw) return "";
+  const raw = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
   return raw.replace(/\/$/, "");
 }
 

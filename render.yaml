@@ -18,6 +18,6 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: SITE_URL
-        sync: false
+        value: https://mp-anyang.onrender.com
       - key: INQUIRY_INBOX
         sync: false
