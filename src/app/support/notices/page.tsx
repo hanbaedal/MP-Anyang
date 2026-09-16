@@ -1,43 +1,51 @@
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { listNotices } from "@/lib/notices";
+import { SITE } from "@/lib/site";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export const metadata = { title: "공지사항" };
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
-function formatDate(value: string) {
+export async function generateMetadata() {
+  const locale = await readLocale();
+  return { title: t(locale, "notices.title") };
+}
+
+function formatDate(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(date);
+  const tag = locale === "zh" ? "zh-CN" : locale;
+  return new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(date);
 }
 
 export default async function NoticesPage() {
+  const locale = await readLocale();
   const notices = await listNotices();
 
   return (
     <>
-      <PageHero kicker="고객센터" title="공지사항" lead="명절 교통, 벌초, 휴무처럼 지금 필요한 글만 올립니다." />
+      <PageHero kicker={t(locale, "notices.kicker")} title={t(locale, "notices.title")} lead={t(locale, "notices.lead")} />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <p className="mb-6 text-sm text-muted-foreground">
-          상담은{" "}
+          {t(locale, "notices.consult", { phone: SITE.phone })}{" "}
           <Link href="/support/inquiry" className="font-medium text-primary underline-offset-4 hover:underline">
-            문의·상담
+            {t(locale, "nav.inquiry")}
           </Link>
-          또는 전화 031-482-2949로 남겨 주세요.
         </p>
         {notices.length === 0 ? (
-          <p className="text-muted-foreground">등록된 공지가 없습니다. 급하신 일은 031-482-2949로 전화 주세요.</p>
+          <p className="text-muted-foreground">{t(locale, "notices.empty", { phone: SITE.phone })}</p>
         ) : (
           <ul className="divide-y rounded-xl border bg-card">
             {notices.map((notice) => (
               <li key={notice.slug}>
                 <Link href={`/support/notices/${notice.slug}`} className="flex flex-col gap-1 px-4 py-4 hover:bg-accent md:flex-row md:items-center md:justify-between">
                   <span className="font-medium text-primary">
-                    {notice.pinned ? <span className="mr-2 text-xs text-ring">고정</span> : null}
+                    {notice.pinned ? <span className="mr-2 text-xs text-ring">{t(locale, "pinned")}</span> : null}
                     {notice.title}
                   </span>
                   <time className="text-sm text-muted-foreground" dateTime={notice.publishedAt}>
-                    {formatDate(notice.publishedAt)}
+                    {formatDate(notice.publishedAt, locale)}
                   </time>
                 </Link>
               </li>

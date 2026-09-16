@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/components/locale-provider";
 
 export function InquiryForm() {
+  const t = useT();
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -18,17 +20,17 @@ export function InquiryForm() {
     const digits = phone.replace(/[^\d]/g, "");
     if (name.length < 2 || name.length > 40) {
       setStatus("error");
-      setMessage("이름을 2자 이상 적어 주세요.");
+      setMessage(t("form.errName"));
       return;
     }
     if (digits.length < 9 || digits.length > 11) {
       setStatus("error");
-      setMessage("연락처를 숫자로 정확히 적어 주세요.");
+      setMessage(t("form.errPhone"));
       return;
     }
     if (messageText.length < 5 || messageText.length > 2000) {
       setStatus("error");
-      setMessage("문의 내용을 조금 더 적어 주세요.");
+      setMessage(t("form.errMessage"));
       return;
     }
     setStatus("loading");
@@ -42,15 +44,15 @@ export function InquiryForm() {
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
         setStatus("error");
-        setMessage(json.error || "접수에 실패했습니다. 전화로 문의해 주세요.");
+        setMessage(json.error || t("form.errSave"));
         return;
       }
       setStatus("ok");
-      setMessage("접수했습니다. 평일 사무실에서 확인하고 연락드리겠습니다.");
+      setMessage(t("inquiry.ok"));
       form.reset();
     } catch {
       setStatus("error");
-      setMessage("네트워크 오류입니다. 잠시 후 다시 시도하거나 전화 주세요.");
+      setMessage(t("form.errNetwork"));
     }
   }
 
@@ -61,13 +63,13 @@ export function InquiryForm() {
     <form noValidate onSubmit={onSubmit} className="max-w-lg space-y-4 rounded-xl border bg-card p-5 shadow-sm">
       <div className="space-y-2">
         <label htmlFor="inquiry-name" className="text-sm font-medium">
-          이름
+          {t("form.name")}
         </label>
         <input id="inquiry-name" name="name" required maxLength={40} autoComplete="name" className={field} />
       </div>
       <div className="space-y-2">
         <label htmlFor="inquiry-phone" className="text-sm font-medium">
-          연락처
+          {t("form.phone")}
         </label>
         <input
           id="inquiry-phone"
@@ -81,23 +83,19 @@ export function InquiryForm() {
       </div>
       <div className="space-y-2">
         <label htmlFor="inquiry-message" className="text-sm font-medium">
-          문의 내용
+          {t("form.message")}
         </label>
         <textarea id="inquiry-message" name="message" required maxLength={2000} rows={6} className={`${field} h-auto py-2`} />
       </div>
       <p className="text-xs text-muted-foreground">
-        제출하시면{" "}
+        {t("form.privacy")}{" "}
         <a className="underline-offset-4 hover:underline" href="/privacy">
-          개인정보처리방침
+          {t("footer.privacy")}
         </a>
-        에 따라 상담 목적으로만 이용합니다. 급하시면{" "}
-        <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
-          {SITE.phone}
-        </a>
-        로 전화해 주세요.
+        . {t("form.callHint", { phone: SITE.phone })}
       </p>
       <Button type="submit" disabled={status === "loading"}>
-        {status === "loading" ? "보내는 중…" : "문의 보내기"}
+        {status === "loading" ? t("form.sending") : t("cta.inquiry")}
       </Button>
       {message ? (
         <p className={status === "ok" ? "text-sm text-primary" : "text-sm text-destructive"} role="status">

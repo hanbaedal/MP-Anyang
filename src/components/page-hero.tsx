@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { mediaUrl } from "@/lib/media";
 
 export function PageHero({
   kicker,
@@ -17,7 +18,7 @@ export function PageHero({
     <section className="relative overflow-hidden border-b bg-primary text-primary-foreground">
       {image ? (
         <Image
-          src={image.src}
+          src={mediaUrl(image.src)}
           alt={image.alt}
           fill
           priority
@@ -77,7 +78,7 @@ export function Photo({
 }) {
   return (
     <div className={cn("relative overflow-hidden rounded-xl bg-muted", className)}>
-      <Image src={src} alt={alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={priority} />
+      <Image src={mediaUrl(src)} alt={alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={priority} />
     </div>
   );
 }

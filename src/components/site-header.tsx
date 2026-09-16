@@ -14,6 +14,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { FlagSwitcher } from "@/components/flag-switcher";
+import { useT } from "@/components/locale-provider";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -27,6 +29,7 @@ function sectionActive(pathname: string, href: string, children?: { href: string
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
@@ -36,9 +39,9 @@ export function SiteHeader() {
           <p className="truncate text-xs text-muted-foreground">{SITE.region}</p>
         </Link>
 
-        <nav className="ml-6 hidden flex-1 items-center gap-1 lg:flex" aria-label="주요 메뉴">
+        <nav className="ml-6 hidden flex-1 items-center gap-1 lg:flex" aria-label={t("menu")}>
           {NAV.map((item) => (
-            <div key={item.label} className="group relative">
+            <div key={item.i18n} className="group relative">
               <Link
                 href={item.href}
                 className={cn(
@@ -46,7 +49,7 @@ export function SiteHeader() {
                   sectionActive(pathname, item.href, item.children) && "text-primary",
                 )}
               >
-                {item.label}
+                {t(item.i18n)}
               </Link>
               {item.children ? (
                 <div className="absolute left-0 top-full z-20 hidden min-w-44 pt-1 group-hover:block group-focus-within:block">
@@ -60,7 +63,7 @@ export function SiteHeader() {
                           isActive(pathname, child.href) && "text-primary",
                         )}
                       >
-                        {child.label}
+                        {t(child.i18n)}
                       </Link>
                     ))}
                   </div>
@@ -70,25 +73,15 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Button asChild size="sm" className="hidden sm:inline-flex">
-            <a href={SITE.phoneTel}>
-              <Phone />
-              {SITE.phone}
-            </a>
-          </Button>
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <FlagSwitcher />
           <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
             <Link href="/intro/directions">
               <MapPin />
-              오시는 길
+              {t("directions")}
             </Link>
           </Button>
-          <Button asChild size="icon" className="sm:hidden" aria-label="전화 걸기">
-            <a href={SITE.phoneTel}>
-              <Phone />
-            </a>
-          </Button>
-          <Button asChild size="icon" variant="outline" className="sm:hidden" aria-label="오시는 길">
+          <Button asChild size="icon" variant="outline" className="sm:hidden" aria-label={t("directions")}>
             <Link href="/intro/directions">
               <MapPin />
             </Link>
@@ -96,7 +89,7 @@ export function SiteHeader() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button size="icon" variant="outline" className="lg:hidden" aria-label="메뉴 열기">
+              <Button size="icon" variant="outline" className="lg:hidden" aria-label={t("menu")}>
                 <Menu />
               </Button>
             </SheetTrigger>
@@ -107,20 +100,18 @@ export function SiteHeader() {
               <nav className="mt-4 flex flex-col gap-4 px-4 pb-8">
                 <SheetClose asChild>
                   <Link href="/" className="text-sm font-medium text-primary">
-                    홈
+                    {t("home")}
                   </Link>
                 </SheetClose>
                 {NAV.map((item) => (
-                  <div key={item.label}>
-                    <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      {item.label}
-                    </p>
+                  <div key={item.i18n}>
+                    <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">{t(item.i18n)}</p>
                     {item.children ? (
                       <div className="flex flex-col">
                         {item.children.map((child) => (
                           <SheetClose asChild key={child.href}>
                             <Link href={child.href} className="rounded-md py-2 text-sm hover:text-primary">
-                              {child.label}
+                              {t(child.i18n)}
                             </Link>
                           </SheetClose>
                         ))}
@@ -128,15 +119,21 @@ export function SiteHeader() {
                     ) : (
                       <SheetClose asChild>
                         <Link href={item.href} className="rounded-md py-2 text-sm hover:text-primary">
-                          {item.label}
+                          {t(item.i18n)}
                         </Link>
                       </SheetClose>
                     )}
                   </div>
                 ))}
-                <a href={SITE.phoneTel} className="text-sm font-medium text-primary">
-                  전화 {SITE.phone}
+                <a href={SITE.phoneTel} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+                  <Phone className="size-4" />
+                  {t("phone")} {SITE.phone}
                 </a>
+                <p className="text-xs text-muted-foreground">
+                  {t("hoursNote")}
+                  <br />
+                  {t("hoursWeekday")} · {t("hoursWeekend")}
+                </p>
               </nav>
             </SheetContent>
           </Sheet>

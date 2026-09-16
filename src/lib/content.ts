@@ -5,6 +5,8 @@ export type ProductCard = {
   href: string;
   image: string;
   summary: string;
+  titleKey: string;
+  summaryKey: string;
 };
 
 export const PRODUCT_OVERVIEW: ProductCard[] = [
@@ -12,19 +14,25 @@ export const PRODUCT_OVERVIEW: ProductCard[] = [
     title: "매장묘",
     href: "/lots/burial",
     image: "/images/burial.jpg",
-    summary: "단장묘(1인), 합장묘(부부단·부부 합장), 쌍분묘(부부 각자)",
+    summary: "단장, 합장, 쌍분묘. 분양가는 확인 필요.",
+    titleKey: "nav.burial",
+    summaryKey: "product.burial.summary",
   },
   {
     title: "평장묘",
     href: "/lots/lawn",
     image: "/images/lawn.jpg",
-    summary: "2위부터 대가족까지. 그 이상 위수는 상담으로 안내합니다.",
+    summary: "PPT: 부부 2인, 가족 4인~24위, 24위 이상도 가능.",
+    titleKey: "nav.lawn",
+    summaryKey: "product.lawn.summary",
   },
   {
     title: "봉안묘",
     href: "/lots/columbarium",
     image: "/images/columbarium.jpg",
-    summary: "봉안묘 2~8위, 12~24위. 전경은 둘러보기에서 볼 수 있습니다.",
+    summary: "PPT: 부부 2인, 가족 4인~12위.",
+    titleKey: "nav.columbarium",
+    summaryKey: "product.col.summary",
   },
 ];
 
@@ -47,19 +55,22 @@ export const BURIAL = [
 ];
 
 export const LAWN = [
-  { title: "고급평장묘 2위", image: "/images/lawn-2.jpg" },
-  { title: "평장묘 2위", image: "/images/lawn.jpg" },
-  { title: "평장묘 4·6·8위", image: "/images/lawn-3.jpg" },
-  { title: "평장묘 12·16위", image: "/images/lawn-4.jpg" },
-  { title: "평장묘 24위", image: "/images/plots.jpg" },
-  { title: "가로평장묘 16위", image: "/images/lawn-3.jpg" },
-  { title: "대가족 평장묘", image: "/images/lawn.jpg" },
+  { title: "부부 2인 (PPT)", image: "/images/lawn-2.jpg" },
+  { title: "가족 4인~24위 (PPT)", image: "/images/lawn-3.jpg" },
+  { title: "24위 이상도 가능 (PPT)", image: "/images/plots.jpg" },
+  { title: "평장묘 2위 (라이브 라벨)", image: "/images/lawn.jpg" },
+  { title: "평장묘 4·6·8위 (라이브)", image: "/images/lawn-3.jpg" },
+  { title: "평장묘 12·16위 (라이브)", image: "/images/lawn-4.jpg" },
+  { title: "가로평장묘 16위 (라이브)", image: "/images/lawn-3.jpg" },
+  { title: "대가족 평장묘 (라이브)", image: "/images/lawn.jpg" },
 ];
 
 export const COLUMBARIUM = [
-  { title: "봉안묘 2~8위", image: "/images/columbarium-2.jpg" },
-  { title: "봉안묘 12~24위", image: "/images/columbarium.jpg" },
-  { title: "봉안묘 전경", image: "/images/columbarium-3.jpg" },
+  { title: "부부 2인 (PPT)", image: "/images/columbarium-2.jpg" },
+  { title: "가족 4인~12위 (PPT)", image: "/images/columbarium.jpg" },
+  { title: "봉안묘 2~8위 (라이브 라벨)", image: "/images/columbarium-2.jpg" },
+  { title: "봉안묘 12~24위 (라이브)", image: "/images/columbarium.jpg" },
+  { title: "봉안묘 전경", image: "/images/columbarium-4.jpg" },
 ];
 
 export const REMODEL_TYPES = [

@@ -1,16 +1,22 @@
 import { PageHero } from "@/components/page-hero";
 import { SERVICES } from "@/lib/content";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export const metadata = { title: "서비스" };
+export async function generateMetadata() {
+  const locale = await readLocale();
+  return { title: t(locale, "svc.title") };
+}
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const locale = await readLocale();
   return (
     <>
       <PageHero
-        kicker="이용안내"
-        title="서비스"
-        lead="이장·개장, 석축, 잔디, 특별관리, 묘지 디자인을 안내합니다."
-        image={{ src: "/images/remodel-before.jpg", alt: "손질이 필요한 봉분" }}
+        kicker={t(locale, "svc.kicker")}
+        title={t(locale, "svc.title")}
+        lead={t(locale, "svc.lead")}
+        image={{ src: "/images/remodel-before.jpg", alt: t(locale, "svc.title") }}
       />
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
         {SERVICES.map((service) => (

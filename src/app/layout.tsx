@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { LocaleProvider } from "@/components/locale-provider";
 import { SITE, metadataBase } from "@/lib/site";
+import { LOCALE_HTML, t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 const sans = Noto_Sans_KR({
   variable: "--font-sans",
@@ -27,21 +32,24 @@ export const metadata: Metadata = {
   formatDetection: { telephone: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await readLocale();
   return (
-    <html lang="ko" className={`${sans.variable} ${serif.variable} h-full`}>
+    <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full`}>
       <body className="flex min-h-full flex-col antialiased">
-        <a
-          href="#content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
-        >
-          본문으로 건너뛰기
-        </a>
-        <SiteHeader />
-        <div id="content" className="flex-1">
-          {children}
-        </div>
-        <SiteFooter />
+        <LocaleProvider locale={locale}>
+          <a
+            href="#content"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
+          >
+            {t(locale, "skip")}
+          </a>
+          <SiteHeader />
+          <div id="content" className="flex-1">
+            {children}
+          </div>
+          <SiteFooter />
+        </LocaleProvider>
       </body>
     </html>
   );

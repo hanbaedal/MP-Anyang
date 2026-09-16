@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { SITE, siteUrl } from "@/lib/site";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const locale = await readLocale();
   const url = siteUrl();
 
   return (
@@ -10,69 +13,75 @@ export function SiteFooter() {
         <div>
           <p className="font-serif text-xl">{SITE.legalName}</p>
           <p className="mt-3 text-sm/6 text-primary-foreground/80">
-            {SITE.address}
+            {t(locale, "footer.visit")}: {SITE.address} ({SITE.visitName})
             <br />
-            전화{" "}
+            {SITE.addressAlt}
+            <br />
+            {t(locale, "phone")}{" "}
             <a className="underline-offset-4 hover:underline" href={SITE.phoneTel}>
               {SITE.phone}
             </a>
-            {SITE.postalCode ? ` · 우편번호 ${SITE.postalCode}` : null}
+            {SITE.postalCode ? ` · ${SITE.postalCode}` : null}
+          </p>
+          <p className="mt-3 text-xs text-primary-foreground/70">
+            {t(locale, "hoursNote")}: {t(locale, "hoursWeekday")} · {t(locale, "hoursWeekend")} · {t(locale, "hoursHoliday")}
           </p>
           {url ? (
             <p className="mt-3 text-sm text-primary-foreground/80">
-              공식 사이트{" "}
+              {t(locale, "footer.site")}{" "}
               <a className="underline-offset-4 hover:underline" href={url}>
                 {url.replace(/^https?:\/\//, "")}
               </a>
             </p>
-          ) : (
-            <p className="mt-3 text-sm text-primary-foreground/70">
-              새 공식 주소는 정해지는 대로 공지로 안내합니다.
-            </p>
-          )}
+          ) : null}
         </div>
         <div className="text-sm">
-          <p className="mb-2 font-medium">바로 가기</p>
+          <p className="mb-2 font-medium">{t(locale, "footer.links")}</p>
           <ul className="space-y-1 text-primary-foreground/80">
             <li>
-              <Link className="hover:underline" href="/lots/burial">
-                분양 상품
+              <Link className="hover:underline" href="/lots/prices">
+                {t(locale, "nav.prices")}
               </Link>
             </li>
             <li>
               <Link className="hover:underline" href="/guide/procedure">
-                분양 절차
+                {t(locale, "nav.procedure")}
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/guide/fees">
-                관리비
+              <Link className="hover:underline" href="/support/faq">
+                {t(locale, "nav.faq")}
               </Link>
             </li>
             <li>
               <Link className="hover:underline" href="/support/inquiry">
-                문의·상담
+                {t(locale, "nav.inquiry")}
               </Link>
             </li>
           </ul>
         </div>
         <div className="text-sm">
-          <p className="mb-2 font-medium">안내</p>
+          <p className="mb-2 font-medium">{t(locale, "footer.info")}</p>
           <ul className="space-y-1 text-primary-foreground/80">
             <li>
               <Link className="hover:underline" href="/privacy">
-                개인정보처리방침
+                {t(locale, "footer.privacy")}
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/support/notices">
-                공지사항
+              <Link className="hover:underline" href="/pay">
+                {t(locale, "nav.pay")}
               </Link>
             </li>
             <li>
-              <Link className="hover:underline" href="/intro/directions">
-                오시는 길
+              <Link className="hover:underline" href="/account/login">
+                {t(locale, "nav.account")}
               </Link>
+            </li>
+            <li>
+              <a className="hover:underline" href={SITE.phoneTel}>
+                {t(locale, "phone")} {SITE.phone}
+              </a>
             </li>
           </ul>
         </div>

@@ -1,16 +1,22 @@
 import { GalleryGrid } from "@/components/gallery-grid";
 import { PageHero } from "@/components/page-hero";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export const metadata = { title: "둘러보기" };
+export async function generateMetadata() {
+  const locale = await readLocale();
+  return { title: t(locale, "gallery.title") };
+}
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const locale = await readLocale();
   return (
     <>
       <PageHero
-        kicker="둘러보기"
-        title="공원 갤러리"
-        lead="전경과 종류별 사진을 한곳에서 봅니다. 전경 메뉴를 둘로 나누지 않았습니다."
-        image={{ src: "/images/park-overview.jpg", alt: "공원 전경" }}
+        kicker={t(locale, "gallery.kicker")}
+        title={t(locale, "gallery.title")}
+        lead={t(locale, "gallery.lead")}
+        image={{ src: "/images/park-overview.jpg", alt: t(locale, "gallery.title") }}
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <GalleryGrid />

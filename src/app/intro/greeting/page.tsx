@@ -1,19 +1,29 @@
 import { PageHero, Prose } from "@/components/page-hero";
-import { GREETING } from "@/lib/site";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export const metadata = { title: "인사말" };
+export async function generateMetadata() {
+  const locale = await readLocale();
+  return { title: t(locale, "greeting.title") };
+}
 
-export default function GreetingPage() {
+export default async function GreetingPage() {
+  const locale = await readLocale();
   return (
     <>
-      <PageHero kicker="공원소개" title="인사말" lead="고인을 모시는 자리가 가족에게도 부담 없는 길이기를 바랍니다." image={{ src: "/images/hero.jpg", alt: "공원 전경" }} />
+      <PageHero
+        kicker={t(locale, "greeting.kicker")}
+        title={t(locale, "greeting.title")}
+        lead={t(locale, "greeting.lead")}
+        image={{ src: "/images/hero.jpg", alt: t(locale, "greeting.title") }}
+      />
       <article className="mx-auto max-w-6xl px-4 py-12">
         <Prose>
-          {GREETING.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
-          <p>감사합니다.</p>
-          <p className="font-medium text-primary">안양공원묘원 임직원 일동</p>
+          <p>{t(locale, "greeting.p1")}</p>
+          <p>{t(locale, "greeting.p2")}</p>
+          <p>{t(locale, "greeting.p3")}</p>
+          <p>{t(locale, "greeting.thanks")}</p>
+          <p className="font-medium text-primary">{t(locale, "greeting.sign")}</p>
         </Prose>
       </article>
     </>

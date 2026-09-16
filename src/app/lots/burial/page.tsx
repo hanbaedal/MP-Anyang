@@ -1,20 +1,26 @@
 import { PageHero, Photo, Prose } from "@/components/page-hero";
 import { BURIAL } from "@/lib/content";
+import { t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
 
-export const metadata = { title: "매장묘" };
+export async function generateMetadata() {
+  const locale = await readLocale();
+  return { title: t(locale, "burial.title") };
+}
 
-export default function BurialPage() {
+export default async function BurialPage() {
+  const locale = await readLocale();
   return (
     <>
       <PageHero
-        kicker="분양안내"
-        title="매장묘"
-        lead="흙에 모시는 자리입니다. 분양 금액은 안내하지 않으며, 위수는 상담에서 확인합니다."
-        image={{ src: "/images/burial.jpg", alt: "매장묘" }}
+        kicker={t(locale, "burial.kicker")}
+        title={t(locale, "burial.title")}
+        lead={t(locale, "burial.lead")}
+        image={{ src: "/images/burial.jpg", alt: t(locale, "burial.title") }}
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <Prose>
-          <p>한 분을 모시는 단장, 부부를 한자리에 모시는 합장(부부단), 부부 각자의 쌍분 가운데 고르실 수 있습니다.</p>
+          <p>{t(locale, "burial.body")}</p>
         </Prose>
         <ul className="mt-10 grid gap-6 md:grid-cols-3">
           {BURIAL.map((item) => (

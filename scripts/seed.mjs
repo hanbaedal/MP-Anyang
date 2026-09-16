@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Atlas DB를 비우고 1차 홈페이지용 notices / inquiries만 만듭니다.
+ * Atlas DB를 비우고 1차 홈페이지용 notices / inquiries / faq / weeding / members 를 만듭니다.
  * 사용: MONGODB_URI=... npm run seed
  */
 import { readFile } from "node:fs/promises";
@@ -12,12 +12,14 @@ const dbName = process.env.MONGODB_DB?.trim() || "MP-Anyang";
 
 if (!uri) {
   console.error("MONGODB_URI가 없습니다. .env.example을 보고 Atlas 연결 문자열을 넣은 뒤 다시 실행하세요.");
-  console.error("URI가 없어도 사이트는 data/notices.json 폴백으로 동작합니다.");
+  console.error("URI가 없어도 사이트는 data/notices.json·data/faq.json 폴백으로 동작합니다.");
   process.exit(2);
 }
 
 const noticesPath = path.join(process.cwd(), "data", "notices.json");
+const faqPath = path.join(process.cwd(), "data", "faq.json");
 const notices = JSON.parse(await readFile(noticesPath, "utf8"));
+const faq = JSON.parse(await readFile(faqPath, "utf8"));
 
 const client = new MongoClient(uri, {
   serverSelectionTimeoutMS: 20_000,
@@ -34,18 +36,30 @@ try {
 
   const noticesCol = db.collection("notices");
   const inquiriesCol = db.collection("inquiries");
+  const faqCol = db.collection("faq");
+  const weedingCol = db.collection("weeding");
+  const membersCol = db.collection("members");
 
-  const docs = notices.map((n) => ({
+  const noticeDocs = notices.map((n) => ({
     ...n,
     publishedAt: new Date(n.publishedAt),
   }));
-  if (docs.length) await noticesCol.insertMany(docs);
+  if (noticeDocs.length) await noticesCol.insertMany(noticeDocs);
+
+  const faqDocs = faq.map((item) => ({
+    ...item,
+    createdAt: new Date(item.createdAt),
+  }));
+  if (faqDocs.length) await faqCol.insertMany(faqDocs);
 
   await noticesCol.createIndex({ slug: 1 }, { unique: true });
   await noticesCol.createIndex({ publishedAt: -1 });
   await inquiriesCol.createIndex({ createdAt: -1 });
+  await faqCol.createIndex({ createdAt: -1 });
+  await weedingCol.createIndex({ createdAt: -1 });
+  await membersCol.createIndex({ phone: 1 }, { unique: true });
 
-  console.log(`notices ${docs.length}건, inquiries 빈 컬렉션을 만들었습니다.`);
+  console.log(`notices ${noticeDocs.length}건, faq ${faqDocs.length}건, inquiries/weeding/members 빈 컬렉션을 만들었습니다.`);
 } finally {
   await client.close();
 }
