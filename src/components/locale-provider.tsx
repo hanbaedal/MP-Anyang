@@ -16,5 +16,5 @@ export function useLocale() {
 
 export function useT() {
   const locale = useLocale();
-  return (key: string) => t(locale, key);
+  return (key: string, vars?: Record<string, string | number>) => t(locale, key, vars);
 }

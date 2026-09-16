@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Phone, MapPin } from "lucide-react";
+import { Menu, MapPin } from "lucide-react";
 import { NAV, SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,10 +125,6 @@ export function SiteHeader() {
                     )}
                   </div>
                 ))}
-                <a href={SITE.phoneTel} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                  <Phone className="size-4" />
-                  {t("phone")} {SITE.phone}
-                </a>
                 <p className="text-xs text-muted-foreground">
                   {t("hoursNote")}
                   <br />
