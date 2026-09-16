@@ -23,11 +23,11 @@ export function SiteHeader() {
               <Menu />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" showCloseButton={false} className="flex w-56 flex-col gap-0 bg-card p-0 sm:max-w-56">
-            <SheetHeader className="flex-row items-center justify-between space-y-0 border-b p-1.5">
-              <SheetTitle className="font-serif text-left text-sm">{t("explorer")}</SheetTitle>
+          <SheetContent side="left" showCloseButton={false} className="flex w-36 max-w-36 flex-col gap-0 bg-card p-0 sm:max-w-36">
+            <SheetHeader className="flex-row items-center justify-between space-y-0 border-b p-1">
+              <SheetTitle className="font-serif text-left text-xs leading-tight">{t("explorer")}</SheetTitle>
               <SheetClose asChild>
-                <Button size="icon-sm" variant="ghost" aria-label={t("close")}>
+                <Button size="icon-xs" variant="ghost" aria-label={t("close")}>
                   <X />
                 </Button>
               </SheetClose>

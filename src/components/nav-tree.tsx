@@ -19,7 +19,7 @@ function groupOpen(pathname: string, href: string, children?: { href: string }[]
   return isNavActive(pathname, href);
 }
 
-const row = "flex h-6 w-full items-center gap-1 px-1.5 text-left hover:bg-accent";
+const row = "flex h-6 w-full items-center gap-0.5 px-1 text-left hover:bg-accent";
 
 export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -95,7 +95,7 @@ export function NavTree({ onNavigate }: { onNavigate?: () => void }) {
                           href={child.href}
                           onClick={onNavigate}
                           aria-current={current ? "page" : undefined}
-                          className={cn(row, "pl-6", current && "bg-accent font-medium text-primary")}
+                          className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                         >
                           <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
                           <span className="truncate">{t(child.i18n)}</span>

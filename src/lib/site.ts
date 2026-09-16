@@ -40,7 +40,14 @@ export const MAP = {
 
 export type NavTone = "home" | "intro" | "lots" | "guide" | "gallery" | "support" | "more";
 export type NavChild = { href: string; label: string; i18n: string; hint?: string };
-export type NavItem = { href: string; label: string; i18n: string; tone: NavTone; children?: NavChild[] };
+export type NavItem = {
+  href: string;
+  label: string;
+  i18n: string;
+  tone: NavTone;
+  image?: string;
+  children?: NavChild[];
+};
 
 export const NAV_TONE_CLASS: Record<NavTone, string> = {
   home: "bg-[#eef3e8] hover:bg-[#e3eadc] border-[#d5e0c8]",
@@ -52,31 +59,29 @@ export const NAV_TONE_CLASS: Record<NavTone, string> = {
   more: "bg-[#e8f3f1] hover:bg-[#d7eae6] border-[#c3ddd8]",
 };
 
-export type SitemapCard = { href: string; i18n: string };
-export type SitemapSection = { titleI18n: string; tone: NavTone; items: SitemapCard[] };
+export type SitemapMenu = {
+  href: string;
+  i18n: string;
+  tone: NavTone;
+  image: string;
+  children: NavChild[];
+};
 
-export function sitemapSections(): SitemapSection[] {
-  const sections: SitemapSection[] = [
-    { titleI18n: "home", tone: "home", items: [{ href: "/", i18n: "home" }] },
+export function sitemapMenus(): SitemapMenu[] {
+  const menus: SitemapMenu[] = [
+    { href: "/", i18n: "home", tone: "home", image: "/images/hero.jpg", children: [] },
   ];
   for (const item of NAV) {
-    if (item.children?.length) {
-      sections.push({
-        titleI18n: item.i18n,
-        tone: item.tone,
-        items: item.children.map((child) => ({ href: child.href, i18n: child.i18n })),
-      });
-    }
+    if (!item.children?.length) continue;
+    menus.push({
+      href: item.href,
+      i18n: item.i18n,
+      tone: item.tone,
+      image: item.image || "/images/park-overview.jpg",
+      children: item.children,
+    });
   }
-  sections.push({
-    titleI18n: "sitemap.etc",
-    tone: "more",
-    items: [
-      { href: "/sitemap", i18n: "nav.sitemap" },
-      { href: "/privacy", i18n: "footer.privacy" },
-    ],
-  });
-  return sections;
+  return menus;
 }
 
 export const NAV: NavItem[] = [
@@ -85,6 +90,7 @@ export const NAV: NavItem[] = [
     label: "공원소개",
     i18n: "nav.intro",
     tone: "intro",
+    image: "/images/park-overview.jpg",
     children: [
       { href: "/intro/greeting", label: "인사말", i18n: "nav.greeting" },
       { href: "/intro/features", label: "공원 특징", i18n: "nav.features" },
@@ -96,6 +102,7 @@ export const NAV: NavItem[] = [
     label: "분양안내",
     i18n: "nav.lots",
     tone: "lots",
+    image: "/images/plots.jpg",
     children: [
       { href: "/lots/burial", label: "매장묘", i18n: "nav.burial" },
       { href: "/lots/lawn", label: "평장묘", i18n: "nav.lawn" },
@@ -109,6 +116,7 @@ export const NAV: NavItem[] = [
     label: "이용안내",
     i18n: "nav.guide",
     tone: "guide",
+    image: "/images/lawn.jpg",
     children: [
       { href: "/guide/procedure", label: "분양 절차", i18n: "nav.procedure" },
       { href: "/guide/fees", label: "관리비", i18n: "nav.fees" },
@@ -123,6 +131,7 @@ export const NAV: NavItem[] = [
     label: "둘러보기",
     i18n: "nav.gallery",
     tone: "gallery",
+    image: "/images/gallery-mound.jpg",
     children: [{ href: "/gallery", label: "공원 갤러리", i18n: "gallery.title" }],
   },
   {
@@ -130,6 +139,7 @@ export const NAV: NavItem[] = [
     label: "고객센터",
     i18n: "nav.support",
     tone: "support",
+    image: "/images/gallery-4.jpg",
     children: [
       { href: "/support/notices", label: "공지사항", i18n: "nav.notices" },
       { href: "/support/inquiry", label: "문의·상담", i18n: "nav.inquiry" },
