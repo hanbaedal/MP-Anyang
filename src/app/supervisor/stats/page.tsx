@@ -25,7 +25,6 @@ export default async function SupervisorStatsPage() {
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 pb-28">
       <div>
         <h1 className="font-serif text-xl text-primary">{t(locale, "supervisor.stats")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t(locale, "supervisor.statsLead")}</p>
         {!data.configured ? (
           <p className="mt-2 text-sm text-amber-800">{t(locale, "supervisor.statsNoMongo")}</p>
         ) : null}
@@ -112,7 +111,6 @@ export default async function SupervisorStatsPage() {
             })}
           </ul>
         )}
-        <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsTrendHint")}</p>
       </section>
 
       <section className="space-y-3">
@@ -143,7 +141,6 @@ export default async function SupervisorStatsPage() {
 
       <section className="space-y-3">
         <h2 className="font-medium text-primary">{t(locale, "supervisor.statsPresence")}</h2>
-        <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPresenceHint")}</p>
         {data.staffPresence.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t(locale, "supervisor.statsEmpty")}</p>
         ) : (
