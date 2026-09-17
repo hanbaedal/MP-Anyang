@@ -1,4 +1,8 @@
-import { readWorkDump, summarizeFees } from "./work-store";
+import { sourceEnvReady } from "./cemetery-source";
+import { requireStaff, type SessionUser } from "./auth";
+import type { Locale } from "./i18n";
+import { readLocale } from "./i18n-server";
+import { readWorkDump, summarizeFees, type WorkDump } from "./work-store";
 import { buildWorkStatusTables, type WorkStatusTables } from "./work-status";
 
 export type WorkOverview = {
@@ -65,4 +69,17 @@ export function isWorkEmpty(overview: WorkOverview) {
   );
 }
 
+export async function loadWorkCopyPage(): Promise<{
+  locale: Locale;
+  session: SessionUser;
+  dump: WorkDump;
+  envReady: boolean;
+}> {
+  const locale = await readLocale();
+  const session = await requireStaff();
+  const dump = await readWorkDump();
+  return { locale, session, dump, envReady: sourceEnvReady() };
+}
+
 export { readWorkDump } from "./work-store";
+export { workCopyLead } from "./work-copy-text";

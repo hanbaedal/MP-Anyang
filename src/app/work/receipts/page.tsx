@@ -1,7 +1,8 @@
+import { WorkCopyEmpty } from "@/components/work-copy-empty";
 import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readWorkDump } from "@/lib/work";
+import { loadWorkCopyPage, workCopyLead } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,7 @@ export async function generateMetadata() {
 }
 
 export default async function WorkReceiptsPage() {
-  const locale = await readLocale();
-  const dump = await readWorkDump();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage();
   const rows = dump.receipts.map((row) => ({
     date: row.date,
     tombNo: row.tombNo,
@@ -26,7 +26,7 @@ export default async function WorkReceiptsPage() {
   return (
     <WorkCopiedTable
       title={t(locale, "work.receipts")}
-      lead={`복사본 ${rows.length}건`}
+      lead={workCopyLead(rows.length)}
       syncedAt={dump.meta?.syncedAt}
       columns={[
         { key: "date", label: "거래년월일" },
@@ -39,6 +39,7 @@ export default async function WorkReceiptsPage() {
         { key: "staff", label: "담당자" },
       ]}
       rows={rows}
+      empty={<WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />}
     />
   );
 }

@@ -1,15 +1,19 @@
+import type { ReactNode } from "react";
+
 export function WorkCopiedTable({
   title,
   lead,
   syncedAt,
   columns,
   rows,
+  empty,
 }: {
   title: string;
   lead?: string;
   syncedAt?: string;
   columns: { key: string; label: string; numeric?: boolean }[];
   rows: Array<Record<string, string | number>>;
+  empty?: ReactNode;
 }) {
   const shown = rows.slice(0, 200);
   return (
@@ -25,7 +29,11 @@ export function WorkCopiedTable({
         ) : null}
       </div>
       {rows.length === 0 ? (
-        <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">화면을 읽지 못했거나 아직 복사본이 없습니다.</p>
+        empty ?? (
+          <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">
+            아직 복사본이 없습니다.
+          </p>
+        )
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
           <table className="w-full min-w-[640px] text-left text-sm">

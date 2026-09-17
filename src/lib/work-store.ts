@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
 import type { CemeteryInfoCopy, ContractCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
@@ -14,7 +15,13 @@ export type WorkMeta = {
   message: string;
 };
 
-type WorkDump = {
+export type WorkStorage = {
+  used: "mongo" | "file" | "none";
+  mongoConfigured: boolean;
+  filePresent: boolean;
+};
+
+type WorkLists = {
   meta: WorkMeta | null;
   contracts: ContractCopy[];
   fees: FeeCopy[];
@@ -22,6 +29,8 @@ type WorkDump = {
   reports: ReportCopy[];
   cemetery: CemeteryInfoCopy[];
 };
+
+export type WorkDump = WorkLists & { storage: WorkStorage };
 
 const files = {
   meta: dataFile("work-meta.local.json"),
@@ -31,6 +40,37 @@ const files = {
   reports: dataFile("work-reports.local.json"),
   cemetery: dataFile("work-cemetery.local.json"),
 };
+
+function workFilesPresent() {
+  return existsSync(files.meta) || existsSync(files.contracts) || existsSync(files.fees);
+}
+
+export function dumpHasCopyRows(dump: WorkLists) {
+  return (
+    dump.contracts.length > 0 ||
+    dump.fees.length > 0 ||
+    dump.receipts.length > 0 ||
+    dump.reports.length > 0 ||
+    dump.cemetery.length > 0
+  );
+}
+
+export function pickWorkDump(
+  mongo: WorkLists | null,
+  file: WorkLists,
+  flags: { mongoConfigured: boolean; filePresent: boolean },
+): WorkDump {
+  if (mongo && dumpHasCopyRows(mongo)) {
+    return { ...mongo, storage: { used: "mongo", ...flags } };
+  }
+  if (dumpHasCopyRows(file)) {
+    return { ...file, storage: { used: "file", ...flags } };
+  }
+  if (mongo) {
+    return { ...mongo, storage: { used: "mongo", ...flags } };
+  }
+  return { ...file, storage: { used: flags.filePresent ? "file" : "none", ...flags } };
+}
 
 async function workDb() {
   if (!hasMongo()) return null;
@@ -42,7 +82,47 @@ async function workDb() {
   }
 }
 
-export async function saveWorkDump(dump: WorkDump) {
+function withoutMongoId<T>(docs: object[]): T[] {
+  return docs.map((doc) => {
+    const { _id: _ignored, ...rest } = doc as { _id?: unknown } & T;
+    return rest as T;
+  });
+}
+
+async function readFileDump(): Promise<WorkLists> {
+  return {
+    meta: await readJsonFile<WorkMeta | null>(files.meta, null),
+    contracts: await readJsonFile<ContractCopy[]>(files.contracts, []),
+    fees: await readJsonFile<FeeCopy[]>(files.fees, []),
+    receipts: await readJsonFile<ReceiptCopy[]>(files.receipts, []),
+    reports: await readJsonFile<ReportCopy[]>(files.reports, []),
+    cemetery: await readJsonFile<CemeteryInfoCopy[]>(files.cemetery, []),
+  };
+}
+
+async function readMongoDump(): Promise<WorkLists | null> {
+  const db = await workDb();
+  if (!db) return null;
+  try {
+    const names = new Set((await db.listCollections().toArray()).map((item) => item.name));
+    const many = async <T,>(name: string) =>
+      names.has(name) ? withoutMongoId<T>((await db.collection(name).find({}).toArray()) as object[]) : [];
+    const metaRows = await many<WorkMeta>("work_meta");
+    return {
+      meta: metaRows[0] ?? null,
+      contracts: await many<ContractCopy>("contracts"),
+      fees: await many<FeeCopy>("fees"),
+      receipts: await many<ReceiptCopy>("receipts"),
+      reports: await many<ReportCopy>("work_reports"),
+      cemetery: await many<CemeteryInfoCopy>("cemetery_info"),
+    };
+  } catch {
+    console.error("[work-store] mongo read failed, using local files");
+    return null;
+  }
+}
+
+export async function saveWorkDump(dump: WorkLists) {
   const db = await workDb();
   if (db) {
     const writes: Array<Promise<unknown>> = [];
@@ -70,35 +150,14 @@ export async function saveWorkDump(dump: WorkDump) {
   await writeJsonFile(files.meta, dump.meta);
 }
 
+/** 현황관리·계약·관리비·영수증이 같은 복사본을 읽습니다. Mongo 행이 없으면 로컬 JSON을 씁니다. */
 export async function readWorkDump(): Promise<WorkDump> {
-  const empty: WorkDump = { meta: null, contracts: [], fees: [], receipts: [], reports: [], cemetery: [] };
-  const db = await workDb();
-  if (db) {
-    try {
-      const names = new Set((await db.listCollections().toArray()).map((item) => item.name));
-      const many = async <T,>(name: string) =>
-        names.has(name) ? ((await db.collection(name).find({}).toArray()) as unknown as T[]) : [];
-      const metaRows = await many<WorkMeta>("work_meta");
-      return {
-        meta: metaRows[0] ?? null,
-        contracts: await many<ContractCopy>("contracts"),
-        fees: await many<FeeCopy>("fees"),
-        receipts: await many<ReceiptCopy>("receipts"),
-        reports: await many<ReportCopy>("work_reports"),
-        cemetery: await many<CemeteryInfoCopy>("cemetery_info"),
-      };
-    } catch {
-      console.error("[work-store] mongo read failed, using local files");
-    }
-  }
-  return {
-    meta: await readJsonFile<WorkMeta | null>(files.meta, null),
-    contracts: await readJsonFile<ContractCopy[]>(files.contracts, []),
-    fees: await readJsonFile<FeeCopy[]>(files.fees, []),
-    receipts: await readJsonFile<ReceiptCopy[]>(files.receipts, []),
-    reports: await readJsonFile<ReportCopy[]>(files.reports, []),
-    cemetery: await readJsonFile<CemeteryInfoCopy[]>(files.cemetery, []),
-  };
+  const file = await readFileDump();
+  const mongo = await readMongoDump();
+  return pickWorkDump(mongo, file, {
+    mongoConfigured: hasMongo(),
+    filePresent: workFilesPresent() || dumpHasCopyRows(file) || Boolean(file.meta),
+  });
 }
 
 export function summarizeFees(fees: FeeCopy[]) {

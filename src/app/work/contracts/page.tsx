@@ -1,7 +1,8 @@
+import { WorkCopyEmpty } from "@/components/work-copy-empty";
 import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readWorkDump } from "@/lib/work";
+import { loadWorkCopyPage, workCopyLead } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,7 @@ export async function generateMetadata() {
 }
 
 export default async function WorkContractsPage() {
-  const locale = await readLocale();
-  const dump = await readWorkDump();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage();
   const rows = dump.contracts.map((row) => ({
     tombNo: row.tombNo,
     burialDate: row.burialDate,
@@ -21,10 +21,13 @@ export default async function WorkContractsPage() {
     pyeong: row.pyeong,
     address: row.address,
   }));
+  const listed = dump.meta?.listedContractTotal
+    ? ` (원본 표시 ${dump.meta.listedContractTotal.toLocaleString("ko-KR")}건)`
+    : "";
   return (
     <WorkCopiedTable
       title={t(locale, "work.contracts")}
-      lead={`복사본 ${rows.length}건${dump.meta?.listedContractTotal ? ` (원본 표시 ${dump.meta.listedContractTotal}건)` : ""}`}
+      lead={workCopyLead(rows.length, listed)}
       syncedAt={dump.meta?.syncedAt}
       columns={[
         { key: "tombNo", label: "묘지번호" },
@@ -35,6 +38,7 @@ export default async function WorkContractsPage() {
         { key: "address", label: "주소(연고자)" },
       ]}
       rows={rows}
+      empty={<WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />}
     />
   );
 }

@@ -19,6 +19,7 @@ export default async function WorkSyncPage() {
       <div>
         <h1 className="font-serif text-xl text-primary">{t(locale, "work.dbUpdate")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t(locale, "work.sourceLead")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t(locale, "work.sourceSyncLists")}</p>
       </div>
       <DbUpdateForm envReady={sourceEnvReady()} />
     </div>
