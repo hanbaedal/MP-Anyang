@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { encodeSession, loginAccount, sessionCookieOptions, SESSION_COOKIE } from "@/lib/auth";
+import { recordStaffLogin } from "@/lib/site-analytics";
 
 export async function POST(request: Request) {
   let body: { username?: string; password?: string };
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
       password: body.password ?? "",
     });
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip")?.trim() ||
+      "";
+    const userAgent = request.headers.get("user-agent") ?? "";
+    await recordStaffLogin(result.user, ip, userAgent);
     const res = NextResponse.json({ ok: true, redirect: result.redirect });
     res.cookies.set(SESSION_COOKIE, encodeSession(result.user), sessionCookieOptions());
     return res;

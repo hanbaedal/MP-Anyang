@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, LayoutTemplate, Map } from "lucide-react";
+import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, LayoutTemplate, Map, Shield } from "lucide-react";
 import { NAV } from "@/lib/site";
 import { WORK_NAV } from "@/lib/work-nav";
 import { EXEC_NAV } from "@/lib/exec-nav";
-import { manageNavItems, MANAGE_HOME } from "@/lib/manage-nav";
+import { manageNavItems } from "@/lib/manage-nav";
+import { SUPERVISOR_NAV } from "@/lib/supervisor-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
 import { isCmsStaff, isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
@@ -45,7 +46,9 @@ export function NavTree({
   const cms = isCmsStaff(role);
   const workOpenDefault = staff;
   const execOpenDefault = isStatusStaff(role);
+  const supervisor = role === "supervisor";
   const manageOpenDefault = cms;
+  const supervisorOpenDefault = supervisor;
 
   useEffect(() => {
     setOpen((prev) => {
@@ -58,14 +61,20 @@ export function NavTree({
       if (workOpenDefault) next.work = true;
       if (execOpenDefault) next.exec = true;
       if (manageOpenDefault) next.manage = true;
+      if (supervisorOpenDefault) next.supervisor = true;
+      if (supervisor && SUPERVISOR_NAV.some((item) => isNavActive(pathname, item.href))) {
+        next.supervisor = true;
+      }
       return next;
     });
-  }, [pathname, workOpenDefault, execOpenDefault, manageOpenDefault]);
+  }, [pathname, workOpenDefault, execOpenDefault, manageOpenDefault, supervisorOpenDefault, supervisor]);
 
   const workExpanded = open.work ?? workOpenDefault;
   const execExpanded = open.exec ?? execOpenDefault;
   const manageExpanded = open.manage ?? manageOpenDefault;
-  const manageLinks = cms && role ? manageNavItems(role) : [];
+  const supervisorExpanded = open.supervisor ?? supervisorOpenDefault;
+  const manageLinks = cms ? manageNavItems() : [];
+  const supervisorActive = supervisor && SUPERVISOR_NAV.some((item) => isNavActive(pathname, item.href));
 
   return (
     <nav aria-label={t("explorer")} className={cn("text-[12px] leading-none", fit && "w-max")}>
@@ -260,17 +269,45 @@ export function NavTree({
             ) : null}
           </li>
         ) : null}
-        {role === "supervisor" ? (
+        {supervisor ? (
           <li className={topLevelLi}>
-            <Link
-              href="/work/sync"
-              onClick={onNavigate}
-              aria-current={pathname.startsWith("/work/sync") ? "page" : undefined}
-              className={cn(row, pathname.startsWith("/work/sync") && "bg-accent font-medium text-primary")}
+            <button
+              type="button"
+              aria-expanded={supervisorExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, supervisor: !supervisorExpanded }))}
+              className={cn(row, supervisorActive && "text-primary")}
             >
-              <Map className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-              <span className={cn("font-medium", !fit && "truncate")}>{t("work.dbUpdate")}</span>
-            </Link>
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", supervisorExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {supervisorExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Shield className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{t("nav.supervisor")}</span>
+            </button>
+            {supervisorExpanded ? (
+              <ul className="border-t border-border">
+                {SUPERVISOR_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
           </li>
         ) : null}
       </ul>

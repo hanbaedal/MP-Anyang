@@ -2,6 +2,7 @@ import type { Role } from "./auth-types";
 import { isCmsStaff, isStaffRole, isStatusStaff } from "./auth-types";
 import { EXEC_NAV } from "./exec-nav";
 import { manageNavItems, MANAGE_HOME } from "./manage-nav";
+import { SUPERVISOR_HOME, SUPERVISOR_NAV } from "./supervisor-nav";
 import { WORK_NAV } from "./work-nav";
 
 export const SITE = {
@@ -89,21 +90,17 @@ export type SitemapMenu = {
   href: string;
   i18n: string;
   tone: NavTone;
-  image: string;
   children: NavChild[];
 };
 
 export function sitemapMenus(role?: Role | null): SitemapMenu[] {
-  const menus: SitemapMenu[] = [
-    { href: "/", i18n: "home", tone: "home", image: "/images/hero.jpg", children: [] },
-  ];
+  const menus: SitemapMenu[] = [];
   for (const item of NAV) {
     if (!item.children?.length) continue;
     menus.push({
       href: item.href,
       i18n: item.i18n,
       tone: item.tone,
-      image: item.image || "/images/park-overview.jpg",
       children: item.children,
     });
   }
@@ -112,7 +109,6 @@ export function sitemapMenus(role?: Role | null): SitemapMenu[] {
       href: WORK_NAV[0].href,
       i18n: "work.program",
       tone: "guide",
-      image: "/images/park-overview.jpg",
       children: WORK_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
     });
   }
@@ -121,17 +117,19 @@ export function sitemapMenus(role?: Role | null): SitemapMenu[] {
       href: EXEC_NAV[0].href,
       i18n: "work.overview",
       tone: "lots",
-      image: "/images/park-overview.jpg",
       children: EXEC_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
     });
   }
   if (role === "supervisor") {
     menus.push({
-      href: "/work/sync",
-      i18n: "work.dbUpdate",
+      href: SUPERVISOR_HOME,
+      i18n: "nav.supervisor",
       tone: "more",
-      image: "/images/park-overview.jpg",
-      children: [],
+      children: SUPERVISOR_NAV.map((item) => ({
+        href: item.href,
+        label: item.i18n,
+        i18n: item.i18n,
+      })),
     });
   }
   if (isCmsStaff(role)) {
@@ -139,8 +137,7 @@ export function sitemapMenus(role?: Role | null): SitemapMenu[] {
       href: MANAGE_HOME,
       i18n: "manage.homepage",
       tone: "support",
-      image: "/images/park-overview.jpg",
-      children: manageNavItems(role).map((item) => ({
+      children: manageNavItems().map((item) => ({
         href: item.href,
         label: item.i18n,
         i18n: item.i18n,

@@ -1,9 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { readSession } from "@/lib/auth";
 import { NAV_TONE_CLASS, sitemapMenus } from "@/lib/site";
-import { thumbUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -27,22 +25,14 @@ export default async function SitemapPage() {
             key={menu.i18n}
             className={cn("flex min-h-0 flex-col overflow-hidden rounded-xl border shadow-sm", NAV_TONE_CLASS[menu.tone])}
           >
-            <Link href={menu.href} className="block shrink-0">
-              <span className="relative block h-16 overflow-hidden bg-muted sm:h-20 md:h-24">
-                <Image
-                  src={thumbUrl(menu.image)}
-                  alt={t(locale, menu.i18n)}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1280px) 50vw, 33vw"
-                  className="object-cover"
-                />
+            <Link
+              href={menu.href}
+              className="flex shrink-0 items-center justify-between gap-1 px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5"
+            >
+              <span className="truncate font-serif text-[13px] leading-tight text-primary sm:text-lg">
+                {t(locale, menu.i18n)}
               </span>
-              <span className="flex items-center justify-between gap-1 px-2 pt-1.5 sm:gap-2 sm:px-3 sm:pt-2">
-                <span className="truncate font-serif text-[13px] leading-tight text-primary sm:text-lg">
-                  {t(locale, menu.i18n)}
-                </span>
-                <ChevronRight className="size-3.5 shrink-0 text-muted-foreground sm:size-4" aria-hidden />
-              </span>
+              <ChevronRight className="size-3.5 shrink-0 text-muted-foreground sm:size-4" aria-hidden />
             </Link>
             {menu.children.length ? (
               <ul className="mt-1 min-h-0 flex-1 border-t border-black/10 px-0.5 pb-0.5 sm:px-1 sm:pb-1">

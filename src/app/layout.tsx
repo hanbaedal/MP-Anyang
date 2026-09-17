@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
+import { StaffActivityBeacon } from "@/components/staff-activity-beacon";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SiteSidebar } from "@/components/site-sidebar";
@@ -8,6 +11,7 @@ import { SITE, metadataBase } from "@/lib/site";
 import { LOCALE_HTML, t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 import { readSession } from "@/lib/auth";
+import { trackPageView } from "@/lib/site-analytics";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -37,10 +41,18 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await readLocale();
   const session = await readSession();
+  const h = await headers();
+  const pathname = h.get("x-pathname") ?? "/";
+  const userAgent = h.get("user-agent");
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip")?.trim() ?? null;
+  after(async () => {
+    await trackPageView({ pathname, session, userAgent, ip });
+  });
   return (
     <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full overflow-hidden`}>
       <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <LocaleProvider locale={locale}>
+          {session ? <StaffActivityBeacon /> : null}
           <a
             href="#content"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
