@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { t, type Locale } from "@/lib/i18n";
+import { execNavItem, type ExecSection } from "@/lib/exec-nav";
 import type { StatusMonthRow, WorkFeeHistoryRow, WorkFeeYearSummary, WorkStatusTables } from "@/lib/work-status";
 
 const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
@@ -175,10 +175,7 @@ function FeeYearSummary({ locale, summary, unit }: { locale: Locale; summary: Wo
   ];
   return (
     <section className="flex max-h-none min-h-min shrink-0 flex-col gap-1.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="text-xs font-medium text-primary sm:text-sm">{t(locale, "work.feeYearSummary", { year: summary.year })}</h2>
-        <p className="text-[10px] leading-none text-muted-foreground">{unit}</p>
-      </div>
+      <p className="text-right text-[10px] leading-none text-muted-foreground">{unit}</p>
       <Card className="gap-0 py-0 shadow-none">
         <CardContent className="grid grid-cols-2 gap-px bg-border p-0 sm:grid-cols-3 lg:grid-cols-6">
           {items.map((item) => (
@@ -194,16 +191,15 @@ function FeeYearSummary({ locale, summary, unit }: { locale: Locale; summary: Wo
   );
 }
 
-function StatusBlock({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex max-h-none min-h-min shrink-0 flex-col gap-1.5">
-      <h2 className="text-xs font-medium text-primary sm:text-sm">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-export function WorkOverviewCards({ locale, status }: { locale: Locale; status: WorkStatusTables }) {
+export function ExecSectionPage({
+  locale,
+  status,
+  section,
+}: {
+  locale: Locale;
+  status: WorkStatusTables;
+  section: ExecSection;
+}) {
   const year = status.feeYear.year;
   const empty =
     status.contractCopyCount === 0 &&
@@ -222,11 +218,21 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
   ]
     .filter(Boolean)
     .join(" ");
+  const item = execNavItem(section);
+  const title =
+    section === "fees"
+      ? t(locale, "work.feeYearSummary", { year })
+      : section === "paid"
+        ? t(locale, "work.statusPaidTable", { year })
+        : section === "unpaid"
+          ? t(locale, "work.statusUnpaidTable", { year })
+          : t(locale, item.i18n);
 
   return (
-    <div className="mx-auto flex h-auto min-h-min max-w-[1100px] flex-col gap-8 px-3 py-3 pb-8 sm:gap-10 sm:px-4 sm:py-4">
+    <div className="mx-auto flex h-auto min-h-min max-w-[1100px] flex-col gap-4 px-3 py-3 pb-28 sm:px-4 sm:py-4">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <h1 className="font-serif text-base text-primary">{t(locale, "work.overview")}</h1>
+        <p className="text-[10px] text-muted-foreground">{t(locale, "work.overview")}</p>
+        <h1 className="w-full font-serif text-xl text-primary">{title}</h1>
         {status.syncedAt ? (
           <p className="text-[10px] text-muted-foreground">
             {t(locale, "work.copiedAt", { when: new Date(status.syncedAt).toLocaleString("ko-KR") })}
@@ -235,9 +241,9 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
         {empty ? <p className="w-full text-xs text-muted-foreground">{t(locale, "work.empty")}</p> : null}
       </header>
 
-      <FeeYearSummary locale={locale} summary={status.feeYear} unit={unit} />
+      {section === "fees" ? <FeeYearSummary locale={locale} summary={status.feeYear} unit={unit} /> : null}
 
-      <StatusBlock title={t(locale, "work.feesByYear")}>
+      {section === "fees-by-year" ? (
         <FeeHistoryTable
           caption={t(locale, "work.feesByYear")}
           rows={status.feeHistory}
@@ -250,9 +256,9 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
           unitLabel={unit}
           footnote={feeHistoryNote}
         />
-      </StatusBlock>
+      ) : null}
 
-      <StatusBlock title={t(locale, "work.statusPaidTable", { year })}>
+      {section === "paid" ? (
         <StatusTable
           caption={t(locale, "work.statusPaidTable", { year })}
           firstHeader={t(locale, "work.statusAmount")}
@@ -261,9 +267,9 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
           unitLabel={unit}
           footnote={t(locale, "work.monthCountNote")}
         />
-      </StatusBlock>
+      ) : null}
 
-      <StatusBlock title={t(locale, "work.statusUnpaidTable", { year })}>
+      {section === "unpaid" ? (
         <StatusTable
           caption={t(locale, "work.statusUnpaidTable", { year })}
           firstHeader={t(locale, "work.statusAmount")}
@@ -272,18 +278,18 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
           unitLabel={unit}
           footnote={t(locale, "work.monthCountNote")}
         />
-      </StatusBlock>
+      ) : null}
 
-      <StatusBlock title={t(locale, "work.contractsByYear")}>
+      {section === "contracts" ? (
         <StatusTable
           caption={t(locale, "work.contractsByYear")}
+          rows={status.contracts}
           firstHeader={t(locale, "work.statusPeriod")}
           lastHeader={t(locale, "work.colTotal")}
-          rows={status.contracts}
           unitLabel={copyTotal}
           footnote={undatedNote}
         />
-      </StatusBlock>
+      ) : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, Map } from "lucide-react";
 import { NAV } from "@/lib/site";
 import { WORK_NAV } from "@/lib/work-nav";
+import { EXEC_NAV } from "@/lib/exec-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
 import { isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
@@ -41,6 +42,7 @@ export function NavTree({
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const staff = isStaffRole(role);
   const workOpenDefault = staff;
+  const execOpenDefault = isStatusStaff(role);
 
   useEffect(() => {
     setOpen((prev) => {
@@ -51,11 +53,13 @@ export function NavTree({
         }
       }
       if (workOpenDefault) next.work = true;
+      if (execOpenDefault) next.exec = true;
       return next;
     });
-  }, [pathname, workOpenDefault]);
+  }, [pathname, workOpenDefault, execOpenDefault]);
 
   const workExpanded = open.work ?? workOpenDefault;
+  const execExpanded = open.exec ?? execOpenDefault;
 
   return (
     <nav aria-label={t("explorer")} className={cn("text-[12px] leading-none", fit && "w-max")}>
@@ -170,15 +174,43 @@ export function NavTree({
         ) : null}
         {isStatusStaff(role) ? (
           <li className={topLevelLi}>
-            <Link
-              href="/work/overview"
-              onClick={onNavigate}
-              aria-current={pathname.startsWith("/work/overview") ? "page" : undefined}
-              className={cn(row, pathname.startsWith("/work/overview") && "bg-accent font-medium text-primary")}
+            <button
+              type="button"
+              aria-expanded={execExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, exec: !execExpanded }))}
+              className={cn(row, execOpenDefault && "text-primary")}
             >
-              <Map className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", execExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {execExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Folder className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
               <span className={cn("font-medium", !fit && "truncate")}>{t("work.overview")}</span>
-            </Link>
+            </button>
+            {execExpanded ? (
+              <ul className="border-t border-border">
+                {EXEC_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
           </li>
         ) : null}
         {role === "supervisor" ? (

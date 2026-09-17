@@ -260,7 +260,7 @@ export async function saveWorkDump(
   return { mongo, file, dbName: mongoDbName(), counts };
 }
 
-/** 현황관리·계약·관리비·영수증이 같은 복사본을 읽습니다. URI가 있으면 Mongo가 우선, JSON은 로컬 폴백입니다. */
+/** 경영관리·계약·관리비·영수증이 같은 복사본을 읽습니다. URI가 있으면 Mongo가 우선, JSON은 로컬 폴백입니다. */
 export async function readWorkDump(): Promise<WorkDump> {
   const file = await readFileDump();
   const mongo = await readMongoDump();

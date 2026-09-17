@@ -116,7 +116,7 @@ export async function requireStaff() {
 export async function requireCmsStaff(supervisor = false) {
   const session = await readSession();
   if (!session || !isCmsStaff(session.role)) {
-    if (session?.role === "ceo") redirect("/work/overview");
+    if (session?.role === "ceo") redirect("/work/exec/fees");
     redirect("/?login=1");
   }
   if (supervisor && session.role !== "supervisor") redirect("/manage");
