@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, Map } from "lucide-react";
 import { NAV } from "@/lib/site";
-import { WORK_NAV } from "@/lib/work";
+import { WORK_NAV } from "@/lib/work-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
 import { DbUpdateButton } from "@/components/db-update-button";
