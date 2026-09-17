@@ -8,12 +8,14 @@ export type CollectionProgress = {
   percent: number;
   done: number;
   total: number;
+  active: boolean;
 };
 
 export type WorkSyncProgress = {
   running: boolean;
   phase: "idle" | "login" | "pull" | "write" | "done" | "error";
   overallPercent: number;
+  activeCollection: WorkCollectionName | null;
   collections: CollectionProgress[];
   message: string;
   savedTo?: "mongo" | "file";
@@ -37,6 +39,7 @@ type ProgressState = {
   phase: WorkSyncProgress["phase"];
   message: string;
   savedTo: "mongo" | "file" | undefined;
+  active: WorkCollectionName | null;
   items: Record<WorkCollectionName, { percent: number; done: number; total: number }>;
 };
 
@@ -51,10 +54,13 @@ function getState(): ProgressState {
       phase: "idle",
       message: "",
       savedTo: undefined,
+      active: null,
       items: emptyItems(),
     };
   }
-  return globalThis._anyangWorkSyncProgress;
+  const state = globalThis._anyangWorkSyncProgress;
+  if (!("active" in state) || state.active === undefined) state.active = null;
+  return state;
 }
 
 function snapshot(): WorkSyncProgress {
@@ -64,6 +70,7 @@ function snapshot(): WorkSyncProgress {
     percent: state.items[name].percent,
     done: state.items[name].done,
     total: state.items[name].total,
+    active: state.running && state.active === name,
   }));
   const overallPercent =
     collections.length === 0
@@ -73,6 +80,7 @@ function snapshot(): WorkSyncProgress {
     running: state.running,
     phase: state.phase,
     overallPercent,
+    activeCollection: state.running ? state.active : null,
     collections,
     message: state.message,
     savedTo: state.savedTo,
@@ -91,6 +99,7 @@ export function beginWorkSyncProgress(message: string) {
   state.phase = "login";
   state.message = message;
   state.savedTo = undefined;
+  state.active = null;
   state.items = emptyItems();
 }
 
@@ -105,6 +114,7 @@ export function setCollectionProgress(name: WorkCollectionName, done: number, to
   const safeTotal = Math.max(0, total);
   const safeDone = Math.max(0, done);
   const raw = safeTotal === 0 ? (safeDone > 0 ? 100 : 0) : Math.round((safeDone / safeTotal) * 100);
+  state.active = name;
   state.items[name] = {
     done: safeDone,
     total: safeTotal,
@@ -122,6 +132,7 @@ export function finishWorkSyncProgress(opts: {
   state.phase = opts.ok ? "done" : "error";
   state.message = opts.message;
   state.savedTo = opts.savedTo;
+  state.active = null;
   if (opts.ok) {
     for (const name of WORK_COLLECTIONS) {
       const cur = state.items[name];

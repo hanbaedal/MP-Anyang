@@ -17,7 +17,7 @@ export default async function WorkSyncPage() {
   const locale = await readLocale();
   await requireSupervisor();
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
+    <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 pb-28">
       <div>
         <h1 className="font-serif text-xl text-primary">{t(locale, "work.dbUpdate")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t(locale, "work.sourceLead")}</p>
