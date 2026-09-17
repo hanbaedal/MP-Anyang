@@ -79,7 +79,10 @@ export async function trackPageView(input: {
       },
       { upsert: true },
     );
-    await col.updateOne({ _id: date }, { $inc: { [`paths.${pathKey}`]: 1 } });
+    /* 비로그인: 일별 공개 PV만. 경로별 집계는 직원 세션만 */
+    if (isStaff) {
+      await col.updateOne({ _id: date }, { $inc: { [`paths.${pathKey}`]: 1 } });
+    }
 
     if (session) {
       await touchStaffPresence(session, input.ip ?? null, false);
