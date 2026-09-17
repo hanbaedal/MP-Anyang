@@ -3,6 +3,8 @@ import { requireSupervisor } from "@/lib/auth";
 import { sourceEnvReady } from "@/lib/cemetery-source";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { mongoDbName, mongoUriSet } from "@/lib/mongo";
+import { WORK_COLLECTIONS } from "@/lib/work-store";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +24,12 @@ export default async function WorkSyncPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t(locale, "work.sourceSyncLists")}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t(locale, "work.dailySync")}</p>
       </div>
-      <DbUpdateButton envReady={sourceEnvReady()} />
+      <DbUpdateButton
+        envReady={sourceEnvReady()}
+        mongoReady={mongoUriSet()}
+        mongoDb={mongoDbName()}
+        collections={[...WORK_COLLECTIONS]}
+      />
     </div>
   );
 }

@@ -22,10 +22,12 @@ export function workCopyEmptyLines(opts: {
   }
   if (!storage.mongoConfigured && !storage.filePresent) {
     lines.push(t(locale, "work.copyNoStore"));
+  } else if (storage.mongoConfigured) {
+    lines.push(t(locale, "work.copyMongoEmpty"));
+  } else if (!storage.filePresent) {
+    lines.push(t(locale, "work.copyNoFile"));
   } else {
-    if (storage.mongoConfigured) lines.push(t(locale, "work.copyMongoEmpty"));
-    if (!storage.filePresent) lines.push(t(locale, "work.copyNoFile"));
-    else lines.push(t(locale, "work.copyFileEmpty"));
+    lines.push(t(locale, "work.copyFileEmpty"));
   }
   return lines;
 }

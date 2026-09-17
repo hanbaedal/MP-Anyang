@@ -136,7 +136,7 @@ async function pagedHtml(
   path: string,
   base: Record<string, string>,
   pageSize: string,
-  opts: { batch?: number; skipErrors?: boolean } = {},
+  opts: { batch?: number; skipErrors?: boolean; onPage?: (done: number, total: number) => void } = {},
 ) {
   const batchSize = opts.batch ?? PAGE_BATCH;
   const skipErrors = opts.skipErrors ?? false;
@@ -144,6 +144,7 @@ async function pagedHtml(
   const pages = first.html ? [first.html] : [];
   const last = first.html ? Math.max(1, lastPage(first.html)) : 1;
   const listed = first.html ? listedTotal(first.html) : 0;
+  opts.onPage?.(pages.length, last);
   for (let start = 2; start <= last; start += batchSize) {
     const batch: number[] = [];
     for (let pg = start; pg <= Math.min(last, start + batchSize - 1); pg++) batch.push(pg);
@@ -162,6 +163,7 @@ async function pagedHtml(
     for (const item of results) {
       if (item.html) pages.push(item.html);
     }
+    opts.onPage?.(pages.length, last);
   }
   return { pages, listed };
 }
@@ -170,11 +172,19 @@ function feeKey(row: FeeCopy) {
   return [row.tombNo, row.billedOn, row.period, row.status, row.billedAmount, row.paidAmount, row.balance].join("|");
 }
 
-async function pullFees(jar: Map<string, string>, feeBase: Record<string, string>) {
+async function pullFees(
+  jar: Map<string, string>,
+  feeBase: Record<string, string>,
+  onYear?: (done: number, total: number) => void,
+) {
   const seen = new Set<string>();
   const fees: FeeCopy[] = [];
   const year = new Date().getFullYear();
-  for (let y = 1978; y <= year + 1; y++) {
+  const firstYear = 1978;
+  const lastYear = year + 1;
+  const totalYears = lastYear - firstYear + 1;
+  let doneYears = 0;
+  for (let y = firstYear; y <= lastYear; y++) {
     const pull = await pagedHtml(
       jar,
       "/managementExpenseList.do",
@@ -193,11 +203,16 @@ async function pullFees(jar: Map<string, string>, feeBase: Record<string, string
       seen.add(key);
       fees.push(row);
     }
+    doneYears += 1;
+    onYear?.(doneYears, totalYears);
   }
   return fees;
 }
 
-export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSyncResult> {
+export async function pullCemeterySource(
+  creds: SourceLogin,
+  opts: { onPull?: (collection: "contracts" | "fees" | "receipts" | "reports" | "cemetery", done: number, total: number) => void } = {},
+): Promise<SourceSyncResult> {
   const empty: SourceSyncResult = {
     ok: false,
     contracts: [],
@@ -232,7 +247,9 @@ export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSync
       cd_company: company,
       id_user_s: user,
     };
-    const contractsPull = await pagedHtml(jar, "/contractList.do", contractBase, "200");
+    const contractsPull = await pagedHtml(jar, "/contractList.do", contractBase, "200", {
+      onPage: (done, total) => opts.onPull?.("contracts", done, total),
+    });
     const contracts = contractsPull.pages.flatMap(parseContractRows);
     const detailTargets = contracts.filter((row) => row.tombNo && row.contractNo).slice(0, 20);
     for (let i = 0; i < detailTargets.length; i += PAGE_BATCH) {
@@ -271,7 +288,7 @@ export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSync
       cd_company: company,
       id_user_s: user,
     };
-    const fees = await pullFees(jar, feeBase);
+    const fees = await pullFees(jar, feeBase, (done, total) => opts.onPull?.("fees", done, total));
 
     const receiptsPull = await pagedHtml(
       jar,
@@ -290,6 +307,7 @@ export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSync
         id_user_s: user,
       },
       "100",
+      { onPage: (done, total) => opts.onPull?.("receipts", done, total) },
     );
     const receipts = receiptsPull.pages.flatMap(parseReceiptRows);
 
@@ -309,6 +327,7 @@ export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSync
         id_user_s: user,
       },
       "23",
+      { onPage: (done, total) => opts.onPull?.("reports", done, total) },
     );
     const reports = reportsPull.pages.flatMap(parseReportRows);
 
@@ -329,6 +348,7 @@ export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSync
         cd_company: company,
       },
       "200",
+      { onPage: (done, total) => opts.onPull?.("cemetery", done, total) },
     );
     const cemetery = cemeteryPull.pages.flatMap(parseCemeteryInfoRows);
 
