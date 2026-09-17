@@ -7,7 +7,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { SITE, metadataBase } from "@/lib/site";
 import { LOCALE_HTML, t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { isStaffRole, readSession } from "@/lib/auth";
+import { readSession } from "@/lib/auth";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +47,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           >
             {t(locale, "skip")}
           </a>
-          <SiteHeader signedIn={Boolean(session)} staff={isStaffRole(session?.role)} />
+          <SiteHeader signedIn={Boolean(session)} role={session?.role ?? null} />
           <div className="flex min-h-0 flex-1 overflow-hidden">
-            <SiteSidebar />
+            <SiteSidebar role={session?.role ?? null} />
             <div id="content" className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
               <div className="h-full min-h-full">{children}</div>
             </div>

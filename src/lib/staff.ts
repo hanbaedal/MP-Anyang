@@ -12,7 +12,7 @@ export type Staff = {
   phone: string;
   email: string;
   passwordHash: string;
-  role: "supervisor" | "admin";
+  role: Role;
   createdAt: string;
 };
 
@@ -41,7 +41,7 @@ function fromDoc(doc: Record<string, unknown>): Staff {
     phone: String(doc.phone ?? ""),
     email: String(doc.email ?? ""),
     passwordHash: String(doc.passwordHash ?? ""),
-    role: doc.role === "supervisor" ? "supervisor" : "admin",
+    role: doc.role === "supervisor" ? "supervisor" : doc.role === "ceo" ? "ceo" : "admin",
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : String(doc.createdAt ?? ""),
   };
 }
@@ -166,6 +166,29 @@ export async function ensureAuthSeed() {
       createdAt: new Date().toISOString(),
     });
   }
+
+  const ceoId = process.env.CEO_ID?.trim();
+  const ceoPassword = process.env.CEO_PASSWORD ?? "";
+  if (ceoId && ceoPassword) {
+    const existing = await findStaffByUsername(ceoId);
+    if (!existing) {
+      await insertStaff({
+        id: randomBytes(12).toString("hex"),
+        username: ceoId,
+        name: "CEO",
+        title: "CEO",
+        phone: "",
+        email: "",
+        passwordHash: await hashPassword(ceoPassword),
+        role: "ceo",
+        createdAt: new Date().toISOString(),
+      });
+    } else if (existing.role !== "ceo") {
+      console.error("[staff] CEO_ID is already used by another role; not overwritten");
+    } else if (!(await verifyPassword(ceoPassword, existing.passwordHash))) {
+      await updateStaff(existing.id, { password: ceoPassword });
+    }
+  }
 }
 
 export function validateAdminInput(input: {
@@ -246,10 +269,12 @@ export async function updateStaff(
 export async function deleteAdmin(id: string) {
   const current = await findStaffById(id);
   if (!current) return { ok: false as const, error: "계정을 찾지 못했습니다." };
-  if (current.role === "supervisor") return { ok: false as const, error: "감독 계정은 삭제할 수 없습니다." };
+  if (current.role === "supervisor" || current.role === "ceo") {
+    return { ok: false as const, error: "이 계정은 삭제할 수 없습니다." };
+  }
   const db = await staffDb();
   if (db) {
-    await db.collection("staff").deleteOne({ id, role: "admin" as Role });
+    await db.collection("staff").deleteOne({ id, role: "admin" });
   } else {
     const all = await readLocal();
     await writeLocal(all.filter((item) => item.id !== id));

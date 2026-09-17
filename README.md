@@ -11,7 +11,7 @@ Node **20**이 필요합니다. (Render도 20으로 고정합니다. 26은 쓰�
 ```bash
 npm ci
 cp .env.example .env.local
-# SUPERVISOR_ID / SUPERVISOR_PASSWORD / ADMIN_SEED / AUTH_SECRET 를 .env.local에 넣습니다.
+# SUPERVISOR_ID / SUPERVISOR_PASSWORD / ADMIN_SEED / CEO_ID / CEO_PASSWORD / AUTH_SECRET 를 .env.local에 넣습니다.
 npm run dev
 ```
 
@@ -19,16 +19,9 @@ npm run dev
 
 홈은 **첫 화면(히어로)만**입니다. 카피는 아래쪽, 전화·오시는 길 알약은 히어로 오른쪽 아래입니다. 소셜 로고 네 개는 푸터 오른쪽입니다. 페이스북·인스타그램·유튜브·네이버 카페 주소가 생기면 `.env`의 빈 칸에만 넣습니다. 주소를 지어내지 마세요. 푸터는 법인명, `경기 안산시 상록구 오리골길 41 (양상동 산50)`, 전화 `031-482-2949 · 15208`만 둡니다.
 
-헤더 오른쪽은 **KR / US / JP / CN** 국기와 **로그인 아이콘**입니다. 감독·관리자로 로그인하면 **관리** 링크가 붙습니다. 메뉴는 왼쪽 **탐색기**입니다. 1차 메뉴 다섯 개(공원소개·분양안내·이용안내·둘러보기·고객센터) 사이만 세로 간격이 넓고, 서브메뉴는 촘촘합니다. 탐색기와 본문은 각각 스크롤됩니다.
+헤더 오른쪽은 **KR / US / JP / CN** 국기와 **로그인 아이콘**입니다. 아이콘을 누르면 작은 로그인 모달이 열립니다. 로그인 가능한 계정은 슈퍼바이저·관리자·CEO뿐입니다. 회원가입과 카카오·구글 간편로그인은 없습니다. 감독·관리자로 들어가면 **관리** 링크가 붙고, 직원 로그인 뒤 탐색기에 **업무프로그램**이 생깁니다. 메뉴는 왼쪽 **탐색기**입니다. 1차 메뉴 다섯 개(공원소개·분양안내·이용안내·둘러보기·고객센터) 사이만 세로 간격이 넓고, 서브메뉴는 촘촘합니다. 탐색기와 본문은 각각 스크롤됩니다.
 
-로그인(아이디·비밀번호) 뒤에는 **사이트맵**(`/sitemap`)으로 갑니다. 카카오·구글 **간편가입/로그인**은 Render에 넣은 키로 `/api/auth/oauth/kakao`, `/api/auth/oauth/google` 이 콜백을 받습니다.
-
-카카오·구글 콘솔에 등록할 콜백(비밀값 없음):
-
-- `https://mp-anyang.onrender.com/api/auth/callback/kakao`
-- `https://mp-anyang.onrender.com/api/auth/callback/google`
-
-`SITE_URL`을 바꾸면 콜백 호스트도 그 주소를 따릅니다. 키는 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, `KAKAO_REST_API_KEY`(또는 `KAKAO_CLIENT_ID`) / `KAKAO_CLIENT_SECRET` 및 Auth.js 별칭(`AUTH_GOOGLE_ID` 등)을 읽습니다. git에 넣지 마세요.
+업무프로그램 하위는 계약관리, 관리비내역, 영수증관리, 업무보고/현황, 기초정보입니다. 감독만 **DB 업데이트**(지금은 `원본 연결 전`)를 보고, CEO만 **현황관리**를 봅니다. 계약 숫자는 Mongo에 자료가 있기 전에는 0입니다. 원본 내부망 주소는 긁지 않습니다.
 
 ## 환경 변수
 
@@ -41,8 +34,8 @@ npm run dev
 | `IMAGE_CDN_BASE` / `NEXT_PUBLIC_IMAGE_CDN_BASE` | 선택. 이미지 CDN |
 | `AUTH_SECRET` | 세션 서명. 공개 서비스에서는 꼭 넣으세요 |
 | `SUPERVISOR_ID` / `SUPERVISOR_PASSWORD` | 감독 시드. git에 값을 넣지 마세요 |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | 구글 간편로그인. Auth.js 별칭 `AUTH_GOOGLE_ID` 등도 읽습니다 |
-| `KAKAO_REST_API_KEY` 또는 `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` | 카카오 간편로그인. `AUTH_KAKAO_ID` 별칭도 읽습니다 |
+| `ADMIN_SEED` | 관리자 시드 `아이디:비밀번호,...` |
+| `CEO_ID` / `CEO_PASSWORD` | CEO 시드. git에 값을 넣지 마세요 |
 | `FACEBOOK` / `INSTAGRAM` / `YOUTUBE` / `CAFE` | 소셜 프로필. 비우면 홈 로고는 전화·오시는 길·분양가·관리비로 갑니다 |
 | `NEXT_PUBLIC_FACEBOOK_URL` 등 | 위와 같음. 클라이언트에서 바꿀 때 사용 |
 
@@ -56,7 +49,7 @@ npm run dev
 MONGODB_URI="mongodb+srv://..." npm run seed
 ```
 
-URI가 없어도, `.env.local`에 감독/관리자 시드가 있으면 첫 로그인 때 로컬 직원 파일을 만듭니다.
+URI가 없어도, `.env.local`에 감독/관리자/CEO 시드가 있으면 첫 로그인 때 로컬 직원 파일을 만듭니다.
 
 ## Render
 

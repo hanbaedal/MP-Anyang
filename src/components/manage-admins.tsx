@@ -76,7 +76,9 @@ export function ManageAdmins({ initial }: { initial: StaffRow[] }) {
             <div>
               <p className="font-medium">
                 {item.username} · {item.name}{" "}
-                <span className="text-xs text-muted-foreground">{item.role === "supervisor" ? "감독" : "관리자"}</span>
+                <span className="text-xs text-muted-foreground">
+                  {item.role === "supervisor" ? "감독" : item.role === "ceo" ? "CEO" : "관리자"}
+                </span>
               </p>
               <p className="text-sm text-muted-foreground">
                 {item.title || "직위 없음"} · {item.phone || "연락처 없음"} · {item.email || "이메일 없음"}

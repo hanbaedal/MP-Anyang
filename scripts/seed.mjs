@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Atlas DB를 비우고 1차 홈페이지용 notices / inquiries / faq / members / staff / cms / gallery 를 만듭니다.
- * 직원 계정은 SUPERVISOR_ID, SUPERVISOR_PASSWORD, ADMIN_SEED 환경변수로만 넣습니다. 평문 비번은 로그에 찍지 않습니다.
+ * 직원 계정은 SUPERVISOR_ID, SUPERVISOR_PASSWORD, ADMIN_SEED, CEO_ID, CEO_PASSWORD 환경변수로만 넣습니다. 평문 비번은 로그에 찍지 않습니다.
  * 사용: MONGODB_URI=... npm run seed
  */
 import { readFile } from "node:fs/promises";
@@ -58,6 +58,21 @@ async function staffFromEnv() {
       email: "",
       passwordHash: await bcrypt.hash(row.password, 12),
       role: "admin",
+      createdAt: new Date(),
+    });
+  }
+  const ceoId = process.env.CEO_ID?.trim();
+  const ceoPassword = process.env.CEO_PASSWORD ?? "";
+  if (ceoId && ceoPassword && !rows.some((item) => item.username === ceoId)) {
+    rows.push({
+      id: randomBytes(12).toString("hex"),
+      username: ceoId,
+      name: "CEO",
+      title: "CEO",
+      phone: "",
+      email: "",
+      passwordHash: await bcrypt.hash(ceoPassword, 12),
+      role: "ceo",
       createdAt: new Date(),
     });
   }
@@ -127,7 +142,7 @@ try {
     `notices ${noticeDocs.length}건, faq ${faqDocs.length}건, staff ${staff.length}명, inquiries/members/cms/gallery 컬렉션을 만들었습니다.`,
   );
   if (!staff.length) {
-    console.log("직원 시드가 비었습니다. SUPERVISOR_ID / SUPERVISOR_PASSWORD / ADMIN_SEED 를 넣고 다시 실행하세요.");
+    console.log("직원 시드가 비었습니다. SUPERVISOR_ID / SUPERVISOR_PASSWORD / ADMIN_SEED / CEO_ID / CEO_PASSWORD 를 넣고 다시 실행하세요.");
   }
 } finally {
   await client.close();

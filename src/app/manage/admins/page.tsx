@@ -1,10 +1,10 @@
 import { PageHero } from "@/components/page-hero";
 import { ManageAdmins } from "@/components/manage-admins";
-import { requireStaff } from "@/lib/auth";
+import { requireCmsStaff } from "@/lib/auth";
 import { listStaff, publicStaff } from "@/lib/staff";
 
 export default async function ManageAdminsPage() {
-  await requireStaff(true);
+  await requireCmsStaff(true);
   const items = (await listStaff()).map(publicStaff);
   return (
     <>

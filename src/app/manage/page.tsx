@@ -2,10 +2,10 @@ import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { CMS_SLUGS } from "@/lib/cms-types";
 import { listInquiries } from "@/lib/inquiries";
-import { requireStaff } from "@/lib/auth";
+import { requireCmsStaff } from "@/lib/auth";
 
 export default async function ManageHomePage() {
-  const session = await requireStaff();
+  const session = await requireCmsStaff();
   const inquiries = await listInquiries();
   const pending = inquiries.filter((item) => item.status !== "answered").length;
 

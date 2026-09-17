@@ -11,7 +11,7 @@ export function LogoutButton() {
       variant="outline"
       onClick={async () => {
         await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/sitemap";
+        window.location.href = "/";
       }}
     >
       {t("account.logout")}

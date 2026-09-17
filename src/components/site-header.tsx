@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FlagSwitcher } from "@/components/flag-switcher";
 import { NavTree } from "@/components/nav-tree";
+import { LoginModal } from "@/components/login-modal";
 import { useT } from "@/components/locale-provider";
+import { isCmsStaff, type Role } from "@/lib/auth-types";
 
-export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: boolean }) {
+export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role | null }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const cms = isCmsStaff(role);
 
   return (
     <header className="z-40 h-12 shrink-0 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
@@ -37,7 +40,7 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
               </SheetClose>
             </SheetHeader>
             <div className="min-h-0 w-max flex-1 overflow-y-auto overscroll-y-contain">
-              <NavTree fit onNavigate={() => setOpen(false)} />
+              <NavTree fit role={role} onNavigate={() => setOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
@@ -48,7 +51,7 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
 
         <div className="ml-auto flex shrink-0 items-center gap-0">
           <FlagSwitcher />
-          {staff ? (
+          {cms ? (
             <Link
               href="/manage"
               className="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-accent"
@@ -56,14 +59,18 @@ export function SiteHeader({ signedIn, staff }: { signedIn: boolean; staff: bool
               {t("header.manage")}
             </Link>
           ) : null}
-          <Link
-            href={signedIn ? "/account" : "/account/login"}
-            aria-label={signedIn ? t("account.myTitle") : t("header.login")}
-            title={signedIn ? t("account.myTitle") : t("header.login")}
-            className="inline-flex size-7 items-center justify-center rounded-md text-primary hover:bg-accent lg:size-9"
-          >
-            <CircleUserRound className="size-4 lg:size-5" aria-hidden />
-          </Link>
+          {signedIn ? (
+            <Link
+              href="/account"
+              aria-label={t("account.myTitle")}
+              title={t("account.myTitle")}
+              className="inline-flex size-7 items-center justify-center rounded-md text-primary hover:bg-accent lg:size-9"
+            >
+              <CircleUserRound className="size-4 lg:size-5" aria-hidden />
+            </Link>
+          ) : (
+            <LoginModal />
+          )}
         </div>
       </div>
     </header>

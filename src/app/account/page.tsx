@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { isStaffRole, profileIncomplete, readSession } from "@/lib/auth";
+import { isCmsStaff, isStaffRole, readSession } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import { redirect } from "next/navigation";
 
@@ -18,19 +18,7 @@ export async function generateMetadata() {
 export default async function AccountPage() {
   const locale = await readLocale();
   const session = await readSession();
-  if (!session) {
-    return (
-      <>
-        <PageHero kicker={t(locale, "nav.account")} title={t(locale, "account.myTitle")} lead={t(locale, "account.needLogin")} />
-        <div className="mx-auto max-w-6xl px-4 py-12">
-          <Button asChild>
-            <Link href="/account/login">{t(locale, "account.submitLogin")}</Link>
-          </Button>
-        </div>
-      </>
-    );
-  }
-  if (profileIncomplete(session)) redirect("/account/complete");
+  if (!session) redirect("/?login=1");
 
   return (
     <>
@@ -40,12 +28,6 @@ export default async function AccountPage() {
           <p>{t(locale, "account.hello", { name: session.name })}</p>
           <p>
             {t(locale, "account.username")}: {session.username}
-          </p>
-          <p>
-            {t(locale, "form.phone")}: {session.phone || "—"}
-          </p>
-          <p>
-            {t(locale, "account.email")}: {session.email || "—"}
           </p>
           {session.title ? (
             <p>
@@ -60,18 +42,20 @@ export default async function AccountPage() {
           </p>
         </Prose>
         <div className="flex flex-wrap gap-3">
-          <Button asChild>
-            <Link href="/sitemap">{t(locale, "account.gotoSitemap")}</Link>
-          </Button>
           {isStaffRole(session.role) ? (
+            <Button asChild>
+              <Link href="/sitemap">{t(locale, "account.gotoSitemap")}</Link>
+            </Button>
+          ) : null}
+          {isCmsStaff(session.role) ? (
             <Button asChild variant="outline">
               <Link href="/manage">{t(locale, "header.manage")}</Link>
             </Button>
-          ) : (
+          ) : session.role === "ceo" ? (
             <Button asChild variant="outline">
-              <Link href="/support/inquiry">{t(locale, "nav.inquiry")}</Link>
+              <Link href="/work/overview">{t(locale, "work.overview")}</Link>
             </Button>
-          )}
+          ) : null}
           <LogoutButton />
         </div>
       </div>

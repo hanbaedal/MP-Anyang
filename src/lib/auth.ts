@@ -1,13 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { afterLoginPath, isStaffRole, type SessionUser } from "./auth-types";
-import { findMemberByUsername, loginMember, memberSession, upsertOAuthMember } from "./members";
-import { ensureAuthSeed, findStaffByEmail, findStaffByUsername } from "./staff";
+import { afterLoginPath, isCmsStaff, isStaffRole, type SessionUser } from "./auth-types";
+import { ensureAuthSeed, findStaffByUsername } from "./staff";
 import { verifyPassword } from "./passwords";
-import type { OAuthProfile } from "./oauth";
 
-export { isStaffRole, profileIncomplete, afterLoginPath } from "./auth-types";
+export { isStaffRole, isCmsStaff, isCeo, afterLoginPath } from "./auth-types";
 export type { Role, SessionUser } from "./auth-types";
 
 export const MEMBER_COOKIE = "anyang_sid";
@@ -47,7 +45,7 @@ export function decodeSession(token: string | undefined | null): SessionUser | n
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionUser & { exp?: number };
-    if (!data.id || !data.role) return null;
+    if (!data.id || !isStaffRole(data.role)) return null;
     if (data.exp && data.exp < Date.now()) return null;
     return {
       id: data.id,
@@ -89,66 +87,52 @@ export async function loginAccount(input: { username: string; password: string }
   if (!username || !password) return { ok: false as const, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
 
   const staff = await findStaffByUsername(username);
-  if (staff) {
-    if (await verifyPassword(password, staff.passwordHash)) {
-      const user: SessionUser = {
-        id: staff.id,
-        username: staff.username,
-        name: staff.name,
-        role: staff.role,
-        phone: staff.phone,
-        email: staff.email,
-        title: staff.title,
-      };
-      return { ok: true as const, user, redirect: afterLoginPath(user) };
-    }
-    return { ok: false as const, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
+  if (staff && (await verifyPassword(password, staff.passwordHash))) {
+    const user: SessionUser = {
+      id: staff.id,
+      username: staff.username,
+      name: staff.name,
+      role: staff.role,
+      phone: staff.phone,
+      email: staff.email,
+      title: staff.title,
+    };
+    return { ok: true as const, user, redirect: afterLoginPath(user) };
   }
-
-  const result = await loginMember({ login: username, password });
-  if (!result.ok) return { ok: false as const, error: result.error };
-  const user = memberSession(result.member);
-  return { ok: true as const, user, redirect: afterLoginPath(user) };
-}
-
-export async function finishOAuthLogin(profile: OAuthProfile) {
-  try {
-    await ensureAuthSeed();
-  } catch (err) {
-    console.error("[auth] seed failed; continuing oauth login");
-    console.error(err);
-  }
-  if (profile.email) {
-    const staff = await findStaffByEmail(profile.email);
-    if (staff) {
-      const user: SessionUser = {
-        id: staff.id,
-        username: staff.username,
-        name: staff.name,
-        role: staff.role,
-        phone: staff.phone,
-        email: staff.email,
-        title: staff.title,
-      };
-      return { ok: true as const, user, redirect: afterLoginPath(user) };
-    }
-  }
-  const member = await upsertOAuthMember(profile);
-  const user = memberSession(member);
-  return { ok: true as const, user, redirect: afterLoginPath(user) };
+  return { ok: false as const, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
 }
 
 export async function usernameTaken(username: string, exceptId?: string) {
   const staff = await findStaffByUsername(username);
-  if (staff && staff.id !== exceptId) return true;
-  const member = await findMemberByUsername(username);
-  if (member && member.id !== exceptId) return true;
-  return false;
+  return Boolean(staff && staff.id !== exceptId);
 }
 
-export async function requireStaff(supervisor = false) {
+export async function requireStaff() {
   const session = await readSession();
-  if (!session || !isStaffRole(session.role)) redirect("/account/login");
+  if (!session || !isStaffRole(session.role)) redirect("/?login=1");
+  return session;
+}
+
+export async function requireCmsStaff(supervisor = false) {
+  const session = await readSession();
+  if (!session || !isCmsStaff(session.role)) {
+    if (session?.role === "ceo") redirect("/work/overview");
+    redirect("/?login=1");
+  }
   if (supervisor && session.role !== "supervisor") redirect("/manage");
+  return session;
+}
+
+export async function requireCeo() {
+  const session = await readSession();
+  if (!session) redirect("/?login=1");
+  if (session.role !== "ceo") redirect("/work/contracts");
+  return session;
+}
+
+export async function requireSupervisor() {
+  const session = await readSession();
+  if (!session) redirect("/?login=1");
+  if (session.role !== "supervisor") redirect("/work/contracts");
   return session;
 }

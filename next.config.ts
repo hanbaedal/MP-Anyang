@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
       { source: "/guide/weeding", destination: "/guide/services", permanent: false },
       { source: "/pay", destination: "/guide/procedure", permanent: false },
       { source: "/support/kakao", destination: "/support/inquiry", permanent: false },
+      { source: "/account/register", destination: "/", permanent: false },
+      { source: "/account/complete", destination: "/", permanent: false },
     ];
   },
 };
