@@ -31,7 +31,31 @@ export default async function SupervisorStatsPage() {
         ) : null}
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicUvToday")}</p>
+          <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
+            {data.totals.publicUvToday.toLocaleString("ko-KR")}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicPvToday")}</p>
+          <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
+            {data.totals.publicPvToday.toLocaleString("ko-KR")}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicUv7d")}</p>
+          <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
+            {data.totals.publicUv7d.toLocaleString("ko-KR")}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicUv30d")}</p>
+          <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
+            {data.totals.publicUv30d.toLocaleString("ko-KR")}
+          </p>
+        </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicTotal")}</p>
           <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
@@ -39,11 +63,18 @@ export default async function SupervisorStatsPage() {
           </p>
         </div>
         <div className="rounded-xl border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsStaffTotal")}</p>
+          <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsPublicUvAll")}</p>
           <p className="mt-1 font-serif text-2xl tabular-nums text-primary">
-            {data.totals.staffPv.toLocaleString("ko-KR")}
+            {data.totals.publicUvAll.toLocaleString("ko-KR")}
           </p>
         </div>
+      </section>
+
+      <section className="rounded-xl border bg-card p-4">
+        <p className="text-xs text-muted-foreground">{t(locale, "supervisor.statsStaffTotal")}</p>
+        <p className="mt-1 font-serif text-xl tabular-nums text-primary">
+          {data.totals.staffPv.toLocaleString("ko-KR")}
+        </p>
       </section>
 
       <section className="space-y-3">
@@ -74,7 +105,7 @@ export default async function SupervisorStatsPage() {
                     </div>
                   </div>
                   <span className="tabular-nums text-right text-xs text-muted-foreground">
-                    {day.publicPv}/{day.staffPv}
+                    {day.publicUv} · {day.publicPv}/{day.staffPv}
                   </span>
                 </li>
               );

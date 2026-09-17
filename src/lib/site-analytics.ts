@@ -1,6 +1,23 @@
+import { randomUUID } from "node:crypto";
 import type { Filter } from "mongodb";
 import type { SessionUser } from "./auth-types";
 import { getDb, mongoUriSet } from "./mongo";
+
+export const ANON_VISITOR_COOKIE = "anyang_vid";
+
+export function anonVisitorCookieOptions() {
+  return {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax" as const,
+    maxAge: 60 * 60 * 24 * 400,
+    secure: process.env.NODE_ENV === "production",
+  };
+}
+
+export function isValidVisitorId(value: string | undefined | null) {
+  return Boolean(value && /^[a-f0-9-]{16,64}$/i.test(value));
+}
 
 const BOT_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|HeadlessChrome|Bytespider/i;
 const SKIP_PREFIXES = ["/api/", "/_next/", "/icon", "/robots", "/sitemap.xml"];
@@ -9,6 +26,14 @@ const HEARTBEAT_SECONDS = 60;
 
 function kstDateKey(d = new Date()) {
   return d.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+}
+
+function kstDateKeyDaysAgo(days: number) {
+  return kstDateKey(new Date(Date.now() - days * 86_400_000));
+}
+
+export function newVisitorId() {
+  return randomUUID();
 }
 
 /** Mongo $inc dotted path — `/`·`.` 를 쓰면 업데이트가 실패할 수 있음 */
@@ -36,10 +61,13 @@ export function shouldSkipAnalyticsPath(pathname: string) {
 type DailyDoc = {
   _id: string;
   publicPv: number;
+  publicUv?: number;
   staffPv: number;
   paths: Record<string, number>;
   updatedAt: Date;
 };
+
+type PublicUvMarker = { _id: string; date: string; visitorId: string; at: Date };
 
 type StaffPresenceDoc = {
   _id: string;
@@ -52,9 +80,44 @@ type StaffPresenceDoc = {
   activeSeconds?: number;
 };
 
+async function recordPublicVisitorForDay(date: string, visitorId: string) {
+  const db = await getDb();
+  if (!db) return;
+  const markerId = `${date}:${visitorId}`;
+  const inserted = await db.collection<PublicUvMarker>("analytics_public_uv").updateOne(
+    { _id: markerId },
+    { $setOnInsert: { date, visitorId, at: new Date() } },
+    { upsert: true },
+  );
+  if (inserted.upsertedCount !== 1) return;
+  await db.collection<DailyDoc>("analytics_daily").updateOne(
+    { _id: date },
+    {
+      $inc: { publicUv: 1 },
+      $setOnInsert: { publicPv: 0, publicUv: 0, staffPv: 0, paths: {} },
+    },
+    { upsert: true },
+  );
+}
+
+async function countDistinctPublicVisitors(sinceDateInclusive: string) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db
+    .collection<PublicUvMarker>("analytics_public_uv")
+    .aggregate<{ n: number }>([
+      { $match: { date: { $gte: sinceDateInclusive } } },
+      { $group: { _id: "$visitorId" } },
+      { $count: "n" },
+    ])
+    .toArray();
+  return rows[0]?.n ?? 0;
+}
+
 export async function trackPageView(input: {
   pathname: string;
   session: SessionUser | null;
+  visitorId?: string | null;
   userAgent?: string | null;
   ip?: string | null;
 }) {
@@ -75,11 +138,14 @@ export async function trackPageView(input: {
       {
         $inc: { [isStaff ? "staffPv" : "publicPv"]: 1 },
         $set: { updatedAt: new Date() },
-        $setOnInsert: { publicPv: 0, staffPv: 0, paths: {} },
+        $setOnInsert: { publicPv: 0, publicUv: 0, staffPv: 0, paths: {} },
       },
       { upsert: true },
     );
-    /* 비로그인: 일별 공개 PV만. 경로별 집계는 직원 세션만 */
+    if (!isStaff && isValidVisitorId(input.visitorId)) {
+      await recordPublicVisitorForDay(date, input.visitorId!);
+    }
+    /* 비로그인: PV·UV만. 경로별 집계는 직원 세션만 */
     if (isStaff) {
       await col.updateOne({ _id: date }, { $inc: { [`paths.${pathKey}`]: 1 } });
     }
@@ -174,13 +240,22 @@ export async function recordStaffHeartbeat(user: SessionUser, ip?: string | null
 
 export type AnalyticsDayRow = {
   date: string;
+  publicUv: number;
   publicPv: number;
   staffPv: number;
 };
 
 export type AnalyticsDashboard = {
   configured: boolean;
-  totals: { publicPv: number; staffPv: number };
+  totals: {
+    publicPv: number;
+    staffPv: number;
+    publicUvToday: number;
+    publicPvToday: number;
+    publicUv7d: number;
+    publicUv30d: number;
+    publicUvAll: number;
+  };
   last30Days: AnalyticsDayRow[];
   topPaths: { path: string; views: number }[];
   recentLogins: {
@@ -203,7 +278,15 @@ export type AnalyticsDashboard = {
 export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
   const empty: AnalyticsDashboard = {
     configured: mongoUriSet(),
-    totals: { publicPv: 0, staffPv: 0 },
+    totals: {
+      publicPv: 0,
+      staffPv: 0,
+      publicUvToday: 0,
+      publicPvToday: 0,
+      publicUv7d: 0,
+      publicUv30d: 0,
+      publicUvAll: 0,
+    },
     last30Days: [],
     topPaths: [],
     recentLogins: [],
@@ -231,6 +314,13 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
       .toArray();
     const publicPv = sumRows[0]?.publicPv ?? 0;
     const staffPv = sumRows[0]?.staffPv ?? 0;
+    const today = kstDateKey();
+    const todayRow = await db.collection<DailyDoc>("analytics_daily").findOne({ _id: today });
+    const publicUvToday = todayRow?.publicUv ?? 0;
+    const publicPvToday = todayRow?.publicPv ?? 0;
+    const publicUv7d = await countDistinctPublicVisitors(kstDateKeyDaysAgo(6));
+    const publicUv30d = await countDistinctPublicVisitors(kstDateKeyDaysAgo(29));
+    const publicUvAll = await countDistinctPublicVisitors("1970-01-01");
     for (const row of daily.slice(-7)) {
       for (const [path, n] of Object.entries(row.paths ?? {})) {
         pathAcc.set(path, (pathAcc.get(path) ?? 0) + n);
@@ -256,9 +346,18 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
 
     return {
       configured: true,
-      totals: { publicPv, staffPv },
+      totals: {
+        publicPv,
+        staffPv,
+        publicUvToday,
+        publicPvToday,
+        publicUv7d,
+        publicUv30d,
+        publicUvAll,
+      },
       last30Days: daily.map((row) => ({
         date: row._id,
+        publicUv: row.publicUv ?? 0,
         publicPv: row.publicPv ?? 0,
         staffPv: row.staffPv ?? 0,
       })),

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth";
-import { trackPageView } from "@/lib/site-analytics";
+import {
+  ANON_VISITOR_COOKIE,
+  anonVisitorCookieOptions,
+  isValidVisitorId,
+  newVisitorId,
+  trackPageView,
+} from "@/lib/site-analytics";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
@@ -12,14 +18,33 @@ export async function POST(request: Request) {
     /* empty body ok */
   }
 
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
   const session = decodeSession(token);
+  let visitorId = jar.get(ANON_VISITOR_COOKIE)?.value;
+  let freshVisitor = false;
+  if (!session && !isValidVisitorId(visitorId)) {
+    visitorId = newVisitorId();
+    freshVisitor = true;
+  }
+
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip")?.trim() ||
     "";
   const userAgent = request.headers.get("user-agent");
 
-  await trackPageView({ pathname, session, userAgent, ip });
-  return NextResponse.json({ ok: true });
+  await trackPageView({
+    pathname,
+    session,
+    visitorId: session ? null : visitorId,
+    userAgent,
+    ip,
+  });
+
+  const res = NextResponse.json({ ok: true });
+  if (freshVisitor && visitorId) {
+    res.cookies.set(ANON_VISITOR_COOKIE, visitorId, anonVisitorCookieOptions());
+  }
+  return res;
 }
