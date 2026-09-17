@@ -1,6 +1,8 @@
 # (재)안양공원묘원 — Render 참고
 # 대시보드에서 기존 서비스 srv-dacn4vfqj5pc73dg8i5g 설정을 이 값에 맞추면 됩니다.
-# 비밀값(MONGODB_URI, INQUIRY_INBOX)은 대시보드에만 넣으세요. SITE_URL은 커스텀 도메인 전 Render 기본 주소입니다.
+# 비밀값(MONGODB_URI, INQUIRY_INBOX, CRON_SECRET)은 대시보드에만 넣으세요. SITE_URL은 커스텀 도메인 전 Render 기본 주소입니다.
+# 매일 01:00 Asia/Seoul DB 업데이트: 웹 프로세스 타이머 + Cron Job이 GET/POST /api/cron/work-sync (Authorization: Bearer $CRON_SECRET).
+# Render 스케줄이 UTC만이면 0 16 * * * (한국 DST 없음). 시간대를 쓰면 0 1 * * * Asia/Seoul.
 
 services:
   - type: web
@@ -40,4 +42,6 @@ services:
       - key: CEMETERY_SOURCE_ID
         sync: false
       - key: CEMETERY_SOURCE_PASSWORD
+        sync: false
+      - key: CRON_SECRET
         sync: false

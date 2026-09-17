@@ -21,6 +21,8 @@ function groupOpen(pathname: string, href: string, children?: { href: string }[]
   return isNavActive(pathname, href);
 }
 
+const topLevelLi = "mb-5 border-b border-border select-none";
+
 export function NavTree({
   onNavigate,
   fit,
@@ -72,10 +74,7 @@ export function NavTree({
           const currentLeaf = !hasChildren && isNavActive(pathname, item.href);
 
           return (
-            <li
-              key={item.i18n}
-              className={cn("border-b border-border select-none", hasChildren && "mb-5 last:mb-0")}
-            >
+            <li key={item.i18n} className={topLevelLi}>
               {hasChildren ? (
                 <button
                   type="button"
@@ -129,7 +128,7 @@ export function NavTree({
           );
         })}
         {staff ? (
-          <li className="border-b border-border select-none">
+          <li className={topLevelLi}>
             <button
               type="button"
               aria-expanded={workExpanded}
@@ -152,7 +151,7 @@ export function NavTree({
                 {WORK_NAV.map((child) => {
                   const current = isNavActive(pathname, child.href);
                   return (
-                    <li key={child.href} className="border-b border-border">
+                    <li key={child.href} className="border-b border-border last:border-b-0">
                       <Link
                         href={child.href}
                         onClick={onNavigate}
@@ -165,34 +164,34 @@ export function NavTree({
                     </li>
                   );
                 })}
-                {isStatusStaff(role) ? (
-                  <li className="border-b border-border">
-                    <Link
-                      href="/work/overview"
-                      onClick={onNavigate}
-                      aria-current={pathname.startsWith("/work/overview") ? "page" : undefined}
-                      className={cn(row, "pl-5", pathname.startsWith("/work/overview") && "bg-accent font-medium text-primary")}
-                    >
-                      <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className={cn(!fit && "truncate")}>{t("work.overview")}</span>
-                    </Link>
-                  </li>
-                ) : null}
-                {role === "supervisor" ? (
-                  <li className="border-b border-border last:border-b-0">
-                    <Link
-                      href="/work/sync"
-                      onClick={onNavigate}
-                      aria-current={pathname.startsWith("/work/sync") ? "page" : undefined}
-                      className={cn(row, "pl-5", pathname.startsWith("/work/sync") && "bg-accent font-medium text-primary")}
-                    >
-                      <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className={cn(!fit && "truncate")}>{t("work.dbUpdate")}</span>
-                    </Link>
-                  </li>
-                ) : null}
               </ul>
             ) : null}
+          </li>
+        ) : null}
+        {isStatusStaff(role) ? (
+          <li className={topLevelLi}>
+            <Link
+              href="/work/overview"
+              onClick={onNavigate}
+              aria-current={pathname.startsWith("/work/overview") ? "page" : undefined}
+              className={cn(row, pathname.startsWith("/work/overview") && "bg-accent font-medium text-primary")}
+            >
+              <Map className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+              <span className={cn("font-medium", !fit && "truncate")}>{t("work.overview")}</span>
+            </Link>
+          </li>
+        ) : null}
+        {role === "supervisor" ? (
+          <li className={topLevelLi}>
+            <Link
+              href="/work/sync"
+              onClick={onNavigate}
+              aria-current={pathname.startsWith("/work/sync") ? "page" : undefined}
+              className={cn(row, pathname.startsWith("/work/sync") && "bg-accent font-medium text-primary")}
+            >
+              <Map className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+              <span className={cn("font-medium", !fit && "truncate")}>{t("work.dbUpdate")}</span>
+            </Link>
           </li>
         ) : null}
       </ul>
