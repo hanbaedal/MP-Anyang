@@ -54,7 +54,7 @@ export default async function AccountPage() {
           ) : null}
           {isStatusStaff(session.role) ? (
             <Button asChild variant="outline">
-              <Link href="/work/exec/fees">{t(locale, "work.overview")}</Link>
+              <Link href="/work/exec/all-fees">{t(locale, "work.overview")}</Link>
             </Button>
           ) : null}
           <LogoutButton />

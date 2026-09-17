@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { t, type Locale } from "@/lib/i18n";
 import { execNavItem, type ExecSection } from "@/lib/exec-nav";
-import type { StatusMonthRow, WorkFeeHistoryRow, WorkFeeYearSummary, WorkStatusTables } from "@/lib/work-status";
+import type { StatusMonthRow, WorkFeeAllSummary, WorkFeeHistoryRow, WorkFeeYearSummary, WorkStatusTables } from "@/lib/work-status";
 
 const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 const TABLE_WRAP = "max-h-none min-h-min shrink-0 overflow-x-auto overflow-y-clip rounded-md border bg-card";
@@ -164,7 +164,17 @@ function FeeHistoryTable({
   );
 }
 
-function FeeYearSummary({ locale, summary, unit }: { locale: Locale; summary: WorkFeeYearSummary; unit: string }) {
+function FeeGlance({
+  locale,
+  summary,
+  unit,
+  lead,
+}: {
+  locale: Locale;
+  summary: WorkFeeYearSummary | WorkFeeAllSummary;
+  unit: string;
+  lead: string;
+}) {
   const items = [
     { label: t(locale, "work.feeTarget"), value: t(locale, "work.feeCountUnit", { n: formatCount(summary.targetCount) }) },
     { label: t(locale, "work.feePaidDone"), value: t(locale, "work.feeCountUnit", { n: formatCount(summary.paidCount) }) },
@@ -186,7 +196,7 @@ function FeeYearSummary({ locale, summary, unit }: { locale: Locale; summary: Wo
           ))}
         </CardContent>
       </Card>
-      <p className="text-[9px] leading-tight text-muted-foreground">{t(locale, "work.feeYearLead", { year: summary.year })}</p>
+      <p className="text-[9px] leading-tight text-muted-foreground">{lead}</p>
     </section>
   );
 }
@@ -203,6 +213,7 @@ export function ExecSectionPage({
   const year = status.feeYear.year;
   const empty =
     status.contractCopyCount === 0 &&
+    status.feeAll.targetCount === 0 &&
     status.feeYear.targetCount === 0 &&
     status.feeHistory.every((row) => row.paidCount === 0 && row.unpaidCount === 0) &&
     status.contracts.every((row) => row.total === 0);
@@ -220,13 +231,15 @@ export function ExecSectionPage({
     .join(" ");
   const item = execNavItem(section);
   const title =
-    section === "fees"
-      ? t(locale, "work.feeYearSummary", { year })
-      : section === "paid"
-        ? t(locale, "work.statusPaidTable", { year })
-        : section === "unpaid"
-          ? t(locale, "work.statusUnpaidTable", { year })
-          : t(locale, item.i18n);
+    section === "all-fees"
+      ? t(locale, "work.feeAllSummary")
+      : section === "fees"
+        ? t(locale, "work.feeYearSummary", { year })
+        : section === "paid"
+          ? t(locale, "work.statusPaidTable", { year })
+          : section === "unpaid"
+            ? t(locale, "work.statusUnpaidTable", { year })
+            : t(locale, item.i18n);
 
   return (
     <div className="mx-auto flex h-auto min-h-min max-w-[1100px] flex-col gap-4 px-3 py-3 pb-28 sm:px-4 sm:py-4">
@@ -241,7 +254,18 @@ export function ExecSectionPage({
         {empty ? <p className="w-full text-xs text-muted-foreground">{t(locale, "work.empty")}</p> : null}
       </header>
 
-      {section === "fees" ? <FeeYearSummary locale={locale} summary={status.feeYear} unit={unit} /> : null}
+      {section === "all-fees" ? (
+        <FeeGlance locale={locale} summary={status.feeAll} unit={unit} lead={t(locale, "work.feeAllLead")} />
+      ) : null}
+
+      {section === "fees" ? (
+        <FeeGlance
+          locale={locale}
+          summary={status.feeYear}
+          unit={unit}
+          lead={t(locale, "work.feeYearLead", { year })}
+        />
+      ) : null}
 
       {section === "fees-by-year" ? (
         <FeeHistoryTable

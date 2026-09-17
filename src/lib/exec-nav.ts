@@ -1,4 +1,5 @@
 export const EXEC_NAV = [
+  { slug: "all-fees", href: "/work/exec/all-fees", i18n: "work.execAllFees" },
   { slug: "fees", href: "/work/exec/fees", i18n: "work.execFees" },
   { slug: "fees-by-year", href: "/work/exec/fees-by-year", i18n: "work.execFeesByYear" },
   { slug: "paid", href: "/work/exec/paid", i18n: "work.execPaid" },

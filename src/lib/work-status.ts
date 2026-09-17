@@ -27,6 +27,16 @@ export type WorkFeeYearSummary = {
   paidRate: number;
 };
 
+/** All-year unique fee glance. Same key as the year summary. Not 분양 계약 건수. */
+export type WorkFeeAllSummary = {
+  targetCount: number;
+  paidCount: number;
+  unpaidCount: number;
+  paidAmount: number;
+  unpaidAmount: number;
+  paidRate: number;
+};
+
 export type WorkFeeHistoryRow = {
   label: string;
   paidAmount: number;
@@ -41,6 +51,7 @@ export type WorkStatusTables = {
   undatedContracts: number;
   undatedFees: number;
   contractCopyCount: number;
+  feeAll: WorkFeeAllSummary;
   feeYear: WorkFeeYearSummary;
   feeHistory: WorkFeeHistoryRow[];
   contracts: StatusMonthRow[];
@@ -158,6 +169,47 @@ function emptyFeeYear(): WorkFeeYearSummary {
   };
 }
 
+function emptyFeeAll(): WorkFeeAllSummary {
+  return {
+    targetCount: 0,
+    paidCount: 0,
+    unpaidCount: 0,
+    paidAmount: 0,
+    unpaidAmount: 0,
+    paidRate: Number.NaN,
+  };
+}
+
+export function buildFeeAllSummary(fees: FeeCopy[]): WorkFeeAllSummary {
+  if (fees.length === 0) return emptyFeeAll();
+  const byKey = new Map<string, { paidAmount: number; balance: number }>();
+  for (const row of fees) {
+    const key = feeKey(row);
+    const cur = byKey.get(key) ?? { paidAmount: 0, balance: 0 };
+    cur.paidAmount += row.paidAmount;
+    cur.balance += row.balance > 0 ? row.balance : 0;
+    byKey.set(key, cur);
+  }
+  let paidCount = 0;
+  let unpaidCount = 0;
+  let paidAmount = 0;
+  let unpaidAmount = 0;
+  for (const cur of byKey.values()) {
+    paidAmount += cur.paidAmount;
+    unpaidAmount += cur.balance;
+    if (cur.balance > 0) unpaidCount += 1;
+    else paidCount += 1;
+  }
+  return {
+    targetCount: byKey.size,
+    paidCount,
+    unpaidCount,
+    paidAmount,
+    unpaidAmount,
+    paidRate: paidShare(paidCount, unpaidCount),
+  };
+}
+
 function shareRow(paid: number[], unpaid: number[]): StatusMonthRow {
   return {
     label: "비율",
@@ -252,6 +304,7 @@ export function buildWorkStatusTables(
     undatedContracts,
     undatedFees,
     contractCopyCount: contracts.length,
+    feeAll: buildFeeAllSummary(fees),
     feeYear,
     feeHistory: [
       historyRow("2010년 이전", feeBefore),
