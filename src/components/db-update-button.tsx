@@ -14,7 +14,7 @@ export function DbUpdateButton({ className, onDone }: { className?: string; onDo
     setLoading(true);
     setMessage(t("work.syncing"));
     try {
-      const res = await fetch("/api/work/sync", { method: "POST" });
+      const res = await fetch("/api/work/sync", { method: "POST", cache: "no-store" });
       const json = (await res.json()) as { message?: string; error?: string; ok?: boolean };
       setMessage(json.message || json.error || t("work.offline"));
     } catch {

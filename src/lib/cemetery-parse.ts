@@ -28,8 +28,16 @@ export function listedTotal(html: string) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function isJunkCell(cell: string) {
+  const text = cell.trim();
+  return !text || !/[0-9A-Za-z가-힣]/.test(text);
+}
+
 function rowCells(rowHtml: string) {
-  return [...rowHtml.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((m) => stripTags(m[1]));
+  const cells = [...rowHtml.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((m) => stripTags(m[1]));
+  while (cells.length && isJunkCell(cells[0])) cells.shift();
+  while (cells.length && isJunkCell(cells[cells.length - 1])) cells.pop();
+  return cells;
 }
 
 export function tableBodyRows(html: string) {
@@ -62,7 +70,7 @@ export type ContractCopy = {
 export function parseContractRows(html: string): ContractCopy[] {
   const rows: ContractCopy[] = [];
   for (const row of tableBodyRows(html)) {
-    const cells = row.cells.length >= 7 ? row.cells.slice(1) : row.cells;
+    const cells = row.cells;
     const tombNo = cells[0] || row.arg1;
     const contractNo = row.arg2;
     if (!tombNo && !contractNo) continue;
@@ -171,10 +179,11 @@ export type CemeteryInfoCopy = {
 export function parseCemeteryInfoRows(html: string): CemeteryInfoCopy[] {
   const rows: CemeteryInfoCopy[] = [];
   for (const row of tableBodyRows(html)) {
-    const c = row.cells.length >= 5 ? row.cells.slice(1) : row.cells;
-    if (!c[0]) continue;
+    const c = row.cells;
+    const tombNo = c[0] || row.arg1;
+    if (!tombNo) continue;
     rows.push({
-      tombNo: c[0] ?? "",
+      tombNo,
       pyeong: c[1] ?? "",
       location: c[2] ?? "",
       inUse: c[3] ?? "",

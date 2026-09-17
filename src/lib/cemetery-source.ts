@@ -65,7 +65,13 @@ async function request(
     headers.set("X-Requested-With", "XMLHttpRequest");
     body = new URLSearchParams(init.form);
   }
-  const res = await fetch(url, { ...init, headers, body, redirect: "manual" });
+  const res = await fetch(url, {
+    ...init,
+    headers,
+    body,
+    redirect: "manual",
+    signal: AbortSignal.timeout(45_000),
+  });
   rememberCookies(jar, res);
   const html = await res.text();
   return { res, html, status: res.status };
@@ -88,8 +94,14 @@ async function login(jar: Map<string, string>) {
     /name=["']passwd["']/.test(html) ||
     (!html.includes("contractList.do") && !html.includes("moveUrl"));
   if (failed) return { ok: false as const, error: "원본 로그인에 실패했습니다." };
+  const landing = await request(jar, "/contractList.do");
+  if (/name=["']passwd["']/.test(landing.html)) {
+    return { ok: false as const, error: "원본 로그인에 실패했습니다." };
+  }
   return { ok: true as const };
 }
+
+const PAGE_BATCH = 5;
 
 async function pagedHtml(
   jar: Map<string, string>,
@@ -97,19 +109,28 @@ async function pagedHtml(
   base: Record<string, string>,
   pageSize: string,
 ) {
-  const pages: string[] = [];
-  let last = 1;
-  let listed = 0;
-  for (let pg = 1; pg <= last; pg++) {
-    const { html, status } = await request(jar, path, {
-      method: "POST",
-      form: { ...base, pg: String(pg), ps: pageSize },
-    });
-    if (status >= 400) throw new Error(`source-${path}-${status}`);
-    pages.push(html);
-    if (pg === 1) {
-      last = Math.max(1, lastPage(html));
-      listed = listedTotal(html);
+  const first = await request(jar, path, {
+    method: "POST",
+    form: { ...base, pg: "1", ps: pageSize },
+  });
+  if (first.status >= 400) throw new Error(`source-${path}-${first.status}`);
+  const pages = [first.html];
+  const last = Math.max(1, lastPage(first.html));
+  const listed = listedTotal(first.html);
+  for (let start = 2; start <= last; start += PAGE_BATCH) {
+    const batch: number[] = [];
+    for (let pg = start; pg <= Math.min(last, start + PAGE_BATCH - 1); pg++) batch.push(pg);
+    const results = await Promise.all(
+      batch.map((pg) =>
+        request(jar, path, {
+          method: "POST",
+          form: { ...base, pg: String(pg), ps: pageSize },
+        }),
+      ),
+    );
+    for (const item of results) {
+      if (item.status >= 400) throw new Error(`source-${path}-${item.status}`);
+      pages.push(item.html);
     }
   }
   return { pages, listed };
@@ -152,19 +173,26 @@ export async function pullCemeterySource(): Promise<SourceSyncResult> {
     };
     const contractsPull = await pagedHtml(jar, "/contractList.do", contractBase, "200");
     const contracts = contractsPull.pages.flatMap(parseContractRows);
-    for (const row of contracts.slice(0, 20)) {
-      if (!row.tombNo || !row.contractNo) continue;
-      const { html, status } = await request(jar, "/contractDetailList.do", {
-        method: "POST",
-        form: {
-          ...contractBase,
-          pg: "1",
-          ps: "23",
-          no_tomb: row.tombNo,
-          no_contract: row.contractNo,
-        },
+    const detailTargets = contracts.filter((row) => row.tombNo && row.contractNo).slice(0, 20);
+    for (let i = 0; i < detailTargets.length; i += PAGE_BATCH) {
+      const slice = detailTargets.slice(i, i + PAGE_BATCH);
+      const details = await Promise.all(
+        slice.map((row) =>
+          request(jar, "/contractDetailList.do", {
+            method: "POST",
+            form: {
+              ...contractBase,
+              pg: "1",
+              ps: "23",
+              no_tomb: row.tombNo,
+              no_contract: row.contractNo,
+            },
+          }),
+        ),
+      );
+      details.forEach((item, index) => {
+        if (item.status < 400) slice[index].extra = parseNamedInputs(item.html);
       });
-      if (status < 400) row.extra = parseNamedInputs(html);
     }
 
     const feeBase = {
