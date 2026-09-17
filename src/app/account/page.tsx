@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { isCmsStaff, isStaffRole, readSession } from "@/lib/auth";
+import { isCmsStaff, isStaffRole, isStatusStaff, readSession } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import { redirect } from "next/navigation";
 
@@ -51,7 +51,8 @@ export default async function AccountPage() {
             <Button asChild variant="outline">
               <Link href="/manage">{t(locale, "header.manage")}</Link>
             </Button>
-          ) : session.role === "ceo" ? (
+          ) : null}
+          {isStatusStaff(session.role) ? (
             <Button asChild variant="outline">
               <Link href="/work/overview">{t(locale, "work.overview")}</Link>
             </Button>

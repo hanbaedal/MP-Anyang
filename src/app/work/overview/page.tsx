@@ -1,8 +1,8 @@
 import { WorkOverviewCards } from "@/components/work-overview";
-import { requireCeo } from "@/lib/auth";
+import { requireStatusStaff } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readWorkOverview } from "@/lib/work";
+import { readWorkStatus } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 
 export default async function WorkOverviewPage() {
   const locale = await readLocale();
-  await requireCeo();
-  const overview = await readWorkOverview();
-  return <WorkOverviewCards locale={locale} overview={overview} />;
+  await requireStatusStaff();
+  const status = await readWorkStatus();
+  return <WorkOverviewCards locale={locale} status={status} />;
 }

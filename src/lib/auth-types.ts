@@ -22,6 +22,10 @@ export function isCeo(role: Role | string | undefined | null): role is "ceo" {
   return role === "ceo";
 }
 
+export function isStatusStaff(role: Role | string | undefined | null): role is "supervisor" | "ceo" {
+  return role === "supervisor" || role === "ceo";
+}
+
 export function afterLoginPath(_user?: SessionUser) {
   return "/sitemap";
 }

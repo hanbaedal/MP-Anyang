@@ -1,11 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { afterLoginPath, isCmsStaff, isStaffRole, type SessionUser } from "./auth-types";
+import { afterLoginPath, isCmsStaff, isStaffRole, isStatusStaff, type SessionUser } from "./auth-types";
 import { ensureAuthSeed, findStaffByUsername } from "./staff";
 import { verifyPassword } from "./passwords";
 
-export { isStaffRole, isCmsStaff, isCeo, afterLoginPath } from "./auth-types";
+export { isStaffRole, isCmsStaff, isCeo, isStatusStaff, afterLoginPath } from "./auth-types";
 export type { Role, SessionUser } from "./auth-types";
 
 export const MEMBER_COOKIE = "anyang_sid";
@@ -127,6 +127,13 @@ export async function requireCeo() {
   const session = await readSession();
   if (!session) redirect("/?login=1");
   if (session.role !== "ceo") redirect("/work/contracts");
+  return session;
+}
+
+export async function requireStatusStaff() {
+  const session = await readSession();
+  if (!session) redirect("/?login=1");
+  if (!isStatusStaff(session.role)) redirect("/work/contracts");
   return session;
 }
 

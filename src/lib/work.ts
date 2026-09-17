@@ -1,4 +1,5 @@
 import { readWorkDump, summarizeFees } from "./work-store";
+import { buildWorkStatusTables, type WorkStatusTables } from "./work-status";
 
 export type WorkOverview = {
   connected: boolean;
@@ -42,6 +43,15 @@ export async function readWorkOverview(): Promise<WorkOverview> {
     };
   } catch {
     return EMPTY;
+  }
+}
+
+export async function readWorkStatus(): Promise<WorkStatusTables> {
+  try {
+    const dump = await readWorkDump();
+    return buildWorkStatusTables(dump.contracts, dump.fees, dump.meta?.syncedAt ?? "");
+  } catch {
+    return buildWorkStatusTables([], [], "");
   }
 }
 

@@ -9,7 +9,7 @@ import { WORK_NAV } from "@/lib/work-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
 import { DbUpdateButton } from "@/components/db-update-button";
-import { isCeo, isStaffRole, type Role } from "@/lib/auth-types";
+import { isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -166,7 +166,7 @@ export function NavTree({
                     </li>
                   );
                 })}
-                {isCeo(role) ? (
+                {isStatusStaff(role) ? (
                   <li className="border-b border-border">
                     <Link
                       href="/work/overview"
