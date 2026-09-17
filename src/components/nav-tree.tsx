@@ -8,7 +8,6 @@ import { NAV } from "@/lib/site";
 import { WORK_NAV } from "@/lib/work-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
-import { DbUpdateButton } from "@/components/db-update-button";
 import { isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
 
 export function isNavActive(pathname: string, href: string) {
@@ -181,7 +180,15 @@ export function NavTree({
                 ) : null}
                 {role === "supervisor" ? (
                   <li className="border-b border-border last:border-b-0">
-                    <DbUpdateButton />
+                    <Link
+                      href="/work/sync"
+                      onClick={onNavigate}
+                      aria-current={pathname.startsWith("/work/sync") ? "page" : undefined}
+                      className={cn(row, "pl-5", pathname.startsWith("/work/sync") && "bg-accent font-medium text-primary")}
+                    >
+                      <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                      <span className={cn(!fit && "truncate")}>{t("work.dbUpdate")}</span>
+                    </Link>
                   </li>
                 ) : null}
               </ul>

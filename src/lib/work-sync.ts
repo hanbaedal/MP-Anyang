@@ -1,8 +1,8 @@
-import { pullCemeterySource } from "./cemetery-source";
+import { pullCemeterySource, type SourceLogin } from "./cemetery-source";
 import { saveWorkDump, summarizeFees } from "./work-store";
 
-export async function syncWorkFromSource() {
-  const pulled = await pullCemeterySource();
+export async function syncWorkFromSource(creds: SourceLogin) {
+  const pulled = await pullCemeterySource(creds);
   if (!pulled.ok) {
     return { ok: false as const, error: pulled.error || "원본에서 자료를 읽지 못했습니다.", message: pulled.error || "원본에서 자료를 읽지 못했습니다." };
   }

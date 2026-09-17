@@ -77,16 +77,28 @@ async function request(
   return { res, html, status: res.status };
 }
 
-async function login(jar: Map<string, string>) {
-  const id = process.env.CEMETERY_SOURCE_ID?.trim() || "";
-  const password = process.env.CEMETERY_SOURCE_PASSWORD ?? "";
-  if (!id || !password) {
-    return { ok: false as const, error: "원본 아이디 또는 비밀번호가 없습니다." };
-  }
+export type SourceLogin = { id: string; password: string };
+
+export const SOURCE_LOGIN_MISSING =
+  "원본 아이디와 비밀번호를 적거나, Render에 CEMETERY_SOURCE_ID / CEMETERY_SOURCE_PASSWORD를 넣으세요.";
+
+export function sourceEnvReady() {
+  return Boolean(process.env.CEMETERY_SOURCE_ID?.trim() && (process.env.CEMETERY_SOURCE_PASSWORD ?? "").length > 0);
+}
+
+export function resolveSourceLogin(override?: { id?: string; password?: string }): SourceLogin | null {
+  const id = override?.id?.trim() || process.env.CEMETERY_SOURCE_ID?.trim() || "";
+  const password =
+    override?.password && override.password.length > 0 ? override.password : (process.env.CEMETERY_SOURCE_PASSWORD ?? "");
+  if (!id || !password) return null;
+  return { id, password };
+}
+
+async function login(jar: Map<string, string>, creds: SourceLogin) {
   await request(jar, "/login.do");
   const { html, status } = await request(jar, "/loginProc.do", {
     method: "POST",
-    form: { cd_company: companyCode(), id, passwd: password },
+    form: { cd_company: companyCode(), id: creds.id, passwd: creds.password },
   });
   const failed =
     status >= 400 ||
@@ -186,7 +198,7 @@ async function pullFees(jar: Map<string, string>, feeBase: Record<string, string
   return fees;
 }
 
-export async function pullCemeterySource(): Promise<SourceSyncResult> {
+export async function pullCemeterySource(creds: SourceLogin): Promise<SourceSyncResult> {
   const empty: SourceSyncResult = {
     ok: false,
     contracts: [],
@@ -198,10 +210,10 @@ export async function pullCemeterySource(): Promise<SourceSyncResult> {
   };
   try {
     const jar = new Map<string, string>();
-    const auth = await login(jar);
+    const auth = await login(jar, creds);
     if (!auth.ok) return { ...empty, error: auth.error };
 
-    const user = process.env.CEMETERY_SOURCE_ID?.trim() || "";
+    const user = creds.id;
     const company = companyCode();
 
     const contractBase = {
