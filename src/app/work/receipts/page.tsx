@@ -11,8 +11,9 @@ export async function generateMetadata() {
 }
 
 export default async function WorkReceiptsPage() {
-  const { locale, session, dump, envReady } = await loadWorkCopyPage();
-  const n = dump.receipts.length.toLocaleString("ko-KR");
+  const { locale, session, dump, envReady } = await loadWorkCopyPage("receipts");
+  const receiptTotal = dump.receipts.length || dump.meta?.receiptCount || 0;
+  const n = receiptTotal.toLocaleString("ko-KR");
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28">
       <div>
@@ -23,7 +24,7 @@ export default async function WorkReceiptsPage() {
           </p>
         ) : null}
       </div>
-      {dump.receipts.length === 0 ? (
+      {receiptTotal === 0 ? (
         <WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />
       ) : (
         <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">

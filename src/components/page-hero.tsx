@@ -70,15 +70,17 @@ export function Photo({
   alt,
   className,
   priority,
+  sizes = "(max-width: 768px) 100vw, 50vw",
 }: {
   src: string;
   alt: string;
   className?: string;
   priority?: boolean;
+  sizes?: string;
 }) {
   return (
     <div className={cn("relative overflow-hidden rounded-xl bg-muted", className)}>
-      <Image src={mediaUrl(src)} alt={alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={priority} />
+      <Image src={mediaUrl(src)} alt={alt} fill className="object-cover" sizes={sizes} priority={priority} />
     </div>
   );
 }

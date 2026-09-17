@@ -19,7 +19,7 @@ export default async function WorkContractsPage({
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
-  const { locale, session, dump, envReady } = await loadWorkCopyPage();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage("contracts");
   const years = contractYearsInCopy(dump.contracts);
   const year = parseYearParam(yearParam, years);
   const ofYear = dump.contracts.filter((row) => {

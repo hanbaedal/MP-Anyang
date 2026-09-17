@@ -24,7 +24,7 @@ export default async function InquiryPage() {
               {SITE.phone}
             </a>
           </p>
-          <p>{SITE.addressAlt}</p>
+          <p>{SITE.address}</p>
         </Prose>
         <InquiryForm />
       </div>

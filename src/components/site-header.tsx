@@ -10,12 +10,11 @@ import { FlagSwitcher } from "@/components/flag-switcher";
 import { NavTree } from "@/components/nav-tree";
 import { LoginModal } from "@/components/login-modal";
 import { useT } from "@/components/locale-provider";
-import { isCmsStaff, type Role } from "@/lib/auth-types";
+import type { Role } from "@/lib/auth-types";
 
 export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role | null }) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const cms = isCmsStaff(role);
 
   return (
     <header className="z-40 h-12 shrink-0 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
@@ -51,14 +50,6 @@ export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role 
 
         <div className="ml-auto flex shrink-0 items-center gap-0">
           <FlagSwitcher />
-          {cms ? (
-            <Link
-              href="/manage"
-              className="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-accent"
-            >
-              {t("header.manage")}
-            </Link>
-          ) : null}
           {signedIn ? (
             <Link
               href="/account"

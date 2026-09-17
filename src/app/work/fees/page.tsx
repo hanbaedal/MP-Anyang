@@ -19,7 +19,7 @@ export default async function WorkFeesPage({
   searchParams: Promise<{ from?: string; to?: string; status?: string }>;
 }) {
   const params = await searchParams;
-  const { locale, session, dump, envReady } = await loadWorkCopyPage();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage("fees");
   const fallback = defaultFeeRange();
   let from = parseIsoYmd(params.from) ?? parseIsoYmd(fallback.from)!;
   let to = parseIsoYmd(params.to) ?? parseIsoYmd(fallback.to)!;

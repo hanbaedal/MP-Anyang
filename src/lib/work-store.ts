@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { cache } from "react";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo, mongoDbName, mongoUriSet, requireDb } from "./mongo";
 import type { CemeteryInfoCopy, ContractCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
@@ -113,18 +114,52 @@ function withoutMongoId<T>(docs: object[]): T[] {
   });
 }
 
-async function readFileDump(): Promise<WorkLists> {
-  return {
-    meta: await readJsonFile<WorkMeta | null>(files.meta, null),
-    contracts: await readJsonFile<ContractCopy[]>(files.contracts, []),
-    fees: await readJsonFile<FeeCopy[]>(files.fees, []),
-    receipts: await readJsonFile<ReceiptCopy[]>(files.receipts, []),
-    reports: await readJsonFile<ReportCopy[]>(files.reports, []),
-    cemetery: await readJsonFile<CemeteryInfoCopy[]>(files.cemetery, []),
-  };
+export type WorkDumpSlice = "full" | "contracts" | "fees" | "receipts" | "reports" | "master" | "status";
+
+type WorkListKey = keyof Omit<WorkLists, "meta">;
+
+type WorkSliceSpec = {
+  meta: boolean;
+  contracts: boolean;
+  fees: boolean;
+  receipts: boolean;
+  reports: boolean;
+  cemetery: boolean;
+};
+
+const SLICE_SPEC: Record<WorkDumpSlice, WorkSliceSpec> = {
+  full: { meta: true, contracts: true, fees: true, receipts: true, reports: true, cemetery: true },
+  contracts: { meta: true, contracts: true, fees: false, receipts: false, reports: false, cemetery: false },
+  fees: { meta: true, contracts: false, fees: true, receipts: false, reports: false, cemetery: false },
+  receipts: { meta: true, contracts: false, fees: false, receipts: false, reports: false, cemetery: false },
+  reports: { meta: true, contracts: false, fees: false, receipts: false, reports: true, cemetery: false },
+  master: { meta: true, contracts: false, fees: false, receipts: false, reports: false, cemetery: false },
+  status: { meta: true, contracts: true, fees: true, receipts: false, reports: false, cemetery: false },
+};
+
+function sliceHasRows(spec: WorkSliceSpec, lists: WorkLists) {
+  if (lists.meta) return true;
+  const keys: WorkListKey[] = ["contracts", "fees", "receipts", "reports", "cemetery"];
+  return keys.some((key) => spec[key] && lists[key].length > 0);
 }
 
-async function readMongoDump(): Promise<WorkLists | null> {
+async function readFileSlice(spec: WorkSliceSpec): Promise<WorkLists> {
+  const [meta, contracts, fees, receipts, reports, cemetery] = await Promise.all([
+    spec.meta ? readJsonFile<WorkMeta | null>(files.meta, null) : Promise.resolve(null),
+    spec.contracts ? readJsonFile<ContractCopy[]>(files.contracts, []) : Promise.resolve([]),
+    spec.fees ? readJsonFile<FeeCopy[]>(files.fees, []) : Promise.resolve([]),
+    spec.receipts ? readJsonFile<ReceiptCopy[]>(files.receipts, []) : Promise.resolve([]),
+    spec.reports ? readJsonFile<ReportCopy[]>(files.reports, []) : Promise.resolve([]),
+    spec.cemetery ? readJsonFile<CemeteryInfoCopy[]>(files.cemetery, []) : Promise.resolve([]),
+  ]);
+  return { meta, contracts, fees, receipts, reports, cemetery };
+}
+
+async function readFileDump(): Promise<WorkLists> {
+  return readFileSlice(SLICE_SPEC.full);
+}
+
+async function readMongoSlice(spec: WorkSliceSpec): Promise<WorkLists | null> {
   if (!mongoUriSet()) return null;
   try {
     const db = await getDb();
@@ -132,19 +167,47 @@ async function readMongoDump(): Promise<WorkLists | null> {
     const names = new Set((await db.listCollections().toArray()).map((item) => item.name));
     const many = async <T,>(name: string) =>
       names.has(name) ? withoutMongoId<T>((await db.collection(name).find({}).toArray()) as object[]) : [];
-    const metaRows = await many<WorkMeta>("work_meta");
-    return {
-      meta: metaRows[0] ?? null,
-      contracts: await many<ContractCopy>("contracts"),
-      fees: await many<FeeCopy>("fees"),
-      receipts: await many<ReceiptCopy>("receipts"),
-      reports: await many<ReportCopy>("work_reports"),
-      cemetery: await many<CemeteryInfoCopy>("cemetery_info"),
-    };
+    const metaPromise = spec.meta
+      ? many<WorkMeta>("work_meta").then((rows) => rows[0] ?? null)
+      : Promise.resolve(null);
+    const [meta, contracts, fees, receipts, reports, cemetery] = await Promise.all([
+      metaPromise,
+      spec.contracts ? many<ContractCopy>("contracts") : Promise.resolve([]),
+      spec.fees ? many<FeeCopy>("fees") : Promise.resolve([]),
+      spec.receipts ? many<ReceiptCopy>("receipts") : Promise.resolve([]),
+      spec.reports ? many<ReportCopy>("work_reports") : Promise.resolve([]),
+      spec.cemetery ? many<CemeteryInfoCopy>("cemetery_info") : Promise.resolve([]),
+    ]);
+    return { meta, contracts, fees, receipts, reports, cemetery };
   } catch {
     console.error("[work-store] mongo read failed; falling back to local files (URI not logged)");
     return null;
   }
+}
+
+async function readMongoDump(): Promise<WorkLists | null> {
+  return readMongoSlice(SLICE_SPEC.full);
+}
+
+function storageFlags(fileHint: boolean) {
+  return {
+    mongoConfigured: hasMongo(),
+    filePresent: workFilesPresent() || fileHint,
+  };
+}
+
+async function readWorkDumpSliceImpl(slice: WorkDumpSlice): Promise<WorkDump> {
+  const spec = SLICE_SPEC[slice];
+  if (mongoUriSet()) {
+    const mongo = await readMongoSlice(spec);
+    if (mongo && sliceHasRows(spec, mongo)) {
+      return { ...mongo, storage: { used: "mongo", ...storageFlags(false) } };
+    }
+  }
+  const file = await readFileSlice(spec);
+  const mongo = mongoUriSet() ? await readMongoSlice(spec) : null;
+  const fileHint = dumpHasCopyRows(file) || Boolean(file.meta);
+  return pickWorkDump(mongo, file, storageFlags(fileHint));
 }
 
 async function replaceCollection(
@@ -261,13 +324,10 @@ export async function saveWorkDump(
 }
 
 /** 경영관리·계약·관리비·영수증이 같은 복사본을 읽습니다. URI가 있으면 Mongo가 우선, JSON은 로컬 폴백입니다. */
+export const readWorkDumpBySlice = cache(readWorkDumpSliceImpl);
+
 export async function readWorkDump(): Promise<WorkDump> {
-  const file = await readFileDump();
-  const mongo = await readMongoDump();
-  return pickWorkDump(mongo, file, {
-    mongoConfigured: hasMongo(),
-    filePresent: workFilesPresent() || dumpHasCopyRows(file) || Boolean(file.meta),
-  });
+  return readWorkDumpBySlice("full");
 }
 
 export async function countWorkCollections() {

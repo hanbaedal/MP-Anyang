@@ -32,7 +32,7 @@ export default async function DirectionsPage() {
         </div>
         <Prose>
           <h2 className="text-xl">{t(locale, "dir.alt")}</h2>
-          <p>{SITE.addressAlt}</p>
+          <p>{SITE.address}</p>
           <p>
             <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
               {SITE.phone}

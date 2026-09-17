@@ -8,7 +8,7 @@ export function SiteFooter() {
         <div className="min-w-0">
           <p className="font-serif text-base">{SITE.legalName}</p>
           <p className="mt-1 text-primary-foreground/85">
-            {SITE.addressAlt}
+            {SITE.address}
             <br />
             전화{" "}
             <a className="underline-offset-4 hover:underline" href={SITE.phoneTel}>

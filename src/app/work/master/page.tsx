@@ -11,7 +11,8 @@ export async function generateMetadata() {
 }
 
 export default async function WorkMasterPage() {
-  const { locale, session, dump, envReady } = await loadWorkCopyPage();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage("master");
+  const cemeteryTotal = dump.cemetery.length || dump.meta?.cemeteryCount || 0;
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28">
       <div>
@@ -22,7 +23,7 @@ export default async function WorkMasterPage() {
           </p>
         ) : null}
       </div>
-      {dump.cemetery.length === 0 ? (
+      {cemeteryTotal === 0 ? (
         <WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />
       ) : (
         <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, Map } from "lucide-react";
+import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, LayoutTemplate, Map } from "lucide-react";
 import { NAV } from "@/lib/site";
 import { WORK_NAV } from "@/lib/work-nav";
 import { EXEC_NAV } from "@/lib/exec-nav";
+import { manageNavItems, MANAGE_HOME } from "@/lib/manage-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
-import { isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
+import { isCmsStaff, isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -41,8 +42,10 @@ export function NavTree({
   const t = useT();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const staff = isStaffRole(role);
+  const cms = isCmsStaff(role);
   const workOpenDefault = staff;
   const execOpenDefault = isStatusStaff(role);
+  const manageOpenDefault = cms;
 
   useEffect(() => {
     setOpen((prev) => {
@@ -54,12 +57,15 @@ export function NavTree({
       }
       if (workOpenDefault) next.work = true;
       if (execOpenDefault) next.exec = true;
+      if (manageOpenDefault) next.manage = true;
       return next;
     });
-  }, [pathname, workOpenDefault, execOpenDefault]);
+  }, [pathname, workOpenDefault, execOpenDefault, manageOpenDefault]);
 
   const workExpanded = open.work ?? workOpenDefault;
   const execExpanded = open.exec ?? execOpenDefault;
+  const manageExpanded = open.manage ?? manageOpenDefault;
+  const manageLinks = cms && role ? manageNavItems(role) : [];
 
   return (
     <nav aria-label={t("explorer")} className={cn("text-[12px] leading-none", fit && "w-max")}>
@@ -194,6 +200,47 @@ export function NavTree({
             {execExpanded ? (
               <ul className="border-t border-border">
                 {EXEC_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        ) : null}
+        {cms ? (
+          <li className={topLevelLi}>
+            <button
+              type="button"
+              aria-expanded={manageExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, manage: !manageExpanded }))}
+              className={cn(row, manageOpenDefault && "text-primary")}
+            >
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", manageExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {manageExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <LayoutTemplate className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{t("manage.homepage")}</span>
+            </button>
+            {manageExpanded ? (
+              <ul className="border-t border-border">
+                {manageLinks.map((child) => {
                   const current = isNavActive(pathname, child.href);
                   return (
                     <li key={child.href} className="border-b border-border last:border-b-0">

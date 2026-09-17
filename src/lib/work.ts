@@ -2,7 +2,7 @@ import { sourceEnvReady } from "./cemetery-source";
 import { requireStaff, type SessionUser } from "./auth";
 import type { Locale } from "./i18n";
 import { readLocale } from "./i18n-server";
-import { readWorkDump, summarizeFees, type WorkDump } from "./work-store";
+import { readWorkDump, readWorkDumpBySlice, summarizeFees, type WorkDump, type WorkDumpSlice } from "./work-store";
 import { buildWorkStatusTables, type WorkStatusTables } from "./work-status";
 
 export type WorkOverview = {
@@ -52,7 +52,7 @@ export async function readWorkOverview(): Promise<WorkOverview> {
 
 export async function readWorkStatus(): Promise<WorkStatusTables> {
   try {
-    const dump = await readWorkDump();
+    const dump = await readWorkDumpBySlice("status");
     return buildWorkStatusTables(dump.contracts, dump.fees, dump.meta?.syncedAt ?? "");
   } catch {
     return buildWorkStatusTables([], [], "");
@@ -69,7 +69,7 @@ export function isWorkEmpty(overview: WorkOverview) {
   );
 }
 
-export async function loadWorkCopyPage(): Promise<{
+export async function loadWorkCopyPage(slice: WorkDumpSlice = "full"): Promise<{
   locale: Locale;
   session: SessionUser;
   dump: WorkDump;
@@ -77,9 +77,9 @@ export async function loadWorkCopyPage(): Promise<{
 }> {
   const locale = await readLocale();
   const session = await requireStaff();
-  const dump = await readWorkDump();
+  const dump = slice === "full" ? await readWorkDump() : await readWorkDumpBySlice(slice);
   return { locale, session, dump, envReady: sourceEnvReady() };
 }
 
-export { readWorkDump } from "./work-store";
+export { readWorkDump, type WorkDumpSlice } from "./work-store";
 export { workCopyLead } from "./work-copy-text";

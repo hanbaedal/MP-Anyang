@@ -1,12 +1,22 @@
+import type { Role } from "./auth-types";
+import { isCmsStaff, isStaffRole, isStatusStaff } from "./auth-types";
+import { EXEC_NAV } from "./exec-nav";
+import { manageNavItems, MANAGE_HOME } from "./manage-nav";
+import { WORK_NAV } from "./work-nav";
+
 export const SITE = {
   legalName: "(재)안양공원묘원",
   shortName: "안양공원",
   phone: "031-482-2949",
   phoneTel: "tel:031-482-2949",
   visitName: "공동묘지관리소",
-  address: "경기 안산시 상록구 버대길 195",
-  addressLine: "경기 안산시 상록구 버대길 195",
+  /** 공개·푸터·오시는 길에 쓰는 도로명+지번 */
+  address: "경기 안산시 상록구 오리골길 41 (양상동 산50)",
+  addressLine: "경기 안산시 상록구 오리골길 41",
+  /** @deprecated 공개 주소와 동일. 기존 호출부 호환용 */
   addressAlt: "경기 안산시 상록구 오리골길 41 (양상동 산50)",
+  /** 지도·내비에 남을 수 있는 옛 도로명(공개 문구에는 쓰지 않음) */
+  addressLegacy: "경기 안산시 상록구 버대길 195",
   addressDetail: "양상동",
   region: "안산 상록구 양상동",
   postalCode: "15208",
@@ -14,7 +24,7 @@ export const SITE = {
   lng: 126.8419504,
   heroLine: "수도권 최상·최선·최고·최대, 접근성이 뛰어난 명당자리 (재)안양공원묘원",
   description:
-    "경기 안산시 상록구 양상동 공동묘지관리소·(재)안양공원묘원. 매장·평장·봉안, 분양가 10% 계약, 관리비·회원·묻고답하기·벌초 신청.",
+    "경기 안산시 상록구 양상동 공동묘지관리소·(재)안양공원묘원. 매장·평장·봉안, 분양 안내, 관리비·묻고답하기.",
 } as const;
 
 export const DEFAULT_SITE_URL = "https://mp-anyang.onrender.com";
@@ -49,7 +59,7 @@ export const MAP = {
   placeName: SITE.visitName,
   naverSearch: `https://map.naver.com/p/search/${encodeURIComponent(SITE.visitName + " " + SITE.addressLine)}`,
   naverDirections: `https://map.naver.com/p/directions/-/-/${SITE.lng},${SITE.lat},${encodeURIComponent(SITE.visitName)}/car`,
-  kakaoSearch: `https://map.kakao.com/?q=${encodeURIComponent(SITE.addressLine)}`,
+  kakaoSearch: `https://map.kakao.com/?q=${encodeURIComponent(SITE.address)}`,
   kakaoDirections: `https://map.kakao.com/link/to/${encodeURIComponent(SITE.visitName)},${SITE.lat},${SITE.lng}`,
   osmEmbed: `https://www.openstreetmap.org/export/embed.html?bbox=${SITE.lng - 0.012}%2C${SITE.lat - 0.008}%2C${SITE.lng + 0.012}%2C${SITE.lat + 0.008}&layer=mapnik&marker=${SITE.lat}%2C${SITE.lng}`,
 };
@@ -83,7 +93,7 @@ export type SitemapMenu = {
   children: NavChild[];
 };
 
-export function sitemapMenus(): SitemapMenu[] {
+export function sitemapMenus(role?: Role | null): SitemapMenu[] {
   const menus: SitemapMenu[] = [
     { href: "/", i18n: "home", tone: "home", image: "/images/hero.jpg", children: [] },
   ];
@@ -95,6 +105,46 @@ export function sitemapMenus(): SitemapMenu[] {
       tone: item.tone,
       image: item.image || "/images/park-overview.jpg",
       children: item.children,
+    });
+  }
+  if (isStaffRole(role)) {
+    menus.push({
+      href: WORK_NAV[0].href,
+      i18n: "work.program",
+      tone: "guide",
+      image: "/images/park-overview.jpg",
+      children: WORK_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
+    });
+  }
+  if (isStatusStaff(role)) {
+    menus.push({
+      href: EXEC_NAV[0].href,
+      i18n: "work.overview",
+      tone: "lots",
+      image: "/images/park-overview.jpg",
+      children: EXEC_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
+    });
+  }
+  if (role === "supervisor") {
+    menus.push({
+      href: "/work/sync",
+      i18n: "work.dbUpdate",
+      tone: "more",
+      image: "/images/park-overview.jpg",
+      children: [],
+    });
+  }
+  if (isCmsStaff(role)) {
+    menus.push({
+      href: MANAGE_HOME,
+      i18n: "manage.homepage",
+      tone: "support",
+      image: "/images/park-overview.jpg",
+      children: manageNavItems(role).map((item) => ({
+        href: item.href,
+        label: item.i18n,
+        i18n: item.i18n,
+      })),
     });
   }
   return menus;

@@ -12,7 +12,7 @@ export async function generateMetadata() {
 }
 
 export default async function WorkReportsPage() {
-  const { locale, session, dump, envReady } = await loadWorkCopyPage();
+  const { locale, session, dump, envReady } = await loadWorkCopyPage("reports");
   const rows = dump.reports.map((row) => ({
     date: row.date,
     handledCount: String(row.handledCount),

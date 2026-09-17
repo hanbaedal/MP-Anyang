@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { readSession } from "@/lib/auth";
 import { NAV_TONE_CLASS, sitemapMenus } from "@/lib/site";
 import { thumbUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,8 @@ export async function generateMetadata() {
 
 export default async function SitemapPage() {
   const locale = await readLocale();
-  const menus = sitemapMenus();
+  const session = await readSession();
+  const menus = sitemapMenus(session?.role);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4">

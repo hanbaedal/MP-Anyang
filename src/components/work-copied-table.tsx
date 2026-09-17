@@ -9,7 +9,7 @@ export function WorkCopiedTable({
   empty,
   toolbar,
   groupLabel,
-  limit = 0,
+  limit = 300,
 }: {
   title: string;
   lead?: string;
