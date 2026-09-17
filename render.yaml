@@ -21,3 +21,23 @@ services:
         value: https://mp-anyang.onrender.com
       - key: INQUIRY_INBOX
         sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: SUPERVISOR_ID
+        sync: false
+      - key: SUPERVISOR_PASSWORD
+        sync: false
+      - key: ADMIN_SEED
+        sync: false
+      - key: CEO_ID
+        sync: false
+      - key: CEO_PASSWORD
+        sync: false
+      - key: CEMETERY_SOURCE_URL
+        value: http://1.255.226.45:88/Cemetery
+      - key: CEMETERY_SOURCE_COMPANY
+        value: "002"
+      - key: CEMETERY_SOURCE_ID
+        sync: false
+      - key: CEMETERY_SOURCE_PASSWORD
+        sync: false
