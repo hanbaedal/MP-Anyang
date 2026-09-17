@@ -1,23 +1,9 @@
-import { randomUUID } from "node:crypto";
 import type { Filter } from "mongodb";
 import type { SessionUser } from "./auth-types";
+import { isValidVisitorId, newVisitorId } from "./analytics-cookie";
 import { getDb, mongoUriSet } from "./mongo";
 
-export const ANON_VISITOR_COOKIE = "anyang_vid";
-
-export function anonVisitorCookieOptions() {
-  return {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax" as const,
-    maxAge: 60 * 60 * 24 * 400,
-    secure: process.env.NODE_ENV === "production",
-  };
-}
-
-export function isValidVisitorId(value: string | undefined | null) {
-  return Boolean(value && /^[a-f0-9-]{16,64}$/i.test(value));
-}
+export { ANON_VISITOR_COOKIE, anonVisitorCookieOptions, isValidVisitorId, newVisitorId } from "./analytics-cookie";
 
 const BOT_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|HeadlessChrome|Bytespider/i;
 const SKIP_PREFIXES = ["/api/", "/_next/", "/icon", "/robots", "/sitemap.xml"];
@@ -30,10 +16,6 @@ function kstDateKey(d = new Date()) {
 
 function kstDateKeyDaysAgo(days: number) {
   return kstDateKey(new Date(Date.now() - days * 86_400_000));
-}
-
-export function newVisitorId() {
-  return randomUUID();
 }
 
 /** Mongo $inc dotted path — `/`·`.` 를 쓰면 업데이트가 실패할 수 있음 */

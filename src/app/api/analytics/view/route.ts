@@ -5,8 +5,8 @@ import {
   anonVisitorCookieOptions,
   isValidVisitorId,
   newVisitorId,
-  trackPageView,
-} from "@/lib/site-analytics";
+} from "@/lib/analytics-cookie";
+import { trackPageView } from "@/lib/site-analytics";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
