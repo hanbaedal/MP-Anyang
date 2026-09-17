@@ -11,9 +11,16 @@ function kstDateKey(d = new Date()) {
   return d.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
 }
 
-function pathStatKey(pathname: string) {
-  const p = pathname.split("?")[0].slice(0, 160) || "/";
-  return p.replace(/\./g, "_");
+/** Mongo $inc dotted path — `/`·`.` 를 쓰면 업데이트가 실패할 수 있음 */
+export function pathStatKey(pathname: string) {
+  const raw = pathname.split("?")[0].slice(0, 160) || "/";
+  if (raw === "/") return "|root|";
+  return raw.replace(/\./g, "_").replace(/\//g, "|");
+}
+
+export function pathStatKeyToLabel(key: string) {
+  if (key === "|root|") return "/";
+  return key.replace(/\|/g, "/");
 }
 
 export function isAnalyticsBot(userAgent: string | null | undefined) {
@@ -62,19 +69,17 @@ export async function trackPageView(input: {
     const date = kstDateKey();
     const pathKey = pathStatKey(pathname);
     const isStaff = Boolean(session);
-    const inc: Record<string, number> = {
-      [isStaff ? "staffPv" : "publicPv"]: 1,
-      [`paths.${pathKey}`]: 1,
-    };
-    await db.collection<DailyDoc>("analytics_daily").updateOne(
+    const col = db.collection<DailyDoc>("analytics_daily");
+    await col.updateOne(
       { _id: date },
       {
-        $inc: inc,
+        $inc: { [isStaff ? "staffPv" : "publicPv"]: 1 },
         $set: { updatedAt: new Date() },
         $setOnInsert: { publicPv: 0, staffPv: 0, paths: {} },
       },
       { upsert: true },
     );
+    await col.updateOne({ _id: date }, { $inc: { [`paths.${pathKey}`]: 1 } });
 
     if (session) {
       await touchStaffPresence(session, input.ip ?? null, false);
@@ -231,7 +236,7 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     const topPaths = [...pathAcc.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15)
-      .map(([path, views]) => ({ path, views }));
+      .map(([path, views]) => ({ path: pathStatKeyToLabel(path), views }));
 
     const recentLogins = await db
       .collection<{ at: Date; username: string; name: string; role: string; ip?: string }>("staff_audit")
