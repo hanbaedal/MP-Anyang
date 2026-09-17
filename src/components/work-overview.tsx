@@ -218,7 +218,6 @@ export function ExecSectionPage({
     status.feeHistory.every((row) => row.paidCount === 0 && row.unpaidCount === 0) &&
     status.contracts.every((row) => row.total === 0);
   const unit = t(locale, "work.amountUnit");
-  const copyTotal = t(locale, "work.contractCopyTotal", { n: formatCount(status.contractCopyCount) });
   const undatedNote =
     status.undatedContracts > 0
       ? t(locale, "work.statusUndated", { n: formatCount(status.undatedContracts) })
@@ -313,16 +312,40 @@ export function ExecSectionPage({
       ) : null}
 
       {section === "contracts" ? (
-        <StatusTable
-          caption={t(locale, "work.contractsByYear")}
-          rows={status.contracts}
-          firstHeader={t(locale, "work.statusPeriod")}
-          lastHeader={t(locale, "work.colTotal")}
-          unitLabel={copyTotal}
-          footnote={undatedNote}
-        />
+        <>
+          <SalesAllGlance locale={locale} count={status.contractCopyCount} />
+          <StatusTable
+            caption={t(locale, "work.contractsByYear")}
+            rows={status.contracts}
+            firstHeader={t(locale, "work.statusPeriod")}
+            lastHeader={t(locale, "work.colTotal")}
+            footnote={undatedNote}
+          />
+        </>
       ) : null}
     </div>
+  );
+}
+
+function SalesAllGlance({ locale, count }: { locale: Locale; count: number }) {
+  const items = [
+    { label: t(locale, "work.salesAllCount"), value: t(locale, "work.feeCountUnit", { n: formatCount(count) }) },
+    { label: t(locale, "work.salesAllAmount"), value: t(locale, "unconfirmed") },
+  ];
+  return (
+    <section className="flex max-h-none min-h-min shrink-0 flex-col gap-1.5">
+      <Card className="gap-0 py-0 shadow-none">
+        <CardContent className="grid grid-cols-1 gap-px bg-border p-0 sm:grid-cols-2">
+          {items.map((item) => (
+            <div key={item.label} className="bg-card px-2.5 py-2">
+              <p className="text-[10px] leading-tight text-muted-foreground">{item.label}</p>
+              <p className="mt-0.5 text-base font-semibold tabular-nums text-primary sm:text-lg">{item.value}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      <p className="text-[9px] leading-tight text-muted-foreground">{t(locale, "work.salesAllLead")}</p>
+    </section>
   );
 }
 

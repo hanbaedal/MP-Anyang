@@ -1,8 +1,10 @@
 import type { ContractCopy, FeeCopy } from "./cemetery-parse";
 
-export const STATUS_YEARS = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
 export const STATUS_FEE_YEAR = 2026;
 export const STATUS_FEE_HISTORY_YEARS = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025] as const;
+/** 분양 표: 2020년 이전 한 덩어리, 2021년부터 연·월. 관리비 연도와 다름. */
+export const STATUS_SALES_BEFORE_YEAR = 2020;
+export const STATUS_SALES_YEARS = [2021, 2022, 2023, 2024, 2025, 2026] as const;
 const UNPAID_STATUSES = new Set(["미납", "납부중", "보류"]);
 
 export type YearMonth = { year: number; month: number };
@@ -336,7 +338,7 @@ export function buildWorkStatusTables(
   syncedAt = "",
 ): WorkStatusTables {
   const before = emptyMonths();
-  const byYear = new Map<number, number[]>(STATUS_YEARS.map((year) => [year, emptyMonths()]));
+  const byYear = new Map<number, number[]>(STATUS_SALES_YEARS.map((year) => [year, emptyMonths()]));
   let undatedContracts = 0;
 
   for (const row of contracts) {
@@ -345,7 +347,7 @@ export function buildWorkStatusTables(
       undatedContracts += 1;
       continue;
     }
-    if (when.year <= 2010) {
+    if (when.year <= STATUS_SALES_BEFORE_YEAR) {
       before[when.month - 1] += 1;
       continue;
     }
@@ -420,8 +422,8 @@ export function buildWorkStatusTables(
       ...STATUS_FEE_HISTORY_YEARS.map((year) => historyRow(`${year}년`, feeByYear.get(year) ?? emptyAcc())),
     ],
     contracts: [
-      rowFromMonths("2010년 이전", before, "count"),
-      ...STATUS_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths(), "count")),
+      rowFromMonths("2020년 이전", before, "count"),
+      ...STATUS_SALES_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths(), "count")),
     ],
     paidRows: [
       rowFromMonths("그달 납부 금액", paidMonths, "amount"),

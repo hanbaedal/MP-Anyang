@@ -2,10 +2,10 @@ export const EXEC_NAV = [
   { slug: "fees", href: "/work/exec/fees", i18n: "work.execFees" },
   { slug: "unpaid-list", href: "/work/exec/unpaid-list", i18n: "work.execUnpaidList" },
   { slug: "sales", href: "/work/exec/sales", i18n: "work.execSales" },
+  { slug: "contracts", href: "/work/exec/contracts", i18n: "work.execContracts" },
   { slug: "fees-by-year", href: "/work/exec/fees-by-year", i18n: "work.execFeesByYear" },
   { slug: "paid", href: "/work/exec/paid", i18n: "work.execPaid" },
   { slug: "unpaid", href: "/work/exec/unpaid", i18n: "work.execUnpaid" },
-  { slug: "contracts", href: "/work/exec/contracts", i18n: "work.execContracts" },
   { slug: "all-fees", href: "/work/exec/all-fees", i18n: "work.execAllFees" },
 ] as const;
 
