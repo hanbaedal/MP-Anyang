@@ -1,6 +1,6 @@
 import type { ContractCopy, FeeCopy } from "./cemetery-parse";
 
-export const STATUS_YEARS = [2021, 2022, 2023, 2024, 2025, 2026] as const;
+export const STATUS_YEARS = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026] as const;
 export const STATUS_FEE_YEAR = 2026;
 const UNPAID_STATUSES = new Set(["미납", "납부중", "보류"]);
 
@@ -85,7 +85,7 @@ export function buildWorkStatusTables(
       undatedContracts += 1;
       continue;
     }
-    if (when.year <= 2020) {
+    if (when.year <= 2010) {
       before[when.month - 1] += 1;
       continue;
     }
@@ -115,7 +115,7 @@ export function buildWorkStatusTables(
     syncedAt,
     undatedContracts,
     contracts: [
-      rowFromMonths("2020년 이전", before),
+      rowFromMonths("2010년 이전", before),
       ...STATUS_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths())),
     ],
     paidCount: paidKeys.size,
