@@ -8,21 +8,33 @@ import { cn } from "@/lib/utils";
 export function DbUpdateButton({ className, onDone }: { className?: string; onDone?: () => void }) {
   const t = useT();
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function onClick() {
+    setLoading(true);
+    setMessage(t("work.syncing"));
     try {
       const res = await fetch("/api/work/sync", { method: "POST" });
-      const json = (await res.json()) as { message?: string; error?: string };
+      const json = (await res.json()) as { message?: string; error?: string; ok?: boolean };
       setMessage(json.message || json.error || t("work.offline"));
     } catch {
       setMessage(t("work.offline"));
+    } finally {
+      setLoading(false);
+      onDone?.();
     }
-    onDone?.();
   }
 
   return (
     <div className={cn("px-1 py-1", className)}>
-      <Button type="button" size="xs" variant="outline" className="h-6 w-full justify-start px-1 text-[11px]" onClick={onClick}>
+      <Button
+        type="button"
+        size="xs"
+        variant="outline"
+        className="h-6 w-full justify-start px-1 text-[11px]"
+        disabled={loading}
+        onClick={onClick}
+      >
         {t("work.dbUpdate")}
       </Button>
       {message ? (

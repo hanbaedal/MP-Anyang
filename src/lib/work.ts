@@ -1,53 +1,45 @@
-import { getDb, hasMongo } from "./mongo";
+import { readWorkDump, summarizeFees } from "./work-store";
 
 export type WorkOverview = {
   connected: boolean;
+  syncedAt: string;
   contractCount: number;
   paidCount: number;
   paidAmount: number;
   unpaidCount: number;
   unpaidAmount: number;
+  feeCount: number;
+  receiptCount: number;
+  message: string;
 };
 
 const EMPTY: WorkOverview = {
   connected: false,
+  syncedAt: "",
   contractCount: 0,
   paidCount: 0,
   paidAmount: 0,
   unpaidCount: 0,
   unpaidAmount: 0,
+  feeCount: 0,
+  receiptCount: 0,
+  message: "",
 };
 
-function num(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
 export async function readWorkOverview(): Promise<WorkOverview> {
-  if (!hasMongo()) return EMPTY;
   try {
-    const db = await getDb();
-    if (!db) return EMPTY;
-    const names = new Set((await db.listCollections().toArray()).map((item) => item.name));
-    if (!names.has("contracts") && !names.has("fees")) return EMPTY;
-
-    const overview: WorkOverview = { ...EMPTY, connected: true };
-    if (names.has("contracts")) {
-      overview.contractCount = await db.collection("contracts").countDocuments();
-    }
-    if (names.has("fees")) {
-      const fees = await db.collection("fees").find({}).toArray();
-      for (const row of fees) {
-        const amount = num((row as { amount?: unknown }).amount);
-        if ((row as { paid?: unknown }).paid === true) {
-          overview.paidCount += 1;
-          overview.paidAmount += amount;
-        } else {
-          overview.unpaidCount += 1;
-          overview.unpaidAmount += amount;
-        }
-      }
-    }
-    return overview;
+    const dump = await readWorkDump();
+    if (!dump.meta && dump.contracts.length === 0 && dump.fees.length === 0) return EMPTY;
+    const feeSum = summarizeFees(dump.fees);
+    return {
+      connected: true,
+      syncedAt: dump.meta?.syncedAt ?? "",
+      contractCount: dump.contracts.length || dump.meta?.listedContractTotal || 0,
+      feeCount: dump.fees.length,
+      receiptCount: dump.receipts.length,
+      message: dump.meta?.message ?? "",
+      ...feeSum,
+    };
   } catch {
     return EMPTY;
   }
@@ -62,3 +54,5 @@ export function isWorkEmpty(overview: WorkOverview) {
     overview.unpaidAmount === 0
   );
 }
+
+export { readWorkDump } from "./work-store";

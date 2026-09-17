@@ -1,6 +1,7 @@
-import { WorkStub } from "@/components/work-stub";
+import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { readWorkDump } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +11,28 @@ export async function generateMetadata() {
 }
 
 export default async function WorkReportsPage() {
-  return <WorkStub titleKey="work.reports" />;
+  const locale = await readLocale();
+  const dump = await readWorkDump();
+  const rows = dump.reports.map((row) => ({
+    date: row.date,
+    handledCount: String(row.handledCount),
+    claimMaterial: row.claimMaterial,
+    inboundMaterial: row.inboundMaterial,
+    note: row.note,
+  }));
+  return (
+    <WorkCopiedTable
+      title={t(locale, "work.reports")}
+      lead={`복사본 ${rows.length}건`}
+      syncedAt={dump.meta?.syncedAt}
+      columns={[
+        { key: "date", label: "작성일자" },
+        { key: "handledCount", label: "처리건수", numeric: true },
+        { key: "claimMaterial", label: "청구자재" },
+        { key: "inboundMaterial", label: "입고자재" },
+        { key: "note", label: "특기사항" },
+      ]}
+      rows={rows}
+    />
+  );
 }

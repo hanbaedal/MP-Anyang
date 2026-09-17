@@ -41,7 +41,12 @@ data/members.local.json
 data/staff.local.json
 data/cms.local.json
 data/gallery.local.json
-data/notices.local.json
+data/work-meta.local.json
+data/work-contracts.local.json
+data/work-fees.local.json
+data/work-receipts.local.json
+data/work-reports.local.json
+data/work-cemetery.local.json
 public/uploads/*
 !public/uploads/.gitkeep
 

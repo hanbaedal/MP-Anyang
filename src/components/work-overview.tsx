@@ -19,6 +19,9 @@ export function WorkOverviewCards({ locale, overview }: { locale: Locale; overvi
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-10">
       <h1 className="font-serif text-xl text-primary">{t(locale, "work.overview")}</h1>
+      {overview.syncedAt ? (
+        <p className="text-xs text-muted-foreground">복사 시각 {new Date(overview.syncedAt).toLocaleString("ko-KR")}</p>
+      ) : null}
       {empty ? (
         <p className="rounded-lg border bg-card px-4 py-4 text-sm text-muted-foreground">{t(locale, "work.empty")}</p>
       ) : null}

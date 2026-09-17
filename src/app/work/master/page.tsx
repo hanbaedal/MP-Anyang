@@ -1,6 +1,7 @@
-import { WorkStub } from "@/components/work-stub";
+import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { readWorkDump } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +11,26 @@ export async function generateMetadata() {
 }
 
 export default async function WorkMasterPage() {
-  return <WorkStub titleKey="work.master" />;
+  const locale = await readLocale();
+  const dump = await readWorkDump();
+  const rows = dump.cemetery.map((row) => ({
+    tombNo: row.tombNo,
+    pyeong: row.pyeong,
+    location: row.location,
+    inUse: row.inUse,
+  }));
+  return (
+    <WorkCopiedTable
+      title={t(locale, "work.master")}
+      lead={`묘지 기초정보 복사본 ${rows.length}건. 원본 사용자 비밀번호 목록은 가져오지 않습니다.`}
+      syncedAt={dump.meta?.syncedAt}
+      columns={[
+        { key: "tombNo", label: "묘지번호" },
+        { key: "pyeong", label: "평수" },
+        { key: "location", label: "위치" },
+        { key: "inUse", label: "사용여부" },
+      ]}
+      rows={rows}
+    />
+  );
 }
