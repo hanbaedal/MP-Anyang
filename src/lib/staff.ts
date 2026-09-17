@@ -127,7 +127,9 @@ async function insertStaff(staff: Staff) {
   await writeLocal(all);
 }
 
-export async function ensureAuthSeed() {
+let seedPromise: Promise<void> | null = null;
+
+async function runAuthSeed() {
   const supervisorId = process.env.SUPERVISOR_ID?.trim();
   const supervisorPassword = process.env.SUPERVISOR_PASSWORD ?? "";
   if (supervisorId && supervisorPassword) {
@@ -202,6 +204,16 @@ export async function ensureAuthSeed() {
       await updateStaff(existing.id, { password: ceoPassword });
     }
   }
+}
+
+export async function ensureAuthSeed() {
+  if (!seedPromise) {
+    seedPromise = runAuthSeed().catch((err) => {
+      seedPromise = null;
+      throw err;
+    });
+  }
+  await seedPromise;
 }
 
 export function validateAdminInput(input: {
