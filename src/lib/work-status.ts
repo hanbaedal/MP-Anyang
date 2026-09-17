@@ -46,6 +46,17 @@ export type WorkFeeHistoryRow = {
   paidRate: number;
 };
 
+export type UnpaidRosterRow = {
+  userName: string;
+  tombNo: string;
+  remaining: number;
+};
+
+export type UnpaidRoster = {
+  totalRemaining: number;
+  rows: UnpaidRosterRow[];
+};
+
 export type WorkStatusTables = {
   syncedAt: string;
   undatedContracts: number;
@@ -53,11 +64,14 @@ export type WorkStatusTables = {
   contractCopyCount: number;
   feeAll: WorkFeeAllSummary;
   feeYear: WorkFeeYearSummary;
+  unpaidRoster: UnpaidRoster;
   feeHistory: WorkFeeHistoryRow[];
   contracts: StatusMonthRow[];
   paidRows: StatusMonthRow[];
   unpaidRows: StatusMonthRow[];
 };
+
+export type FeePayFilter = "all" | "paid" | "unpaid";
 
 type YearAcc = {
   paidAmount: number;
@@ -65,6 +79,100 @@ type YearAcc = {
   paidKeys: Set<string>;
   unpaidKeys: Set<string>;
 };
+
+/** YYYYMMDD number, or null. Missing day becomes 1. */
+export function parseCopyYmd(raw: string | undefined | null): number | null {
+  const when = parseCopyDate(raw);
+  if (!when) return null;
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  let day = 1;
+  if (digits.length >= 8) {
+    const n = Number(digits.slice(6, 8));
+    if (n >= 1 && n <= 31) day = n;
+  }
+  return when.year * 10000 + when.month * 100 + day;
+}
+
+export function parseIsoYmd(raw: string | undefined | null): number | null {
+  const m = String(raw ?? "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return year * 10000 + month * 100 + day;
+}
+
+export function isoFromYmd(n: number) {
+  const s = String(n).padStart(8, "0");
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+}
+
+export function defaultFeeRange() {
+  return {
+    from: `${STATUS_FEE_YEAR}-01-01`,
+    to: `${STATUS_FEE_YEAR}-12-31`,
+  };
+}
+
+export function feePayFilter(raw: string | undefined | null): FeePayFilter {
+  if (raw === "paid" || raw === "unpaid") return raw;
+  return "all";
+}
+
+export function feeMatchesPay(row: FeeCopy, filter: FeePayFilter) {
+  if (filter === "paid") return isPaidFee(row);
+  if (filter === "unpaid") return isUnpaidFee(row);
+  return true;
+}
+
+export function feeInRange(row: FeeCopy, from: number, to: number) {
+  const ymd = parseCopyYmd(row.billedOn);
+  if (ymd == null) return false;
+  return ymd >= from && ymd <= to;
+}
+
+export function contractYearsInCopy(contracts: ContractCopy[]): number[] {
+  const years = new Set<number>([STATUS_FEE_YEAR]);
+  for (const row of contracts) {
+    const when = contractDate(row);
+    if (when) years.add(when.year);
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+export function parseYearParam(raw: string | undefined | null, years: number[], fallback = STATUS_FEE_YEAR) {
+  const n = Number(raw);
+  if (Number.isInteger(n) && n >= 1900 && n <= 2100) return n;
+  return years.includes(fallback) ? fallback : (years[0] ?? fallback);
+}
+
+export function buildUnpaidRoster(fees: FeeCopy[]): UnpaidRoster {
+  const byKey = new Map<string, { userName: string; tombNo: string; remaining: number; billedOn: string }>();
+  for (const row of fees) {
+    const key = feeKey(row);
+    const add = row.balance > 0 ? row.balance : 0;
+    const cur = byKey.get(key);
+    if (!cur) {
+      byKey.set(key, { userName: row.userName, tombNo: row.tombNo, remaining: add, billedOn: row.billedOn });
+      continue;
+    }
+    cur.remaining += add;
+    if (row.billedOn > cur.billedOn) {
+      cur.userName = row.userName;
+      cur.tombNo = row.tombNo;
+      cur.billedOn = row.billedOn;
+    }
+  }
+  const rows = [...byKey.values()]
+    .filter((row) => row.remaining > 0)
+    .sort((a, b) => b.remaining - a.remaining || a.tombNo.localeCompare(b.tombNo, "ko"))
+    .map(({ userName, tombNo, remaining }) => ({ userName, tombNo, remaining }));
+  return {
+    totalRemaining: rows.reduce((sum, row) => sum + row.remaining, 0),
+    rows,
+  };
+}
 
 export function parseCopyDate(raw: string | undefined | null): YearMonth | null {
   const text = String(raw ?? "").trim();
@@ -105,15 +213,15 @@ function rowFromMonths(label: string, months: number[], kind: StatusRowKind, tot
   return { label, months, total: total ?? months.reduce((sum, n) => sum + n, 0), kind };
 }
 
-function feeKey(row: FeeCopy) {
+export function feeKey(row: FeeCopy) {
   return row.tombNo || row.ref || `${row.userName}-${row.billedOn}`;
 }
 
-function isPaidFee(row: FeeCopy) {
+export function isPaidFee(row: FeeCopy) {
   return row.status === "완납" || (row.paidAmount > 0 && row.balance === 0 && row.status !== "미납");
 }
 
-function isUnpaidFee(row: FeeCopy) {
+export function isUnpaidFee(row: FeeCopy) {
   return UNPAID_STATUSES.has(row.status) || row.balance > 0;
 }
 
@@ -306,6 +414,7 @@ export function buildWorkStatusTables(
     contractCopyCount: contracts.length,
     feeAll: buildFeeAllSummary(fees),
     feeYear,
+    unpaidRoster: buildUnpaidRoster(fees),
     feeHistory: [
       historyRow("2010년 이전", feeBefore),
       ...STATUS_FEE_HISTORY_YEARS.map((year) => historyRow(`${year}년`, feeByYear.get(year) ?? emptyAcc())),

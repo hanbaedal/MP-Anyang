@@ -1,8 +1,7 @@
 import { WorkCopyEmpty } from "@/components/work-copy-empty";
-import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { loadWorkCopyPage, workCopyLead } from "@/lib/work";
+import { loadWorkCopyPage } from "@/lib/work";
 
 export const dynamic = "force-dynamic";
 
@@ -13,33 +12,24 @@ export async function generateMetadata() {
 
 export default async function WorkReceiptsPage() {
   const { locale, session, dump, envReady } = await loadWorkCopyPage();
-  const rows = dump.receipts.map((row) => ({
-    date: row.date,
-    tombNo: row.tombNo,
-    deceased: row.deceased,
-    serial: row.serial,
-    amount: row.amount.toLocaleString("ko-KR"),
-    summary: row.summary,
-    kind: row.kind,
-    staff: row.staff,
-  }));
+  const n = dump.receipts.length.toLocaleString("ko-KR");
   return (
-    <WorkCopiedTable
-      title={t(locale, "work.receipts")}
-      lead={workCopyLead(rows.length)}
-      syncedAt={dump.meta?.syncedAt}
-      columns={[
-        { key: "date", label: "거래년월일" },
-        { key: "tombNo", label: "묘지번호" },
-        { key: "deceased", label: "고인성명" },
-        { key: "serial", label: "일련번호" },
-        { key: "amount", label: "거래금액", numeric: true },
-        { key: "summary", label: "내역요약" },
-        { key: "kind", label: "영수종류" },
-        { key: "staff", label: "담당자" },
-      ]}
-      rows={rows}
-      empty={<WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />}
-    />
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28">
+      <div>
+        <h1 className="font-serif text-xl text-primary">{t(locale, "work.receipts")}</h1>
+        {dump.meta?.syncedAt ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            복사 시각 {new Date(dump.meta.syncedAt).toLocaleString("ko-KR")}
+          </p>
+        ) : null}
+      </div>
+      {dump.receipts.length === 0 ? (
+        <WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />
+      ) : (
+        <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">
+          {t(locale, "work.receiptsOpinion", { n })}
+        </p>
+      )}
+    </div>
   );
 }

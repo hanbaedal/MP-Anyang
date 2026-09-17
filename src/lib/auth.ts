@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { EXEC_HOME } from "./exec-nav";
 import { afterLoginPath, isCmsStaff, isStaffRole, isStatusStaff, type SessionUser } from "./auth-types";
 import { ensureAuthSeed, findStaffByUsername } from "./staff";
 import { verifyPassword } from "./passwords";
@@ -116,7 +117,7 @@ export async function requireStaff() {
 export async function requireCmsStaff(supervisor = false) {
   const session = await readSession();
   if (!session || !isCmsStaff(session.role)) {
-    if (session?.role === "ceo") redirect("/work/exec/all-fees");
+    if (session?.role === "ceo") redirect(EXEC_HOME);
     redirect("/?login=1");
   }
   if (supervisor && session.role !== "supervisor") redirect("/manage");

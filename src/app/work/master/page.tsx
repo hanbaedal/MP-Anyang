@@ -1,5 +1,4 @@
 import { WorkCopyEmpty } from "@/components/work-copy-empty";
-import { WorkCopiedTable } from "@/components/work-copied-table";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 import { loadWorkCopyPage } from "@/lib/work";
@@ -13,25 +12,23 @@ export async function generateMetadata() {
 
 export default async function WorkMasterPage() {
   const { locale, session, dump, envReady } = await loadWorkCopyPage();
-  const rows = dump.cemetery.map((row) => ({
-    tombNo: row.tombNo,
-    pyeong: row.pyeong,
-    location: row.location,
-    inUse: row.inUse,
-  }));
   return (
-    <WorkCopiedTable
-      title={t(locale, "work.master")}
-      lead={`묘지 기초정보 복사본 ${rows.length.toLocaleString("ko-KR")}건. 원본 사용자 비밀번호 목록은 가져오지 않습니다.`}
-      syncedAt={dump.meta?.syncedAt}
-      columns={[
-        { key: "tombNo", label: "묘지번호" },
-        { key: "pyeong", label: "평수" },
-        { key: "location", label: "위치" },
-        { key: "inUse", label: "사용여부" },
-      ]}
-      rows={rows}
-      empty={<WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />}
-    />
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28">
+      <div>
+        <h1 className="font-serif text-xl text-primary">{t(locale, "work.master")}</h1>
+        {dump.meta?.syncedAt ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            복사 시각 {new Date(dump.meta.syncedAt).toLocaleString("ko-KR")}
+          </p>
+        ) : null}
+      </div>
+      {dump.cemetery.length === 0 ? (
+        <WorkCopyEmpty locale={locale} role={session.role} envReady={envReady} storage={dump.storage} />
+      ) : (
+        <p className="rounded-lg border bg-card px-4 py-6 text-sm text-muted-foreground">
+          {t(locale, "work.masterNoZone")}
+        </p>
+      )}
+    </div>
   );
 }

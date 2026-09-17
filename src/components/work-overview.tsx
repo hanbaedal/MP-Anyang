@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { t, type Locale } from "@/lib/i18n";
 import { execNavItem, type ExecSection } from "@/lib/exec-nav";
-import type { StatusMonthRow, WorkFeeAllSummary, WorkFeeHistoryRow, WorkFeeYearSummary, WorkStatusTables } from "@/lib/work-status";
+import type { StatusMonthRow, UnpaidRoster, WorkFeeAllSummary, WorkFeeHistoryRow, WorkFeeYearSummary, WorkStatusTables } from "@/lib/work-status";
 
 const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 const TABLE_WRAP = "max-h-none min-h-min shrink-0 overflow-x-auto overflow-y-clip rounded-md border bg-card";
@@ -239,7 +239,9 @@ export function ExecSectionPage({
           ? t(locale, "work.statusPaidTable", { year })
           : section === "unpaid"
             ? t(locale, "work.statusUnpaidTable", { year })
-            : t(locale, item.i18n);
+            : section === "sales"
+              ? t(locale, "work.salesYearSummary", { year })
+              : t(locale, item.i18n);
 
   return (
     <div className="mx-auto flex h-auto min-h-min max-w-[1100px] flex-col gap-4 px-3 py-3 pb-28 sm:px-4 sm:py-4">
@@ -304,6 +306,12 @@ export function ExecSectionPage({
         />
       ) : null}
 
+      {section === "unpaid-list" ? <UnpaidRosterTable locale={locale} roster={status.unpaidRoster} /> : null}
+
+      {section === "sales" ? (
+        <SalesYearSection locale={locale} status={status} year={year} undatedNote={undatedNote} />
+      ) : null}
+
       {section === "contracts" ? (
         <StatusTable
           caption={t(locale, "work.contractsByYear")}
@@ -315,5 +323,109 @@ export function ExecSectionPage({
         />
       ) : null}
     </div>
+  );
+}
+
+function formatWon(n: number) {
+  return n.toLocaleString("ko-KR");
+}
+
+function UnpaidRosterTable({ locale, roster }: { locale: Locale; roster: UnpaidRoster }) {
+  return (
+    <section className="flex max-h-none min-h-min shrink-0 flex-col gap-1.5">
+      <p className="text-right text-[10px] leading-none text-muted-foreground">{t(locale, "work.wonUnit")}</p>
+      <Card className="gap-0 py-0 shadow-none">
+        <CardContent className="grid grid-cols-1 gap-px bg-border p-0 sm:grid-cols-2">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-[10px] leading-tight text-muted-foreground">{t(locale, "work.unpaidListTotal")}</p>
+            <p className="mt-0.5 text-base font-semibold tabular-nums text-primary sm:text-lg">
+              {formatWon(roster.totalRemaining)}
+            </p>
+          </div>
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-[10px] leading-tight text-muted-foreground">{t(locale, "work.feeUnpaid")}</p>
+            <p className="mt-0.5 text-base font-semibold tabular-nums text-primary sm:text-lg">
+              {t(locale, "work.unpaidListCount", { n: formatCount(roster.rows.length) })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      <p className="text-[9px] leading-tight text-muted-foreground">{t(locale, "work.unpaidListLead")}</p>
+      {roster.rows.length === 0 ? (
+        <p className="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">{t(locale, "work.empty")}</p>
+      ) : (
+        <div className={TABLE_WRAP}>
+          <table className="w-max min-w-full border-collapse text-[11px] leading-tight sm:text-xs">
+            <caption className="sr-only">{t(locale, "work.execUnpaidList")}</caption>
+            <thead className="border-b bg-muted/50 text-muted-foreground">
+              <tr>
+                <th scope="col" className="px-1.5 py-0.5 text-left font-medium whitespace-nowrap">
+                  {t(locale, "work.colName")}
+                </th>
+                <th scope="col" className="px-1.5 py-0.5 text-left font-medium whitespace-nowrap">
+                  {t(locale, "work.colTomb")}
+                </th>
+                <th scope="col" className="px-1.5 py-0.5 text-right font-medium whitespace-nowrap">
+                  {t(locale, "work.colRemaining")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {roster.rows.map((row, i) => (
+                <tr key={`${row.tombNo}-${row.userName}-${i}`} className="border-b last:border-b-0">
+                  <td className="px-1.5 py-0.5 whitespace-nowrap">{row.userName || "—"}</td>
+                  <td className="px-1.5 py-0.5 whitespace-nowrap">{row.tombNo || "—"}</td>
+                  <td className="px-1.5 py-0.5 text-right font-medium tabular-nums whitespace-nowrap">
+                    {formatWon(row.remaining)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SalesYearSection({
+  locale,
+  status,
+  year,
+  undatedNote,
+}: {
+  locale: Locale;
+  status: WorkStatusTables;
+  year: number;
+  undatedNote?: string;
+}) {
+  const sales =
+    status.contracts.find((row) => row.label === `${year}년`) ?? {
+      label: `${year}년`,
+      months: Array.from({ length: 12 }, () => 0),
+      total: 0,
+      kind: "count" as const,
+    };
+  return (
+    <section className="flex max-h-none min-h-min shrink-0 flex-col gap-1.5">
+      <Card className="gap-0 py-0 shadow-none">
+        <CardContent className="p-0">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-[10px] leading-tight text-muted-foreground">{t(locale, "work.salesCount")}</p>
+            <p className="mt-0.5 text-base font-semibold tabular-nums text-primary sm:text-lg">
+              {t(locale, "work.feeCountUnit", { n: formatCount(sales.total) })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      <p className="text-[9px] leading-tight text-muted-foreground">{t(locale, "work.salesYearLead", { year })}</p>
+      <StatusTable
+        caption={t(locale, "work.salesYearSummary", { year })}
+        rows={[sales]}
+        firstHeader={t(locale, "work.statusPeriod")}
+        lastHeader={t(locale, "work.colTotal")}
+        footnote={undatedNote}
+      />
+    </section>
   );
 }
