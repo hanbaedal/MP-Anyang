@@ -17,6 +17,7 @@ export type StatusMonthRow = {
 export type WorkStatusTables = {
   syncedAt: string;
   undatedContracts: number;
+  contractCopyCount: number;
   contracts: StatusMonthRow[];
   paidRows: StatusMonthRow[];
   unpaidRows: StatusMonthRow[];
@@ -143,6 +144,7 @@ export function buildWorkStatusTables(
   return {
     syncedAt,
     undatedContracts,
+    contractCopyCount: contracts.length,
     contracts: [
       rowFromMonths("2010년 이전", before, "count"),
       ...STATUS_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths(), "count")),

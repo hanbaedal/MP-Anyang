@@ -6,7 +6,7 @@ import { readLocale } from "@/lib/i18n-server";
 export default async function HomePage() {
   const locale = await readLocale();
   return (
-    <section className="relative h-full min-h-full overflow-hidden bg-primary text-primary-foreground">
+    <section className="relative min-h-full overflow-hidden bg-primary text-primary-foreground">
       <div className="absolute inset-0">
         <Photo src="/images/hero.jpg" alt="(재)안양공원묘원 언덕 묘역 전경" className="h-full rounded-none" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
