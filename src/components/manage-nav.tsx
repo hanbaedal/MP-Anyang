@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth-types";
 
 const LABELS: Record<string, string> = {
   "manage.gallery": "갤러리",
+  "manage.funeral": "장례·안치",
   "manage.notices": "공지",
   "manage.inquiries": "문의",
   "manage.faq": "묻고답하기",

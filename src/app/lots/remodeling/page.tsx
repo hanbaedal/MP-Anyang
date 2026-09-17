@@ -1,4 +1,5 @@
-import { PageHero, Photo, Prose } from "@/components/page-hero";
+import { ExpandablePhoto } from "@/components/expandable-photo";
+import { PageHero, Prose } from "@/components/page-hero";
 import { Paragraphs } from "@/components/paragraphs";
 import { REMODEL_TYPES } from "@/lib/content";
 import { getCmsPage } from "@/lib/cms";
@@ -38,7 +39,7 @@ export default async function RemodelPage() {
         <ul className="mt-10 grid gap-6 md:grid-cols-3">
           {items.map((item) => (
             <li key={item.id || item.title} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-              {item.image ? <Photo src={item.image} alt={item.title} className="aspect-[4/3] rounded-none" /> : null}
+              {item.image ? <ExpandablePhoto src={item.image} alt={item.title} className="aspect-[4/3] rounded-none" /> : null}
               <div className="p-4">
                 <h2 className="text-lg">{item.title}</h2>
                 {item.text ? <p className="mt-2 text-sm text-muted-foreground">{item.text}</p> : null}

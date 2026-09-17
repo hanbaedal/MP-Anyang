@@ -8,6 +8,7 @@ export type ManageNavItem = { href: string; i18n: string };
 export function manageNavItems(): ManageNavItem[] {
   return [
     { href: "/manage/gallery", i18n: "manage.gallery" },
+    { href: "/manage/funeral", i18n: "manage.funeral" },
     { href: "/manage/notices", i18n: "manage.notices" },
     { href: "/manage/inquiries", i18n: "manage.inquiries" },
     { href: "/manage/faq", i18n: "manage.faq" },

@@ -27,6 +27,10 @@ export default async function ManageHomePage() {
           <h2 className="font-medium">갤러리 사진</h2>
           <p className="mt-1 text-sm text-muted-foreground">올리고 고치고 지웁니다. Render 재배포 시 업로드 파일은 사라질 수 있습니다.</p>
         </Link>
+        <Link href="/manage/funeral" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
+          <h2 className="font-medium">장례·안치</h2>
+          <p className="mt-1 text-sm text-muted-foreground">매장·화장 공공서류 PDF를 등록합니다. 없으면 공개 페이지에 「준비 중」으로 표시됩니다.</p>
+        </Link>
         <Link href="/manage/notices" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
           <h2 className="font-medium">공지사항</h2>
           <p className="mt-1 text-sm text-muted-foreground">글을 등록·수정·삭제합니다.</p>

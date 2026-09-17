@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { GALLERY, type GalleryItem, type GalleryTag } from "@/lib/content";
-import { mediaUrl, thumbUrl } from "@/lib/media";
+import { thumbUrl } from "@/lib/media";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ImageLightboxDialog } from "@/components/image-lightbox-dialog";
 import { useT } from "@/components/locale-provider";
 
 const TAGS: Array<{ value: "전체" | GalleryTag; key: string }> = [
@@ -61,16 +61,9 @@ export function GalleryGrid({ preview, items = GALLERY }: { preview?: number; it
         ))}
       </ul>
       {itemsFiltered.length === 0 ? <p className="text-sm text-muted-foreground">{t("gallery.empty")}</p> : null}
-      <Dialog open={Boolean(open)} onOpenChange={(next) => !next && setOpen(null)}>
-        <DialogContent className="max-w-4xl border-none bg-transparent p-0 shadow-none">
-          <DialogTitle className="sr-only">{current?.alt ?? t("photo")}</DialogTitle>
-          {current ? (
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
-              <Image src={mediaUrl(current.src)} alt={current.alt} fill className="object-contain" sizes="100vw" />
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {current ? (
+        <ImageLightboxDialog open={Boolean(open)} onOpenChange={(next) => !next && setOpen(null)} src={current.src} alt={current.alt} />
+      ) : null}
     </div>
   );
 }

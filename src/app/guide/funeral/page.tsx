@@ -1,4 +1,6 @@
+import { FuneralDocList } from "@/components/funeral-doc-list";
 import { PageHero, Prose } from "@/components/page-hero";
+import { funeralDocsById } from "@/lib/funeral-docs";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -10,6 +12,7 @@ export async function generateMetadata() {
 
 export default async function FuneralPage() {
   const locale = await readLocale();
+  const docs = await funeralDocsById();
   const steps = [
     { n: "1", t: t(locale, "fun.s1t"), d: t(locale, "fun.s1d", { phone: SITE.phone }) },
     { n: "2", t: t(locale, "fun.s2t"), d: t(locale, "fun.s2d") },
@@ -29,26 +32,7 @@ export default async function FuneralPage() {
             </li>
           ))}
         </ol>
-        <div className="grid gap-8 md:grid-cols-2">
-          <Prose>
-            <h2 className="text-xl">{t(locale, "fun.burialDocs")}</h2>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>{t(locale, "fun.docDeath")}</li>
-              <li>{t(locale, "fun.docFamily")}</li>
-              <li>{t(locale, "fun.docId")}</li>
-              <li>{t(locale, "fun.docPolice")}</li>
-            </ul>
-          </Prose>
-          <Prose>
-            <h2 className="text-xl">{t(locale, "fun.cremationDocs")}</h2>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>{t(locale, "fun.docDeath")}</li>
-              <li>{t(locale, "fun.docCremation")}</li>
-              <li>{t(locale, "fun.docFamily")}</li>
-              <li>{t(locale, "fun.docPolice")}</li>
-            </ul>
-          </Prose>
-        </div>
+        <FuneralDocList locale={locale} docs={docs} />
         <Prose>
           <p>
             {t(locale, "fun.more")}{" "}
