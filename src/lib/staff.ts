@@ -151,20 +151,33 @@ export async function ensureAuthSeed() {
     console.error("[staff] supervisor seed skipped: SUPERVISOR_ID or SUPERVISOR_PASSWORD is empty");
   }
 
-  for (const row of parseAdminSeed(process.env.ADMIN_SEED)) {
+  const adminRows = parseAdminSeed(process.env.ADMIN_SEED);
+  if (adminRows.length === 0) {
+    console.error("[staff] admin seed skipped: ADMIN_SEED is empty");
+  }
+  for (const row of adminRows) {
     const existing = await findStaffByUsername(row.username);
-    if (existing) continue;
-    await insertStaff({
-      id: randomBytes(12).toString("hex"),
-      username: row.username,
-      name: row.username,
-      title: "관리자",
-      phone: "",
-      email: "",
-      passwordHash: await hashPassword(row.password),
-      role: "admin",
-      createdAt: new Date().toISOString(),
-    });
+    if (!existing) {
+      await insertStaff({
+        id: randomBytes(12).toString("hex"),
+        username: row.username,
+        name: row.username,
+        title: "관리자",
+        phone: "",
+        email: "",
+        passwordHash: await hashPassword(row.password),
+        role: "admin",
+        createdAt: new Date().toISOString(),
+      });
+      continue;
+    }
+    if (existing.role !== "admin") {
+      console.error("[staff] admin seed username already used by another role; not overwritten");
+      continue;
+    }
+    if (!(await verifyPassword(row.password, existing.passwordHash))) {
+      await updateStaff(existing.id, { password: row.password });
+    }
   }
 
   const ceoId = process.env.CEO_ID?.trim();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CircleUserRound } from "lucide-react";
+import { CircleUserRound, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useT } from "@/components/locale-provider";
@@ -11,10 +11,20 @@ export function LoginModal() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("login") === "1") setOpen(true);
   }, []);
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setShowPassword(false);
+      setStatus("idle");
+      setMessage("");
+    }
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +57,7 @@ export function LoginModal() {
     "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <button
           type="button"
@@ -73,14 +83,26 @@ export function LoginModal() {
             <label htmlFor="login-password" className="text-sm font-medium">
               {t("account.password")}
             </label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className={field}
-            />
+            <div className="relative">
+              <input
+                id="login-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                className={`${field} pr-10`}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 inline-flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? t("account.hidePassword") : t("account.showPassword")}
+                aria-pressed={showPassword}
+                title={showPassword ? t("account.hidePassword") : t("account.showPassword")}
+                onClick={() => setShowPassword((value) => !value)}
+              >
+                {showPassword ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={status === "loading"}>
             {status === "loading" ? t("form.sending") : t("account.submitLogin")}
