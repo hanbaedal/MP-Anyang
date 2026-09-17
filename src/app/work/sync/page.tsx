@@ -1,4 +1,4 @@
-import { DbUpdateForm } from "@/components/db-update-form";
+import { DbUpdateButton } from "@/components/db-update-button";
 import { requireSupervisor } from "@/lib/auth";
 import { sourceEnvReady } from "@/lib/cemetery-source";
 import { t } from "@/lib/i18n";
@@ -21,7 +21,7 @@ export default async function WorkSyncPage() {
         <p className="mt-2 text-sm text-muted-foreground">{t(locale, "work.sourceLead")}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t(locale, "work.sourceSyncLists")}</p>
       </div>
-      <DbUpdateForm envReady={sourceEnvReady()} />
+      <DbUpdateButton envReady={sourceEnvReady()} />
     </div>
   );
 }

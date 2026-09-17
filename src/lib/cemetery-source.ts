@@ -80,16 +80,15 @@ async function request(
 export type SourceLogin = { id: string; password: string };
 
 export const SOURCE_LOGIN_MISSING =
-  "원본 아이디와 비밀번호를 적거나, Render에 CEMETERY_SOURCE_ID / CEMETERY_SOURCE_PASSWORD를 넣으세요.";
+  "Render에 CEMETERY_SOURCE_ID / CEMETERY_SOURCE_PASSWORD를 넣으세요.";
 
 export function sourceEnvReady() {
   return Boolean(process.env.CEMETERY_SOURCE_ID?.trim() && (process.env.CEMETERY_SOURCE_PASSWORD ?? "").length > 0);
 }
 
-export function resolveSourceLogin(override?: { id?: string; password?: string }): SourceLogin | null {
-  const id = override?.id?.trim() || process.env.CEMETERY_SOURCE_ID?.trim() || "";
-  const password =
-    override?.password && override.password.length > 0 ? override.password : (process.env.CEMETERY_SOURCE_PASSWORD ?? "");
+export function resolveSourceLogin(): SourceLogin | null {
+  const id = process.env.CEMETERY_SOURCE_ID?.trim() || "";
+  const password = process.env.CEMETERY_SOURCE_PASSWORD ?? "";
   if (!id || !password) return null;
   return { id, password };
 }

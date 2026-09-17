@@ -12,21 +12,11 @@ export async function GET() {
   return NextResponse.json({ ok: true, envReady: sourceEnvReady() });
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   const guard = await requireWorkApi("supervisor");
   if (guard.error) return guard.error;
 
-  let id = "";
-  let password = "";
-  try {
-    const body = (await request.json()) as { id?: unknown; password?: unknown };
-    if (typeof body.id === "string") id = body.id;
-    if (typeof body.password === "string") password = body.password;
-  } catch {
-    // Empty body: use Render/server env if present.
-  }
-
-  const creds = resolveSourceLogin({ id, password });
+  const creds = resolveSourceLogin();
   if (!creds) {
     return NextResponse.json({ ok: false, error: SOURCE_LOGIN_MISSING, message: SOURCE_LOGIN_MISSING }, { status: 400 });
   }
