@@ -1,10 +1,17 @@
 import { pullCemeterySource, resolveSourceLogin, SOURCE_LOGIN_MISSING, type SourceLogin } from "./cemetery-source";
-import { mongoDbName, mongoUriSet } from "./mongo";
+import {
+  isMongoFailure,
+  logMongoFailure,
+  mongoDbName,
+  mongoUriSet,
+  mongoUserMessage,
+} from "./mongo";
 import { saveWorkDump, summarizeFees } from "./work-store";
 import {
   beginWorkSyncProgress,
   finishWorkSyncProgress,
   mapPullCollection,
+  readWorkSyncProgress,
   setCollectionProgress,
   setWorkSyncPhase,
 } from "./work-sync-progress";
@@ -42,7 +49,8 @@ export type WorkSyncSkip = {
 
 export type WorkSyncResult = WorkSyncOk | WorkSyncFail | WorkSyncSkip;
 
-const MONGO_WRITE_FAILED = "MongoDB에 복사본을 넣지 못했습니다. MONGODB_URI와 네트워크를 확인하세요.";
+const PULL_FAILED = "원본에서 자료를 읽지 못했습니다.";
+const FILE_SAVE_FAILED = "복사본을 저장하지 못했습니다.";
 
 let syncing = false;
 
@@ -89,11 +97,13 @@ export async function syncWorkFromSource(creds: SourceLogin): Promise<WorkSyncOk
         onCollection: (name, done, total) => setCollectionProgress(name, done, total, 100),
       },
     );
-  } catch {
+  } catch (err) {
     if (mongoUriSet()) {
-      return { ok: false, error: MONGO_WRITE_FAILED, message: MONGO_WRITE_FAILED };
+      logMongoFailure("work dump write", err);
+      const message = mongoUserMessage(err);
+      return { ok: false, error: message, message };
     }
-    return { ok: false, error: "복사본을 저장하지 못했습니다.", message: "복사본을 저장하지 못했습니다." };
+    return { ok: false, error: FILE_SAVE_FAILED, message: FILE_SAVE_FAILED };
   }
   return {
     ok: true as const,
@@ -136,9 +146,11 @@ export async function runWorkSyncFromEnv(source: "button" | "timer" | "cron"): P
     }
     return result;
   } catch (err) {
-    console.error("[work-sync] failed", source);
-    console.error(err);
-    const message = mongoUriSet() ? MONGO_WRITE_FAILED : "원본에서 자료를 읽지 못했습니다.";
+    const phase = readWorkSyncProgress().phase;
+    const blameMongo = isMongoFailure(err) || (mongoUriSet() && phase === "write");
+    if (blameMongo) logMongoFailure(`work-sync ${source} phase=${phase}`, err);
+    else console.error(`[work-sync] failed ${source} phase=${phase} (error body not logged)`);
+    const message = blameMongo ? mongoUserMessage(err) : PULL_FAILED;
     finishWorkSyncProgress({ ok: false, message });
     return { ok: false, error: message, message };
   } finally {

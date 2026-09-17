@@ -1,8 +1,26 @@
+import { setDefaultResultOrder } from "node:dns";
 import { MongoClient, type Db } from "mongodb";
+import { logMongoFailure, mongoUserMessage, MONGO_WRITE_FAILED } from "./mongo-error";
+
+export {
+  inspectMongoError,
+  isMongoFailure,
+  logMongoFailure,
+  mongoUserMessage,
+  MONGO_AUTH_FAILED,
+  MONGO_FORBIDDEN,
+  MONGO_URI_BAD,
+  MONGO_URI_MISSING,
+  MONGO_WRITE_FAILED,
+} from "./mongo-error";
+
+setDefaultResultOrder("ipv4first");
 
 declare global {
-  var _anyangMongo: { uri: string; pending: Promise<MongoClient> } | undefined;
+  var _anyangMongo: { uri: string; client: MongoClient; pending: Promise<MongoClient> } | undefined;
 }
+
+const CONNECT_MS = 12_000;
 
 export function mongoUriSet() {
   return Boolean(process.env.MONGODB_URI?.trim());
@@ -16,17 +34,36 @@ export function mongoDbName() {
   return process.env.MONGODB_DB?.trim() || "MP-Anyang";
 }
 
+function clientOptions() {
+  return {
+    serverSelectionTimeoutMS: CONNECT_MS,
+    connectTimeoutMS: CONNECT_MS,
+    family: 4 as const,
+    autoSelectFamily: false,
+  };
+}
+
+async function resetMongoClient() {
+  const cached = global._anyangMongo;
+  global._anyangMongo = undefined;
+  if (!cached) return;
+  try {
+    const client = await cached.pending.catch(() => cached.client);
+    await client.close();
+  } catch {
+    /* ignore stale close */
+  }
+}
+
 export async function getDb(): Promise<Db | null> {
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri) return null;
 
   if (!global._anyangMongo || global._anyangMongo.uri !== uri) {
-    const client = new MongoClient(uri, {
-      serverSelectionTimeoutMS: 12_000,
-      connectTimeoutMS: 12_000,
-    });
+    const client = new MongoClient(uri, clientOptions());
     global._anyangMongo = {
       uri,
+      client,
       pending: client.connect().catch((error) => {
         global._anyangMongo = undefined;
         throw error;
@@ -43,13 +80,25 @@ export async function requireDb(): Promise<Db> {
   if (!mongoUriSet()) {
     throw new Error("MONGODB_URI missing");
   }
+  const uri = process.env.MONGODB_URI?.trim() || "";
+  const reuse = Boolean(global._anyangMongo && global._anyangMongo.uri === uri);
   try {
-    const db = await getDb();
-    if (!db) throw new Error("MONGODB_URI missing");
-    await db.command({ ping: 1 });
-    return db;
+    const first = await getDb();
+    if (!first) throw new Error("MONGODB_URI missing");
+    try {
+      await first.command({ ping: 1 });
+      return first;
+    } catch (pingErr) {
+      if (!reuse || mongoUserMessage(pingErr) !== MONGO_WRITE_FAILED) throw pingErr;
+      logMongoFailure("ping failed; reconnecting", pingErr);
+      await resetMongoClient();
+      const retry = await getDb();
+      if (!retry) throw new Error("MONGODB_URI missing");
+      await retry.command({ ping: 1 });
+      return retry;
+    }
   } catch (err) {
-    console.error("[mongo] connect failed (URI set; value not logged)");
+    logMongoFailure("connect failed", err);
     throw err;
   }
 }
