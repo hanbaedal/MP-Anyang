@@ -103,37 +103,87 @@ async function login(jar: Map<string, string>) {
 
 const PAGE_BATCH = 5;
 
+async function readPage(
+  jar: Map<string, string>,
+  path: string,
+  form: Record<string, string>,
+  skipErrors: boolean,
+) {
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const item = await request(jar, path, { method: "POST", form });
+    lastStatus = item.status;
+    if (item.status < 400) return item;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  if (skipErrors) return { html: "", status: lastStatus };
+  throw new Error(`source-${path}-${lastStatus}`);
+}
+
 async function pagedHtml(
   jar: Map<string, string>,
   path: string,
   base: Record<string, string>,
   pageSize: string,
+  opts: { batch?: number; skipErrors?: boolean } = {},
 ) {
-  const first = await request(jar, path, {
-    method: "POST",
-    form: { ...base, pg: "1", ps: pageSize },
-  });
-  if (first.status >= 400) throw new Error(`source-${path}-${first.status}`);
-  const pages = [first.html];
-  const last = Math.max(1, lastPage(first.html));
-  const listed = listedTotal(first.html);
-  for (let start = 2; start <= last; start += PAGE_BATCH) {
+  const batchSize = opts.batch ?? PAGE_BATCH;
+  const skipErrors = opts.skipErrors ?? false;
+  const first = await readPage(jar, path, { ...base, pg: "1", ps: pageSize }, skipErrors);
+  const pages = first.html ? [first.html] : [];
+  const last = first.html ? Math.max(1, lastPage(first.html)) : 1;
+  const listed = first.html ? listedTotal(first.html) : 0;
+  for (let start = 2; start <= last; start += batchSize) {
     const batch: number[] = [];
-    for (let pg = start; pg <= Math.min(last, start + PAGE_BATCH - 1); pg++) batch.push(pg);
-    const results = await Promise.all(
-      batch.map((pg) =>
-        request(jar, path, {
-          method: "POST",
-          form: { ...base, pg: String(pg), ps: pageSize },
-        }),
-      ),
-    );
+    for (let pg = start; pg <= Math.min(last, start + batchSize - 1); pg++) batch.push(pg);
+    const results =
+      skipErrors || batchSize === 1
+        ? await (async () => {
+            const out = [];
+            for (const pg of batch) {
+              out.push(await readPage(jar, path, { ...base, pg: String(pg), ps: pageSize }, skipErrors));
+            }
+            return out;
+          })()
+        : await Promise.all(
+            batch.map((pg) => readPage(jar, path, { ...base, pg: String(pg), ps: pageSize }, skipErrors)),
+          );
     for (const item of results) {
-      if (item.status >= 400) throw new Error(`source-${path}-${item.status}`);
-      pages.push(item.html);
+      if (item.html) pages.push(item.html);
     }
   }
   return { pages, listed };
+}
+
+function feeKey(row: FeeCopy) {
+  return [row.tombNo, row.billedOn, row.period, row.status, row.billedAmount, row.paidAmount, row.balance].join("|");
+}
+
+async function pullFees(jar: Map<string, string>, feeBase: Record<string, string>) {
+  const seen = new Set<string>();
+  const fees: FeeCopy[] = [];
+  const year = new Date().getFullYear();
+  for (let y = 1978; y <= year + 1; y++) {
+    const pull = await pagedHtml(
+      jar,
+      "/managementExpenseList.do",
+      {
+        ...feeBase,
+        srch_billing_from: `${y}0101`,
+        srch_billing_to: `${y}1231`,
+        srch_gubun: "",
+      },
+      "80",
+      { batch: 1, skipErrors: true },
+    );
+    for (const row of pull.pages.flatMap(parseFeeRows)) {
+      const key = feeKey(row);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      fees.push(row);
+    }
+  }
+  return fees;
 }
 
 export async function pullCemeterySource(): Promise<SourceSyncResult> {
@@ -210,8 +260,7 @@ export async function pullCemeterySource(): Promise<SourceSyncResult> {
       cd_company: company,
       id_user_s: user,
     };
-    const feesPull = await pagedHtml(jar, "/managementExpenseList.do", feeBase, "100");
-    const fees = feesPull.pages.flatMap(parseFeeRows);
+    const fees = await pullFees(jar, feeBase);
 
     const receiptsPull = await pagedHtml(
       jar,
