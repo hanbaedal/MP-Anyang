@@ -8,7 +8,8 @@ import { WORK_NAV } from "./work-nav";
 export const SITE = {
   legalName: "(재)안양공원묘원",
   shortName: "안양공원",
-  phone: "031-482-2949",
+  /** U+2011(줄바꿈 없는 하이픈) — 본문·푸터 표시용 */
+  phone: "031\u2011482\u20112949",
   phoneTel: "tel:031-482-2949",
   visitName: "공동묘지관리소",
   /** 공개·푸터·오시는 길에 쓰는 도로명+지번 */

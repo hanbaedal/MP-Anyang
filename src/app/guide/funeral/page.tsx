@@ -34,8 +34,8 @@ export default async function FuneralPage() {
         </ol>
         <FuneralDocList locale={locale} docs={docs} />
         <Prose>
+          <p className="break-keep">{t(locale, "fun.more")}</p>
           <p>
-            {t(locale, "fun.more")}{" "}
             <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
               {SITE.phone}
             </a>
