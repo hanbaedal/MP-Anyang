@@ -11,12 +11,22 @@ function formatThousandWon(n: number) {
   return Math.floor(n / 1000).toLocaleString("ko-KR");
 }
 
+function formatPercent(n: number) {
+  if (!Number.isFinite(n)) return "-";
+  return `${n.toFixed(1)}%`;
+}
+
+function formatCell(row: StatusMonthRow, n: number) {
+  if (row.kind === "amount") return formatThousandWon(n);
+  if (row.kind === "percent") return formatPercent(n);
+  return formatCount(n);
+}
+
 function StatusTable({
   caption,
   rows,
   firstHeader,
   lastHeader,
-  money,
   unitLabel,
   compact,
 }: {
@@ -24,11 +34,9 @@ function StatusTable({
   rows: StatusMonthRow[];
   firstHeader: string;
   lastHeader: string;
-  money?: boolean;
   unitLabel?: string;
   compact?: boolean;
 }) {
-  const format = money ? formatThousandWon : formatCount;
   const cellY = compact ? "py-0" : "py-0.5";
   return (
     <div>
@@ -64,10 +72,12 @@ function StatusTable({
                 </th>
                 {row.months.map((value, i) => (
                   <td key={MONTHS[i]} className={`px-1 text-right tabular-nums whitespace-nowrap ${cellY}`}>
-                    {format(value)}
+                    {formatCell(row, value)}
                   </td>
                 ))}
-                <td className={`px-1.5 text-right font-medium tabular-nums whitespace-nowrap ${cellY}`}>{format(row.total)}</td>
+                <td className={`px-1.5 text-right font-medium tabular-nums whitespace-nowrap ${cellY}`}>
+                  {formatCell(row, row.total)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -78,7 +88,10 @@ function StatusTable({
 }
 
 export function WorkOverviewCards({ locale, status }: { locale: Locale; status: WorkStatusTables }) {
-  const empty = status.contracts.every((row) => row.total === 0) && status.paid.total === 0 && status.unpaid.total === 0;
+  const empty =
+    status.contracts.every((row) => row.total === 0) &&
+    (status.paidRows[0]?.total ?? 0) === 0 &&
+    (status.unpaidRows[0]?.total ?? 0) === 0;
   const unit = t(locale, "work.amountUnit");
 
   return (
@@ -110,31 +123,23 @@ export function WorkOverviewCards({ locale, status }: { locale: Locale; status: 
       </section>
 
       <section className="space-y-0.5">
-        <h2 className="flex flex-wrap items-baseline gap-x-2 text-xs font-medium text-primary sm:text-sm">
-          <span>{t(locale, "work.statusPaidHeadline")}</span>
-          <span className="font-serif text-base tabular-nums">{formatCount(status.paidCount)}</span>
-        </h2>
+        <h2 className="text-xs font-medium text-primary sm:text-sm">{t(locale, "work.statusPaidTable")}</h2>
         <StatusTable
           caption={t(locale, "work.statusPaidTable")}
           firstHeader={t(locale, "work.statusAmount")}
           lastHeader={t(locale, "work.colGrand")}
-          rows={[status.paid]}
-          money
+          rows={status.paidRows}
           unitLabel={unit}
         />
       </section>
 
       <section className="space-y-0.5">
-        <h2 className="flex flex-wrap items-baseline gap-x-2 text-xs font-medium text-primary sm:text-sm">
-          <span>{t(locale, "work.statusUnpaidHeadline")}</span>
-          <span className="font-serif text-base tabular-nums">{formatCount(status.unpaidCount)}</span>
-        </h2>
+        <h2 className="text-xs font-medium text-primary sm:text-sm">{t(locale, "work.statusUnpaidTable")}</h2>
         <StatusTable
           caption={t(locale, "work.statusUnpaidTable")}
           firstHeader={t(locale, "work.statusAmount")}
           lastHeader={t(locale, "work.colGrand")}
-          rows={[status.unpaid]}
-          money
+          rows={status.unpaidRows}
           unitLabel={unit}
         />
       </section>

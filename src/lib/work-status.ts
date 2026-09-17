@@ -5,21 +5,21 @@ export const STATUS_FEE_YEAR = 2026;
 const UNPAID_STATUSES = new Set(["미납", "납부중", "보류"]);
 
 export type YearMonth = { year: number; month: number };
+export type StatusRowKind = "count" | "amount" | "percent";
 
 export type StatusMonthRow = {
   label: string;
   months: number[];
   total: number;
+  kind: StatusRowKind;
 };
 
 export type WorkStatusTables = {
   syncedAt: string;
   undatedContracts: number;
   contracts: StatusMonthRow[];
-  paidCount: number;
-  unpaidCount: number;
-  paid: StatusMonthRow;
-  unpaid: StatusMonthRow;
+  paidRows: StatusMonthRow[];
+  unpaidRows: StatusMonthRow[];
 };
 
 export function parseCopyDate(raw: string | undefined | null): YearMonth | null {
@@ -49,8 +49,12 @@ function emptyMonths() {
   return Array.from({ length: 12 }, () => 0);
 }
 
-function rowFromMonths(label: string, months: number[]): StatusMonthRow {
-  return { label, months, total: months.reduce((sum, n) => sum + n, 0) };
+function monthSets() {
+  return Array.from({ length: 12 }, () => new Set<string>());
+}
+
+function rowFromMonths(label: string, months: number[], kind: StatusRowKind, total?: number): StatusMonthRow {
+  return { label, months, total: total ?? months.reduce((sum, n) => sum + n, 0), kind };
 }
 
 function feeKey(row: FeeCopy) {
@@ -68,6 +72,25 @@ function isUnpaidFee(row: FeeCopy) {
 function unpaidAmount(row: FeeCopy) {
   if (row.balance > 0) return row.balance;
   return Math.max(0, row.billedAmount - row.paidAmount);
+}
+
+/** 미납 ÷ (납부+미납) × 100. Both 0 → NaN (UI shows `-`). */
+export function unpaidShare(unpaid: number, paid: number) {
+  const den = unpaid + paid;
+  if (den === 0) return Number.NaN;
+  return (unpaid / den) * 100;
+}
+
+function shareRow(paid: number[], unpaid: number[]): StatusMonthRow {
+  return {
+    label: "비율",
+    kind: "percent",
+    months: unpaid.map((value, i) => unpaidShare(value, paid[i])),
+    total: unpaidShare(
+      unpaid.reduce((sum, n) => sum + n, 0),
+      paid.reduce((sum, n) => sum + n, 0),
+    ),
+  };
 }
 
 export function buildWorkStatusTables(
@@ -97,6 +120,8 @@ export function buildWorkStatusTables(
   const unpaidMonths = emptyMonths();
   const paidKeys = new Set<string>();
   const unpaidKeys = new Set<string>();
+  const paidMonthKeys = monthSets();
+  const unpaidMonthKeys = monthSets();
 
   for (const row of fees) {
     const when = parseCopyDate(row.billedOn);
@@ -104,10 +129,14 @@ export function buildWorkStatusTables(
     const monthIndex = when.month - 1;
     const key = feeKey(row);
     if (row.paidAmount > 0) paidMonths[monthIndex] += row.paidAmount;
-    if (isPaidFee(row)) paidKeys.add(key);
+    if (isPaidFee(row)) {
+      paidKeys.add(key);
+      paidMonthKeys[monthIndex].add(key);
+    }
     if (isUnpaidFee(row)) {
       unpaidMonths[monthIndex] += unpaidAmount(row);
       unpaidKeys.add(key);
+      unpaidMonthKeys[monthIndex].add(key);
     }
   }
 
@@ -115,12 +144,27 @@ export function buildWorkStatusTables(
     syncedAt,
     undatedContracts,
     contracts: [
-      rowFromMonths("2010년 이전", before),
-      ...STATUS_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths())),
+      rowFromMonths("2010년 이전", before, "count"),
+      ...STATUS_YEARS.map((year) => rowFromMonths(`${year}년`, byYear.get(year) ?? emptyMonths(), "count")),
     ],
-    paidCount: paidKeys.size,
-    unpaidCount: unpaidKeys.size,
-    paid: rowFromMonths("납부액", paidMonths),
-    unpaid: rowFromMonths("미납액", unpaidMonths),
+    paidRows: [
+      rowFromMonths("납부 금액", paidMonths, "amount"),
+      rowFromMonths(
+        "납부자 수",
+        paidMonthKeys.map((set) => set.size),
+        "count",
+        paidKeys.size,
+      ),
+    ],
+    unpaidRows: [
+      rowFromMonths("미납 금액", unpaidMonths, "amount"),
+      rowFromMonths(
+        "미납자 수",
+        unpaidMonthKeys.map((set) => set.size),
+        "count",
+        unpaidKeys.size,
+      ),
+      shareRow(paidMonths, unpaidMonths),
+    ],
   };
 }

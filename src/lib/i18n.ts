@@ -342,8 +342,8 @@ const ko: Record<string, string> = {
   "work.amountUnit": "(금액단위:1,000원)",
   "work.statusPaidHeadline": "2026 현재 납부자 수",
   "work.statusUnpaidHeadline": "2026 현재 미납자 수",
-  "work.statusPaidTable": "2026 월별 납부 금액",
-  "work.statusUnpaidTable": "2026 월별 미납 금액",
+  "work.statusPaidTable": "2026년 월별 납부자 금액 / 납부자 수",
+  "work.statusUnpaidTable": "2026년 월별 미납자 금액 / 미납자 수",
   "work.statusUndated": "일자가 없는 계약 복사본 {n}건은 연·월 표에 넣지 않았습니다.",
   "faq.askClosed": "공개 질문 접수는 닫았습니다. 개인 상담은 문의·상담을 이용해 주세요.",
 };
@@ -667,8 +667,8 @@ const en: Record<string, string> = {
   "work.amountUnit": "(unit: 1,000 KRW)",
   "work.statusPaidHeadline": "2026 payers",
   "work.statusUnpaidHeadline": "2026 unpaid",
-  "work.statusPaidTable": "2026 paid amounts by month",
-  "work.statusUnpaidTable": "2026 unpaid amounts by month",
+  "work.statusPaidTable": "2026 monthly paid amount / payer count",
+  "work.statusUnpaidTable": "2026 monthly unpaid amount / unpaid count",
   "work.statusUndated": "{n} copied contracts have no date and are omitted from the year–month table.",
   "faq.askClosed": "Public questions are closed. For personal matters use Inquiry.",
 };
@@ -991,8 +991,8 @@ const zh: Record<string, string> = {
   "work.amountUnit": "(金额单位:1,000韩元)",
   "work.statusPaidHeadline": "2026 已缴人数",
   "work.statusUnpaidHeadline": "2026 未缴人数",
-  "work.statusPaidTable": "2026 月度已缴金额",
-  "work.statusUnpaidTable": "2026 月度未缴金额",
+  "work.statusPaidTable": "2026 月度已缴金额 / 已缴人数",
+  "work.statusUnpaidTable": "2026 月度未缴金额 / 未缴人数",
   "work.statusUndated": "无日期的合同副本 {n} 件未列入年月表。",
   "faq.askClosed": "已停止公开提问。个人咨询请用咨询表。",
 };
@@ -1315,8 +1315,8 @@ const ja: Record<string, string> = {
   "work.amountUnit": "(金額単位:1,000ウォン)",
   "work.statusPaidHeadline": "2026 納付者数",
   "work.statusUnpaidHeadline": "2026 未納者数",
-  "work.statusPaidTable": "2026 月別納付額",
-  "work.statusUnpaidTable": "2026 月別未納額",
+  "work.statusPaidTable": "2026 月別納付額 / 納付者数",
+  "work.statusUnpaidTable": "2026 月別未納額 / 未納者数",
   "work.statusUndated": "日付のない契約コピー {n}件は年月表に入れていません。",
   "faq.askClosed": "公開質問の受付は終了しました。個人のご相談はお問い合わせへ。",
 };
