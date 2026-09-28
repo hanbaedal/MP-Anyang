@@ -92,11 +92,13 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             <td className={th} style={{ letterSpacing: "0.2em" }}>
               묘지 번호
             </td>
-            <td className={cell}>{data.tombNo}</td>
+            <td className={cell} colSpan={2}>
+              {data.tombNo}
+            </td>
             <td className={th} style={{ letterSpacing: "0.28em" }}>
               평수
             </td>
-            <td className={cell} colSpan={3}>
+            <td className={cell} colSpan={2}>
               <span className="flex items-center justify-between px-[0.4em]">
                 <span>{data.pyeong}</span>
                 <span>평</span>
