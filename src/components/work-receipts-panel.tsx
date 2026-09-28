@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildStatementPair, RECEIPT_PRINT_MAX } from "@/lib/receipt-statement";
+import { TransactionStatementPreview } from "@/components/transaction-statement-preview";
 import { TransactionStatementPage, TransactionStatementPrintRoot } from "@/components/transaction-statement-sheet";
 import type { ContractCopy, FeeCopy } from "@/lib/cemetery-parse";
 import { feeKey } from "@/lib/work-status";
@@ -170,18 +171,16 @@ export function WorkReceiptsPanel({
 
       <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
         <DialogContent
-          className="flex max-h-[min(92vh,900px)] max-w-[min(96vw,920px)] flex-col gap-3 overflow-hidden p-4 sm:p-5"
+          className="flex h-[min(88vh,720px)] max-h-[min(88vh,720px)] w-[min(98vw,960px)] max-w-[min(98vw,960px)] flex-col gap-2 overflow-hidden p-3 sm:p-4"
           showCloseButton
         >
-          <DialogHeader className="shrink-0 gap-1 pr-8">
+          <DialogHeader className="shrink-0 gap-0.5 pr-8">
             <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
-            <DialogDescription>가로(A4) · 왼쪽 회사용 · 오른쪽 고객용</DialogDescription>
+            <DialogDescription className="text-xs">왼쪽 회사용 · 오른쪽 고객용 (출력 시 가로 A4)</DialogDescription>
           </DialogHeader>
           {previewPair ? (
-            <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-white p-2">
-              <div className="mx-auto w-max origin-top scale-[0.42] sm:scale-[0.52] md:scale-[0.58] lg:scale-[0.65]">
-                <TransactionStatementPage company={previewPair.company} customer={previewPair.customer} />
-              </div>
+            <div className="min-h-0 flex-1 overflow-hidden rounded-md bg-muted/30 p-1">
+              <TransactionStatementPreview company={previewPair.company} customer={previewPair.customer} />
             </div>
           ) : null}
           <div className="flex shrink-0 justify-end gap-2 border-t pt-3">
