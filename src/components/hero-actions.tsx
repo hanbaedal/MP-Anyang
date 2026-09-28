@@ -97,10 +97,10 @@ function SocialLink({
 
 export function SocialActions() {
   const items = [
-    { href: socialHref("FACEBOOK", SITE.phoneTel), label: "전화 상담", icon: <FacebookMark /> },
-    { href: socialHref("INSTAGRAM", "/intro/directions"), label: "오시는 길", icon: <InstagramMark /> },
-    { href: socialHref("YOUTUBE", "/lots/prices"), label: "분양가·잔여", icon: <YoutubeMark /> },
-    { href: socialHref("CAFE", "/guide/fees"), label: "관리비", icon: <NaverCafeMark /> },
+    { href: socialHref("FACEBOOK", SITE.phoneTel), label: "페이스북", icon: <FacebookMark /> },
+    { href: socialHref("INSTAGRAM", "/intro/directions"), label: "인스타그램", icon: <InstagramMark /> },
+    { href: socialHref("YOUTUBE", "/lots/prices"), label: "유튜브", icon: <YoutubeMark /> },
+    { href: socialHref("CAFE", "/guide/fees"), label: "네이버 카페", icon: <NaverCafeMark /> },
   ];
 
   return (
