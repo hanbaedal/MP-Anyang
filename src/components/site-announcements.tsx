@@ -8,60 +8,40 @@ import { Button } from "@/components/ui/button";
 import { isAnnouncementActive, type SiteAnnouncement } from "@/lib/announcement-types";
 import { thumbUrl } from "@/lib/media";
 
-function dismissKey(id: string) {
-  return `anyang-announcement-dismiss-${id}`;
-}
-
-function isDismissed(item: SiteAnnouncement): boolean {
-  if (typeof window === "undefined") return false;
-  const key = dismissKey(item.id);
-  const raw = item.dismissScope === "session" ? sessionStorage.getItem(key) : localStorage.getItem(key);
-  if (!raw) return false;
-  if (item.dismissScope === "day") {
-    const today = new Date().toISOString().slice(0, 10);
-    return raw === today;
-  }
-  return true;
-}
-
-function rememberDismiss(item: SiteAnnouncement) {
-  const key = dismissKey(item.id);
-  if (item.dismissScope === "session") {
-    sessionStorage.setItem(key, "1");
-  } else if (item.dismissScope === "day") {
-    localStorage.setItem(key, new Date().toISOString().slice(0, 10));
-  } else {
-    localStorage.setItem(key, "1");
-  }
-}
-
-function filterVisible(items: SiteAnnouncement[]) {
+function filterVisible(items: SiteAnnouncement[], dismissedIds: ReadonlySet<string>) {
   const now = new Date();
-  return items.filter((item) => isAnnouncementActive(item, now) && !isDismissed(item));
+  return items.filter((item) => isAnnouncementActive(item, now) && !dismissedIds.has(item.id));
 }
 
 export function SiteAnnouncements() {
-  const [queue, setQueue] = useState<SiteAnnouncement[]>([]);
+  const [allActive, setAllActive] = useState<SiteAnnouncement[]>([]);
+  /** 이번 메인(/) 방문 동안만 — 다른 메뉴 갔다가 메인으로 오면 컴포넌트가 다시 마운트되어 비워짐 */
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
   const [current, setCurrent] = useState<SiteAnnouncement | null>(null);
   const [open, setOpen] = useState(false);
 
-  const applyQueue = useCallback((items: SiteAnnouncement[]) => {
-    const visible = filterVisible(items);
-    setQueue(visible);
-    setCurrent((prev) => {
-      if (prev && isAnnouncementActive(prev) && !isDismissed(prev)) {
-        return prev;
-      }
-      return visible[0] ?? null;
-    });
-    setOpen(Boolean(visible[0]));
-  }, []);
+  const syncFromActive = useCallback(
+    (items: SiteAnnouncement[], dismissed: ReadonlySet<string>) => {
+      const visible = filterVisible(items, dismissed);
+      setCurrent((prev) => {
+        if (prev && visible.some((item) => item.id === prev.id)) return prev;
+        return visible[0] ?? null;
+      });
+      setOpen(visible.length > 0);
+    },
+    [],
+  );
 
   const load = useCallback(async () => {
     const res = await fetch("/api/announcements/active", { cache: "no-store" });
     const json = (await res.json()) as { items?: SiteAnnouncement[] };
-    applyQueue(json.items ?? []);
-  }, [applyQueue]);
+    const items = json.items ?? [];
+    setAllActive(items);
+    setDismissedIds((dismissed) => {
+      syncFromActive(items, dismissed);
+      return dismissed;
+    });
+  }, [syncFromActive]);
 
   useEffect(() => {
     void load();
@@ -77,18 +57,19 @@ export function SiteAnnouncements() {
   }, [load]);
 
   useEffect(() => {
-    if (!current) return;
-    if (!isAnnouncementActive(current) || isDismissed(current)) {
-      const rest = queue.filter((item) => item.id !== current.id);
-      applyQueue(rest);
-    }
-  }, [current, queue, applyQueue]);
+    syncFromActive(allActive, dismissedIds);
+  }, [allActive, dismissedIds, syncFromActive]);
 
   function closeAndNext() {
     if (!current) return;
-    rememberDismiss(current);
-    const rest = queue.filter((item) => item.id !== current.id);
-    applyQueue(rest);
+    setDismissedIds((prev) => {
+      const next = new Set(prev);
+      next.add(current.id);
+      const visible = filterVisible(allActive, next);
+      setCurrent(visible[0] ?? null);
+      setOpen(visible.length > 0);
+      return next;
+    });
   }
 
   if (!current) return null;
@@ -117,7 +98,7 @@ export function SiteAnnouncements() {
           ) : null}
           <div className="flex flex-wrap gap-2 border-t pt-3">
             <Button type="button" variant="outline" size="sm" onClick={closeAndNext}>
-              {current.dismissScope === "day" ? "오늘 하루 안 보기" : "닫기"}
+              닫기
             </Button>
           </div>
         </div>

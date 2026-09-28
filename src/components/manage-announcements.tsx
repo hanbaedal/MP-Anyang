@@ -102,8 +102,8 @@ export function ManageAnnouncements({ initial }: { initial: SiteAnnouncement[] }
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-10">
       <p className="text-sm text-muted-foreground">
         <strong>메인(/) 접속 시</strong>만 모달로 뜹니다. <strong>노출 시작</strong> 전에는 안 보이고, <strong>종료</strong> 시각이 지나면 자동으로 숨깁니다(1분마다
-        갱신). 「사용 안 함」이면 즉시 OFF. 방문자 「닫기」는
-        선택한 범위(session/오늘/기간 끝까지)에 저장됩니다.
+        갱신). 「사용 안 함」이면 즉시 OFF. 방문자가 닫아도 <strong>다른 메뉴 갔다가 메인(/)으로
+        다시 들어오면</strong> 노출 기간 안이면 모달이 다시 뜹니다.
       </p>
 
       <section className="space-y-3 rounded-xl border bg-card p-5">
