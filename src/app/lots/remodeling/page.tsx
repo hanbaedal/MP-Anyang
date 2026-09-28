@@ -23,7 +23,7 @@ export default async function RemodelPage() {
         kicker={t(locale, "remodel.kicker")}
         title={cms?.title || t(locale, "remodel.title")}
         lead={cms?.lead || t(locale, "remodel.lead")}
-        image={{ src: "/images/remodel.jpg", alt: t(locale, "remodel.title") }}
+        image={{ src: "/images/remodel-3.jpg", alt: t(locale, "remodel.title") }}
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <Prose>

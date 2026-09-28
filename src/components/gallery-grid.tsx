@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { GALLERY, type GalleryItem, type GalleryTag } from "@/lib/content";
-import { thumbUrl } from "@/lib/media";
+import { mediaUrl, thumbUrl } from "@/lib/media";
 import { Button } from "@/components/ui/button";
 import { ImageLightboxDialog } from "@/components/image-lightbox-dialog";
 import { useT } from "@/components/locale-provider";
@@ -53,6 +53,10 @@ export function GalleryGrid({ preview, items = GALLERY }: { preview?: number; it
               type="button"
               className="relative block aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted"
               onClick={() => setOpen(item.src)}
+              onMouseEnter={() => {
+                const img = new window.Image();
+                img.src = mediaUrl(item.src);
+              }}
             >
               <Image src={thumbUrl(item.src)} alt={item.alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
             </button>

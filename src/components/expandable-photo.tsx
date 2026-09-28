@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { mediaUrl } from "@/lib/media";
+import { mediaUrl, thumbUrl } from "@/lib/media";
 import { ImageLightboxDialog } from "@/components/image-lightbox-dialog";
 
 export function ExpandablePhoto({
@@ -11,7 +11,7 @@ export function ExpandablePhoto({
   alt,
   className,
   priority,
-  sizes = "(max-width: 768px) 100vw, 50vw",
+  sizes = "(max-width: 768px) 100vw, 33vw",
 }: {
   src: string;
   alt: string;
@@ -20,6 +20,12 @@ export function ExpandablePhoto({
   sizes?: string;
 }) {
   const [open, setOpen] = useState(false);
+
+  const preloadOriginal = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const img = new window.Image();
+    img.src = mediaUrl(src);
+  }, [src]);
 
   return (
     <>
@@ -30,9 +36,19 @@ export function ExpandablePhoto({
           className,
         )}
         onClick={() => setOpen(true)}
+        onMouseEnter={preloadOriginal}
+        onFocus={preloadOriginal}
         aria-label={alt ? `${alt} 원본 보기` : "사진 원본 보기"}
       >
-        <Image src={mediaUrl(src)} alt={alt} fill className="object-cover" sizes={sizes} priority={priority} />
+        <Image
+          src={thumbUrl(src)}
+          alt={alt}
+          fill
+          className="object-cover"
+          sizes={sizes}
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
+        />
       </button>
       <ImageLightboxDialog open={open} onOpenChange={setOpen} src={src} alt={alt} />
     </>
