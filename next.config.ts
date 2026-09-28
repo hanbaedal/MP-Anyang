@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: cdnPatterns(),
   },
+  async rewrites() {
+    return [{ source: "/uploads/:path*", destination: "/api/uploads/:path*" }];
+  },
   async redirects() {
     return [
       { source: "/support/contact", destination: "/support/inquiry", permanent: false },

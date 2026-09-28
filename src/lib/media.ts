@@ -26,14 +26,22 @@ export function mediaUrl(path: string) {
   return base ? `${base}${normalized}` : normalized;
 }
 
+/** 업로드 파일 URL — Render 등에서는 GridFS를 /api/uploads 로 제공 */
+export function uploadMediaUrl(relativeUnderUploads: string) {
+  const clean = relativeUnderUploads.replace(/^\/+/, "").replace(/^uploads\//, "");
+  return mediaUrl(`/api/uploads/${clean}`);
+}
+
 /** Small thumbnail for 둘러보기 grids. Originals stay at the same folder for lightbox. */
 export function thumbUrl(path: string) {
   if (!path) return path;
   if (/^https?:\/\//i.test(path)) return path;
   const normalized = resolveImagePath(path);
-  if (normalized.startsWith("/uploads/")) {
-    const thumb = normalized.replace(/^\/uploads\//, "/uploads/thumbs/").replace(/\.(png|webp|gif|jpe?g)$/i, ".jpg");
-    return mediaUrl(thumb);
+  if (normalized.startsWith("/uploads/") || normalized.startsWith("/api/uploads/")) {
+    let rel = normalized.replace(/^\/(api\/)?uploads\//, "");
+    if (rel.startsWith("thumbs/")) rel = rel.slice("thumbs/".length);
+    const thumbFile = rel.replace(/\.(png|webp|gif|jpe?g)$/i, ".jpg");
+    return uploadMediaUrl(`thumbs/${thumbFile}`);
   }
   const thumb = normalized.replace(/^\/images\//, "/images/thumbs/");
   return mediaUrl(thumb === normalized ? normalized : thumb);

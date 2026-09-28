@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { hasMongo } from "./mongo";
+import { putUploadObject } from "./upload-store";
 
 const VIDEO_MAX = 25 * 1024 * 1024;
 const AUDIO_MAX = 12 * 1024 * 1024;
@@ -44,9 +46,22 @@ export async function saveHomeHeroUpload(
           : "mp3";
 
   const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
+  const buf = Buffer.from(await file.arrayBuffer());
+  const src = `/uploads/home-hero/${name}`;
+  const key = `uploads/home-hero/${name}`;
+
+  if (hasMongo()) {
+    try {
+      await putUploadObject(key, buf, type || undefined);
+      return { ok: true, src };
+    } catch (error) {
+      console.error("[home-hero-upload] gridfs failed", error);
+      return { ok: false, error: "파일 저장에 실패했습니다. MongoDB 연결을 확인해 주세요." };
+    }
+  }
+
   const dir = path.join(process.cwd(), "public", "uploads", "home-hero");
   await mkdir(dir, { recursive: true });
-  const buf = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(dir, name), buf);
-  return { ok: true, src: `/uploads/home-hero/${name}` };
+  return { ok: true, src };
 }

@@ -47,7 +47,7 @@ export function defaultHomeHeroSettings(): HomeHeroSettings {
 
 export function isSafeHomeMediaPath(src: string) {
   if (!src.startsWith("/") || src.includes("..")) return false;
-  return /^\/(videos|audio|uploads|images)\//.test(src);
+  return /^\/(videos|audio|uploads|api\/uploads|images)\//.test(src);
 }
 
 function normalizeAsset(raw: unknown, kind: HomeHeroAsset["kind"]): HomeHeroAsset | null {

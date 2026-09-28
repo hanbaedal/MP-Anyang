@@ -93,8 +93,10 @@ export function ManageAnnouncements({ initial }: { initial: SiteAnnouncement[] }
     try {
       const res = await fetch("/api/manage/upload-image", { method: "POST", body: form });
       const json = (await res.json()) as { ok?: boolean; src?: string; error?: string };
-      if (json.src) setDraft((d) => ({ ...d, imageSrc: json.src }));
-      else setMessage(json.error || "업로드 실패");
+      if (json.src) {
+        setDraft((d) => ({ ...d, imageSrc: json.src }));
+        setMessage("사진을 올렸습니다. 「저장」을 눌러야 목록·메인에 반영됩니다.");
+      } else setMessage(json.error || "업로드 실패");
     } finally {
       setStatus("idle");
     }
