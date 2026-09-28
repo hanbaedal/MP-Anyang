@@ -62,16 +62,18 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             <td className={`${cell} statement-rep-cell`} colSpan={2}>
               <span className="statement-rep">
                 <span className="statement-rep-name">{STATEMENT_FACILITY.representative}</span>
-                <span className="statement-rep-mark">(인)</span>
+                <span className="statement-rep-mark">
+                  (인)
+                  <Image
+                    src="/images/representative-seal.png"
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="statement-seal pointer-events-none mix-blend-multiply"
+                    unoptimized
+                  />
+                </span>
               </span>
-              <Image
-                src="/images/representative-seal.png"
-                alt=""
-                width={64}
-                height={64}
-                className="statement-seal pointer-events-none mix-blend-multiply"
-                unoptimized
-              />
             </td>
             <td className={th} colSpan={2}>
               사업장 전화번호

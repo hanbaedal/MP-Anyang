@@ -176,6 +176,7 @@
 .statement-rep {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   width: 100%;
   position: relative;
   z-index: 1;
@@ -185,14 +186,21 @@
   position: relative;
   z-index: 3;
   flex: 0 0 auto;
-  padding: 0 1.5mm;
-  letter-spacing: 0.45em;
+  padding: 0 1mm 0 0.4mm;
+  letter-spacing: 0.4em;
   background: #fff;
 }
 
 .statement-rep-mark {
-  margin-left: auto;
-  margin-right: 1mm;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 7mm;
+  height: 4mm;
+  margin-left: 2mm;
   font-size: 0.85em;
   letter-spacing: 0;
   color: #222;
@@ -202,10 +210,10 @@
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: -3mm;
+  left: 50%;
   width: 15mm;
   height: 15mm;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   object-fit: contain;
 }
 
