@@ -1,10 +1,17 @@
 import { WorkCopyEmpty } from "@/components/work-copy-empty";
 import { WorkCopiedTable } from "@/components/work-copied-table";
-import { WorkYearFilter } from "@/components/work-lookup-filters";
+import { WorkContractFilter } from "@/components/work-lookup-filters";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 import { loadWorkCopyPage } from "@/lib/work";
-import { contractDate, contractYearsInCopy, parseYearParam } from "@/lib/work-status";
+import {
+  burialDateInRange,
+  contractDate,
+  contractYearsInCopy,
+  parseIsoYmd,
+  parseYearParam,
+  tombNoMatches,
+} from "@/lib/work-status";
 
 export const dynamic = "force-dynamic";
 
@@ -16,18 +23,24 @@ export async function generateMetadata() {
 export default async function WorkContractsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; tomb?: string; burialFrom?: string; burialTo?: string }>;
 }) {
-  const { year: yearParam } = await searchParams;
+  const params = await searchParams;
   const { locale, session, dump, envReady } = await loadWorkCopyPage("contracts");
   const years = contractYearsInCopy(dump.contracts);
-  const year = parseYearParam(yearParam, years);
+  const year = parseYearParam(params.year, years);
+  const tomb = params.tomb?.trim() ?? "";
+  const burialFrom = parseIsoYmd(params.burialFrom);
+  const burialTo = parseIsoYmd(params.burialTo);
   const ofYear = dump.contracts.filter((row) => {
     const when = contractDate(row);
     return Boolean(when && when.year === year);
   });
+  const matched = ofYear.filter(
+    (row) => tombNoMatches(row, tomb) && burialDateInRange(row, burialFrom, burialTo),
+  );
   const undated = dump.contracts.filter((row) => !contractDate(row)).length;
-  const rows = ofYear.map((row) => ({
+  const rows = matched.map((row) => ({
     tombNo: row.tombNo,
     burialDate: row.burialDate,
     userName: row.userName,
@@ -53,7 +66,16 @@ export default async function WorkContractsPage({
       title={t(locale, "work.contracts")}
       lead={lead}
       syncedAt={dump.meta?.syncedAt}
-      toolbar={<WorkYearFilter locale={locale} years={years} year={year} />}
+      toolbar={
+        <WorkContractFilter
+          locale={locale}
+          years={years}
+          year={year}
+          tomb={tomb}
+          burialFrom={params.burialFrom ?? ""}
+          burialTo={params.burialTo ?? ""}
+        />
+      }
       columns={[
         { key: "tombNo", label: "묘지번호" },
         { key: "burialDate", label: "매장일자" },

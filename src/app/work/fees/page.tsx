@@ -4,7 +4,15 @@ import { WorkFeeFilter } from "@/components/work-lookup-filters";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 import { loadWorkCopyPage } from "@/lib/work";
-import { defaultFeeRange, feeInRange, feeMatchesPay, feePayFilter, isoFromYmd, parseIsoYmd } from "@/lib/work-status";
+import {
+  defaultFeeRange,
+  feeInRange,
+  feeMatchesPay,
+  feePayFilter,
+  isoFromYmd,
+  parseIsoYmd,
+  summarizeFeeQuery,
+} from "@/lib/work-status";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +40,7 @@ export default async function WorkFeesPage({
   const toIso = isoFromYmd(to);
   const status = feePayFilter(params.status);
   const matched = dump.fees.filter((row) => feeInRange(row, from, to) && feeMatchesPay(row, status));
+  const summary = summarizeFeeQuery(matched, status);
   const rows = matched.map((row) => ({
     billedOn: row.billedOn,
     tombNo: row.tombNo,
@@ -53,7 +62,7 @@ export default async function WorkFeesPage({
       title={t(locale, "work.fees")}
       lead={lead}
       syncedAt={dump.meta?.syncedAt}
-      toolbar={<WorkFeeFilter locale={locale} from={fromIso} to={toIso} status={status} />}
+      toolbar={<WorkFeeFilter locale={locale} from={fromIso} to={toIso} status={status} summary={summary} />}
       groupLabel={t(locale, "work.noZone")}
       columns={[
         { key: "billedOn", label: "청구일자" },

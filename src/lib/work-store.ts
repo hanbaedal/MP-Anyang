@@ -131,7 +131,7 @@ const SLICE_SPEC: Record<WorkDumpSlice, WorkSliceSpec> = {
   full: { meta: true, contracts: true, fees: true, receipts: true, reports: true, cemetery: true },
   contracts: { meta: true, contracts: true, fees: false, receipts: false, reports: false, cemetery: false },
   fees: { meta: true, contracts: false, fees: true, receipts: false, reports: false, cemetery: false },
-  receipts: { meta: true, contracts: false, fees: false, receipts: false, reports: false, cemetery: false },
+  receipts: { meta: true, contracts: true, fees: true, receipts: false, reports: false, cemetery: false },
   reports: { meta: true, contracts: false, fees: false, receipts: false, reports: true, cemetery: false },
   master: { meta: true, contracts: false, fees: false, receipts: false, reports: false, cemetery: false },
   status: { meta: true, contracts: true, fees: true, receipts: false, reports: false, cemetery: false },

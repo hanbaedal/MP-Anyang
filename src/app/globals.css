@@ -83,3 +83,31 @@
     white-space: nowrap;
   }
 }
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .receipt-print-root,
+  .receipt-print-root * {
+    visibility: visible !important;
+  }
+
+  .receipt-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .receipt-print-page {
+    break-after: page;
+    page-break-after: always;
+  }
+}

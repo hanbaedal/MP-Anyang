@@ -73,7 +73,7 @@ export type WorkStatusTables = {
   unpaidRows: StatusMonthRow[];
 };
 
-export type FeePayFilter = "all" | "paid" | "unpaid";
+export type FeePayFilter = "all" | "paid" | "unpaid" | "hold";
 
 type YearAcc = {
   paidAmount: number;
@@ -118,14 +118,53 @@ export function defaultFeeRange() {
 }
 
 export function feePayFilter(raw: string | undefined | null): FeePayFilter {
-  if (raw === "paid" || raw === "unpaid") return raw;
+  if (raw === "paid" || raw === "unpaid" || raw === "hold") return raw;
   return "all";
 }
 
+export function isHoldFee(row: FeeCopy) {
+  return row.status.trim() === "보류";
+}
+
 export function feeMatchesPay(row: FeeCopy, filter: FeePayFilter) {
+  if (filter === "hold") return isHoldFee(row);
   if (filter === "paid") return isPaidFee(row);
-  if (filter === "unpaid") return isUnpaidFee(row);
+  if (filter === "unpaid") return isUnpaidFee(row) && !isHoldFee(row);
   return true;
+}
+
+export function tombNoMatches(row: { tombNo: string }, query: string) {
+  const q = query.trim();
+  if (!q) return true;
+  return row.tombNo.includes(q);
+}
+
+export function burialDateInRange(row: ContractCopy, fromYmd: number | null, toYmd: number | null) {
+  if (fromYmd == null && toYmd == null) return true;
+  const ymd = parseCopyYmd(row.burialDate);
+  if (ymd == null) return false;
+  if (fromYmd != null && ymd < fromYmd) return false;
+  if (toYmd != null && ymd > toYmd) return false;
+  return true;
+}
+
+export type FeeQuerySummary = {
+  rowCount: number;
+  uniqueCount: number;
+  amount: number;
+};
+
+export function summarizeFeeQuery(rows: FeeCopy[], filter: FeePayFilter): FeeQuerySummary {
+  const keys = new Set<string>();
+  let amount = 0;
+  for (const row of rows) {
+    keys.add(feeKey(row));
+    if (filter === "paid") amount += row.paidAmount;
+    else if (filter === "unpaid" || filter === "hold") {
+      amount += row.balance > 0 ? row.balance : Math.max(0, row.billedAmount - row.paidAmount);
+    } else amount += row.billedAmount;
+  }
+  return { rowCount: rows.length, uniqueCount: keys.size, amount };
 }
 
 export function feeInRange(row: FeeCopy, from: number, to: number) {
