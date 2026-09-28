@@ -9,7 +9,7 @@ export default async function ManageHomeHeroPage() {
       <PageHero
         kicker="관리"
         title="메인 영상·음악"
-        lead="메인 화면 배경 영상과 BGM을 올리거나 목록에서 골라 공개합니다. 방문자는 재생 버튼을 눌러야 소리·영상이 함께 나옵니다."
+        lead="계절별 영상·음악을 DB 라이브러리에 쌓아 두고, 공개에 쓸 항목만 골라 바꿉니다. 방문자는 재생 버튼을 눌러야 영상·BGM이 함께 나옵니다."
       />
       <ManageHomeHero initial={settings} />
     </>

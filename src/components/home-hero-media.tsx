@@ -20,13 +20,32 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   const [started, setStarted] = useState(false);
   const [musicOn, setMusicOn] = useState(true);
   const [showPrompt, setShowPrompt] = useState(true);
+  const [mediaError, setMediaError] = useState("");
 
   const syncPlay = useCallback(async () => {
     const video = videoRef.current;
     const audio = audioRef.current;
     if (!video || !audio) return false;
+    setMediaError("");
     video.muted = true;
     try {
+      if (video.readyState < 2) {
+        await new Promise<void>((resolve, reject) => {
+          const onReady = () => {
+            video.removeEventListener("loadeddata", onReady);
+            video.removeEventListener("error", onFail);
+            resolve();
+          };
+          const onFail = () => {
+            video.removeEventListener("loadeddata", onReady);
+            video.removeEventListener("error", onFail);
+            reject(new Error("video load failed"));
+          };
+          video.addEventListener("loadeddata", onReady);
+          video.addEventListener("error", onFail);
+          video.load();
+        });
+      }
       await video.play();
       if (musicOn) await audio.play();
       else audio.pause();
@@ -35,6 +54,10 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
       setShowPrompt(false);
       return true;
     } catch {
+      sessionStorage.removeItem(SESSION_KEY);
+      setShowPrompt(true);
+      setStarted(false);
+      setMediaError("영상 또는 음악을 재생하지 못했습니다. 관리 화면에서 파일 경로를 확인해 주세요.");
       return false;
     }
   }, [musicOn]);
@@ -54,7 +77,6 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   useEffect(() => {
     if (reduceMotion) return;
     if (sessionStorage.getItem(SESSION_KEY) !== "1") return;
-    setShowPrompt(false);
     void syncPlay();
   }, [reduceMotion, syncPlay]);
 
@@ -113,7 +135,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
       {showPrompt ? (
         <>
           <div className="pointer-events-none absolute inset-0 z-[5] bg-black/30" aria-hidden />
-          <div className="pointer-events-none absolute inset-0 z-[6] flex items-center justify-center px-6">
+          <div className="pointer-events-none absolute inset-0 z-[20] flex items-center justify-center px-6">
             <button
               type="button"
               onClick={startFromClick}
@@ -130,6 +152,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
                 <br />
                 함께 재생됩니다
               </span>
+              {mediaError ? <span className="max-w-sm text-xs text-red-200">{mediaError}</span> : null}
             </button>
           </div>
         </>

@@ -17,8 +17,8 @@ export default async function HomePage() {
         />
         <div className="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
       </div>
-      <div className="relative z-10 flex h-full min-h-full flex-col justify-end px-4 pb-5 pt-8 sm:px-6 sm:pb-7 md:px-10 md:pb-8">
-        <div className="flex flex-col items-center justify-end gap-4 text-center md:flex-row md:items-end md:justify-between md:gap-8 md:text-left">
+      <div className="pointer-events-none relative z-10 flex h-full min-h-full flex-col justify-end px-4 pb-5 pt-8 sm:px-6 sm:pb-7 md:px-10 md:pb-8">
+        <div className="pointer-events-auto flex flex-col items-center justify-end gap-4 text-center md:flex-row md:items-end md:justify-between md:gap-8 md:text-left">
           <div className="w-full min-w-0 md:w-auto">
             <p className="text-sm tracking-wide text-primary-foreground/85">{t(locale, "home.kicker")}</p>
             <h1 className="mt-2 font-serif leading-tight text-primary-foreground">
