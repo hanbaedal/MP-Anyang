@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   HOME_HERO_SEASON_LABELS,
@@ -115,9 +115,16 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   const [applyOnUpload, setApplyOnUpload] = useState(true);
   const [uploadSeason, setUploadSeason] = useState<HomeHeroSeasonTag>("");
   const [uploadLabel, setUploadLabel] = useState("");
+  const [pickVideoSrc, setPickVideoSrc] = useState(initial.videoSrc);
+  const [pickAudioSrc, setPickAudioSrc] = useState(initial.audioSrc);
 
   const sortedVideos = useMemo(() => sortAssets(settings.videos), [settings.videos]);
   const sortedAudios = useMemo(() => sortAssets(settings.audios), [settings.audios]);
+
+  useEffect(() => {
+    setPickVideoSrc(settings.videoSrc);
+    setPickAudioSrc(settings.audioSrc);
+  }, [settings.videoSrc, settings.audioSrc]);
 
   async function refresh() {
     const res = await fetch("/api/manage/home-hero");
@@ -264,18 +271,56 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   }
 
   const busy = status === "busy";
+  const pickChanged = pickVideoSrc !== settings.videoSrc || pickAudioSrc !== settings.audioSrc;
 
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-10">
       <p className="text-sm text-muted-foreground">
-        <strong>DB(MongoDB)</strong>에는 파일 경로·이름·계절 태그·공개 중인 조합만 저장됩니다. 실제 mp4/mp3는 서버 디스크(
-        <code className="rounded bg-muted px-1">uploads/home-hero</code>)에 두며, Render 재배포 시 업로드분이 사라질 수 있어{" "}
-        <strong>계절별 파일은 PC에도 보관</strong>해 두는 것이 좋습니다. 봄·여름 영상을 미리 올려 두고, 계절이 되면 「공개에 사용」만
-        바꾸면 됩니다.
+        <strong>계절별 영상·음악</strong>을 라이브러리에 쌓아 두고, 아래에서 <strong>공개 조합</strong>을 고른 뒤 「메인에 적용」을
+        누르면 https://mp-anyang.onrender.com/ 메인에 반영됩니다. 방문자는 <strong>들어오자마자 무음 영상</strong>이 재생되고, 배경음악은
+        「배경음악 재생」을 눌러야 나옵니다(브라우저 정책). DB에는 경로·계절 태그만 저장되며, mp4/mp3 파일은 서버 디스크에 있습니다.
       </p>
 
+      <section className="space-y-4 rounded-xl border-2 border-primary/30 bg-card p-5">
+        <h2 className="font-medium">라이브러리에서 공개 조합 선택</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="block space-y-1 text-sm">
+            <span className="font-medium">공개 영상</span>
+            <select className={field} value={pickVideoSrc} disabled={busy} onChange={(e) => setPickVideoSrc(e.target.value)}>
+              {sortedVideos.map((item) => (
+                <option key={item.id} value={item.src}>
+                  {item.label}
+                  {seasonLabel(item.season) ? ` (${seasonLabel(item.season)})` : ""}
+                  {settings.videoSrc === item.src ? " · 현재 공개" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="font-medium">공개 음악</span>
+            <select className={field} value={pickAudioSrc} disabled={busy} onChange={(e) => setPickAudioSrc(e.target.value)}>
+              {sortedAudios.map((item) => (
+                <option key={item.id} value={item.src}>
+                  {item.label}
+                  {seasonLabel(item.season) ? ` (${seasonLabel(item.season)})` : ""}
+                  {settings.audioSrc === item.src ? " · 현재 공개" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <Button
+          type="button"
+          disabled={busy || !pickChanged}
+          onClick={() => void applySelection({ videoSrc: pickVideoSrc, audioSrc: pickAudioSrc })}
+        >
+          선택한 영상·음악을 메인에 적용
+        </Button>
+        {!pickChanged ? <p className="text-xs text-muted-foreground">목록에서 다른 영상·음악을 고르면 적용 버튼이 활성화됩니다.</p> : null}
+      </section>
+
       <section className="space-y-3 rounded-xl border bg-card p-5">
-        <h2 className="font-medium">지금 공개 중</h2>
+        <h2 className="font-medium">지금 공개 중 (미리보기)</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="mb-2 text-xs text-muted-foreground">영상</p>

@@ -5,7 +5,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Photo } from "@/components/page-hero";
 import { cn } from "@/lib/utils";
 
-const SESSION_KEY = "anyang-home-hero-media";
+const BGM_SESSION_KEY = "anyang-home-hero-bgm";
 
 type Props = {
   videoSrc: string;
@@ -17,54 +17,38 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [musicOn, setMusicOn] = useState(true);
-  const [showPrompt, setShowPrompt] = useState(true);
-  const [mediaError, setMediaError] = useState("");
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [musicOn, setMusicOn] = useState(false);
+  const [showBgmPrompt, setShowBgmPrompt] = useState(true);
 
-  const syncPlay = useCallback(async () => {
+  const startVideo = useCallback(async () => {
     const video = videoRef.current;
-    const audio = audioRef.current;
-    if (!video || !audio) return false;
-    setMediaError("");
+    if (!video) return;
     video.muted = true;
     try {
-      if (video.readyState < 2) {
-        await new Promise<void>((resolve, reject) => {
-          const onReady = () => {
-            video.removeEventListener("loadeddata", onReady);
-            video.removeEventListener("error", onFail);
-            resolve();
-          };
-          const onFail = () => {
-            video.removeEventListener("loadeddata", onReady);
-            video.removeEventListener("error", onFail);
-            reject(new Error("video load failed"));
-          };
-          video.addEventListener("loadeddata", onReady);
-          video.addEventListener("error", onFail);
-          video.load();
-        });
-      }
       await video.play();
-      if (musicOn) await audio.play();
-      else audio.pause();
-      sessionStorage.setItem(SESSION_KEY, "1");
-      setStarted(true);
-      setShowPrompt(false);
-      return true;
+      setVideoReady(true);
+      setVideoError(false);
     } catch {
-      sessionStorage.removeItem(SESSION_KEY);
-      setShowPrompt(true);
-      setStarted(false);
-      setMediaError("영상 또는 음악을 재생하지 못했습니다. 관리 화면에서 파일 경로를 확인해 주세요.");
-      return false;
+      setVideoError(true);
     }
-  }, [musicOn]);
+  }, []);
 
-  const startFromClick = useCallback(() => {
-    void syncPlay();
-  }, [syncPlay]);
+  const startBgm = useCallback(async () => {
+    const audio = audioRef.current;
+    const video = videoRef.current;
+    if (!audio || !video) return;
+    try {
+      if (video.paused) await startVideo();
+      await audio.play();
+      setMusicOn(true);
+      setShowBgmPrompt(false);
+      sessionStorage.setItem(BGM_SESSION_KEY, "1");
+    } catch {
+      setShowBgmPrompt(true);
+    }
+  }, [startVideo]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -76,16 +60,22 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
 
   useEffect(() => {
     if (reduceMotion) return;
-    if (sessionStorage.getItem(SESSION_KEY) !== "1") return;
-    void syncPlay();
-  }, [reduceMotion, syncPlay]);
+    setVideoReady(false);
+    void startVideo();
+  }, [reduceMotion, videoSrc, startVideo]);
+
+  useEffect(() => {
+    if (reduceMotion || sessionStorage.getItem(BGM_SESSION_KEY) !== "1") return;
+    setShowBgmPrompt(false);
+    void startBgm();
+  }, [reduceMotion, audioSrc, startBgm]);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !started) return;
-    if (musicOn) void audio.play().catch(() => {});
+    if (!audio) return;
+    if (musicOn) void audio.play().catch(() => setMusicOn(false));
     else audio.pause();
-  }, [musicOn, started]);
+  }, [musicOn, audioSrc]);
 
   useEffect(() => {
     return () => {
@@ -108,7 +98,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
 
   return (
     <>
-      {!started ? (
+      {videoError ? (
         <Photo
           src={posterSrc}
           alt=""
@@ -119,53 +109,53 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
         />
       ) : null}
       <video
+        key={videoSrc}
         ref={videoRef}
-        className={cn(
-          "absolute inset-0 h-full w-full object-cover",
-          started ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
+        className={cn("absolute inset-0 h-full w-full object-cover", videoReady || videoError ? "opacity-100" : "opacity-0")}
         src={videoSrc}
         poster={posterSrc}
         muted
+        autoPlay
         playsInline
         loop
-        preload="metadata"
+        preload="auto"
+        onLoadedData={() => setVideoReady(true)}
+        onError={() => setVideoError(true)}
       />
-      <audio ref={audioRef} src={audioSrc} loop preload="metadata" />
-      {showPrompt ? (
-        <>
-          <div className="pointer-events-none absolute inset-0 z-[5] bg-black/30" aria-hidden />
-          <div className="pointer-events-none absolute inset-0 z-[20] flex items-center justify-center px-6">
-            <button
-              type="button"
-              onClick={startFromClick}
-              className="pointer-events-auto flex cursor-pointer flex-col items-center gap-3 rounded-2xl bg-black/40 px-8 py-6 text-center text-primary-foreground ring-1 ring-white/25 backdrop-blur-sm transition hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-              aria-label="영상과 음악 재생"
-            >
-              <span className="inline-flex size-14 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/40">
-                <svg viewBox="0 0 24 24" className="ml-1 size-7 fill-current" aria-hidden>
-                  <path d="M8 5v14l11-7L8 5z" />
-                </svg>
-              </span>
-              <span className="max-w-xs text-sm font-medium tracking-wide sm:text-base">
-                클릭하면 영상과 음악이
-                <br />
-                함께 재생됩니다
-              </span>
-              {mediaError ? <span className="max-w-sm text-xs text-red-200">{mediaError}</span> : null}
-            </button>
-          </div>
-        </>
+      <audio key={audioSrc} ref={audioRef} src={audioSrc} loop preload="metadata" />
+      {showBgmPrompt && videoReady && !videoError ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-28 z-[20] flex justify-center px-4 md:bottom-32">
+          <button
+            type="button"
+            onClick={() => void startBgm()}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm text-white ring-1 ring-white/30 backdrop-blur-sm hover:bg-black/60"
+            aria-label="배경음악 재생"
+          >
+            <Volume2 className="size-4" aria-hidden />
+            배경음악 재생
+          </button>
+        </div>
       ) : null}
-      {started ? (
+      {musicOn ? (
         <button
           type="button"
           onClick={() => setMusicOn((on) => !on)}
-          className="absolute right-3 top-3 z-[6] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:right-4 sm:top-4"
-          aria-label={musicOn ? "음악 끄기" : "음악 켜기"}
-          title={musicOn ? "음악 끄기" : "음악 켜기"}
+          className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
+          aria-label="음악 끄기"
+          title="음악 끄기"
         >
-          {musicOn ? <Volume2 className="size-5" aria-hidden /> : <VolumeX className="size-5" aria-hidden />}
+          <Volume2 className="size-5" aria-hidden />
+        </button>
+      ) : null}
+      {!musicOn && !showBgmPrompt && videoReady ? (
+        <button
+          type="button"
+          onClick={() => void startBgm()}
+          className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
+          aria-label="배경음악 켜기"
+          title="배경음악 켜기"
+        >
+          <VolumeX className="size-5" aria-hidden />
         </button>
       ) : null}
     </>
