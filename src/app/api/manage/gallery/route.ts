@@ -1,10 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { addGalleryPhoto, deleteGalleryPhoto, GALLERY_TAGS, listGallery, updateGalleryPhoto } from "@/lib/gallery";
 import type { GalleryTag } from "@/lib/content";
 import { requireStaffApi } from "@/lib/manage-guard";
+import { saveManageUpload } from "@/lib/manage-image-upload";
 
 export async function GET() {
   const guard = await requireStaffApi();
@@ -24,23 +22,12 @@ export async function POST(request: Request) {
   const file = form.get("file");
   const alt = String(form.get("alt") ?? "");
   const tags = parseTags(form.get("tags"));
-  if (!(file instanceof File) || file.size < 1) {
+  if (!(file instanceof File)) {
     return NextResponse.json({ ok: false, error: "사진 파일을 선택해 주세요." }, { status: 400 });
   }
-  if (file.size > 8 * 1024 * 1024) {
-    return NextResponse.json({ ok: false, error: "사진은 8MB 이하만 올릴 수 있습니다." }, { status: 400 });
-  }
-  const type = file.type;
-  const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : type === "image/gif" ? "gif" : "jpg";
-  if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(type) && !file.name.match(/\.(jpe?g|png|webp|gif)$/i)) {
-    return NextResponse.json({ ok: false, error: "JPG, PNG, WebP, GIF만 올릴 수 있습니다." }, { status: 400 });
-  }
-  const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-  const buf = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, name), buf);
-  const photo = await addGalleryPhoto({ src: `/uploads/${name}`, alt, tags });
+  const saved = await saveManageUpload(file);
+  if (!saved.ok) return NextResponse.json(saved, { status: 400 });
+  const photo = await addGalleryPhoto({ src: saved.src, alt, tags });
   return NextResponse.json({ ok: true, photo });
 }
 

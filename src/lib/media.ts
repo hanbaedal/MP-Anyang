@@ -31,6 +31,7 @@ export function thumbUrl(path: string) {
   if (!path) return path;
   if (/^https?:\/\//i.test(path)) return path;
   const normalized = resolveImagePath(path);
+  if (normalized.startsWith("/uploads/")) return mediaUrl(normalized);
   const thumb = normalized.replace(/^\/images\//, "/images/thumbs/");
   return mediaUrl(thumb === normalized ? normalized : thumb);
 }
