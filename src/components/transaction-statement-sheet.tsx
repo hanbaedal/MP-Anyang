@@ -6,6 +6,10 @@ const RED = "#c41e3a";
 const cell = "border border-black text-center align-middle whitespace-nowrap";
 const th = `${cell} bg-[#f5f5f5] font-normal`;
 
+function spacedName(name: string) {
+  return name.split("").join("\u00a0\u00a0");
+}
+
 function dateLine(parts: { year: string; month: string; day: string }, twoDigitYear = false) {
   const y = twoDigitYear ? parts.year.slice(-2) : parts.year;
   return `${y}년 ${parts.month}월 ${parts.day}일`;
@@ -61,15 +65,16 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             <td className={th}>대표자성명</td>
             <td className={`${cell} statement-rep-cell`} colSpan={2}>
               <span className="statement-rep">
-                <span className="statement-rep-name">{STATEMENT_FACILITY.representative}</span>
+                <span className="statement-rep-name">{spacedName(STATEMENT_FACILITY.representative)}</span>
                 <span className="statement-rep-mark">
                   (인)
                   <Image
                     src="/images/representative-seal.png"
                     alt=""
-                    width={64}
-                    height={64}
-                    className="statement-seal pointer-events-none mix-blend-multiply"
+                    width={57}
+                    height={57}
+                    className="statement-seal mix-blend-multiply"
+                    style={{ width: "15mm", height: "15mm" }}
                     unoptimized
                   />
                 </span>

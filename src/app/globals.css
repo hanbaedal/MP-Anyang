@@ -160,6 +160,17 @@
   overflow: hidden;
 }
 
+.statement-frame,
+.statement-tables,
+.statement-table,
+.statement-table-main,
+.statement-table td.statement-rep-cell,
+.statement-table tr.stmt-row-seal,
+.statement-rep,
+.statement-rep-mark {
+  overflow: visible;
+}
+
 .statement-note {
   height: 2.8cqh;
   margin: 0.15cqh 0 0;
@@ -168,15 +179,10 @@
   line-height: 2.8cqh;
 }
 
-.statement-table td.statement-rep-cell,
-.statement-table tr.stmt-row-seal {
-  overflow: visible;
-}
-
 .statement-rep {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: 100%;
   position: relative;
   z-index: 1;
@@ -186,8 +192,8 @@
   position: relative;
   z-index: 3;
   flex: 0 0 auto;
-  padding: 0 1mm 0 0.4mm;
-  letter-spacing: 0.4em;
+  padding: 0 0.15em;
+  letter-spacing: 0;
   background: #fff;
 }
 
@@ -200,21 +206,24 @@
   justify-content: center;
   width: 7mm;
   height: 4mm;
-  margin-left: 2mm;
-  font-size: 0.85em;
+  margin-left: 2em;
+  font-size: 1em;
   letter-spacing: 0;
   color: #222;
 }
 
 .statement-seal {
   position: absolute;
-  z-index: 2;
+  z-index: 5;
   top: 50%;
   left: 50%;
-  width: 15mm;
-  height: 15mm;
+  width: 15mm !important;
+  height: 15mm !important;
+  max-width: none !important;
+  max-height: none !important;
   transform: translate(-50%, -50%);
-  object-fit: contain;
+  object-fit: fill;
+  pointer-events: none;
 }
 
 .statement-perforation {
