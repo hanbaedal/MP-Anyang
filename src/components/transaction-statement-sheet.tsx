@@ -3,8 +3,8 @@ import type { StatementPayload } from "@/lib/receipt-statement";
 import { STATEMENT_FACILITY } from "@/lib/receipt-statement";
 
 const RED = "#c41e3a";
-const cell = "border border-black px-1 py-[2px] text-[8.5px] leading-tight align-middle";
-const th = `${cell} bg-[#f5f5f5] text-center font-normal whitespace-nowrap`;
+const cell = "border border-black text-center align-middle";
+const th = `${cell} bg-[#f5f5f5] font-normal whitespace-nowrap`;
 
 function dateLine(parts: { year: string; month: string; day: string }, twoDigitYear = false) {
   const y = twoDigitYear ? parts.year.slice(-2) : parts.year;
@@ -13,19 +13,19 @@ function dateLine(parts: { year: string; month: string; day: string }, twoDigitY
 
 function CopyBlock({ data }: { data: StatementPayload }) {
   return (
-    <div className="statement-copy flex h-full min-w-0 flex-1 flex-col border-2 border-black bg-white p-[3px] text-black">
-      <div className="relative mb-0.5 min-h-[14px] text-[7.5px] leading-none">
+    <div className="statement-copy flex h-full min-w-0 flex-1 flex-col border-2 border-black bg-white p-[1.5px] text-black">
+      <div className="statement-banner relative shrink-0">
         <span className="absolute left-0 top-0 font-bold tracking-wide" style={{ color: RED }}>
           {data.serial}
         </span>
-        <p className="px-8 text-center" style={{ color: RED }}>
+        <p className="px-10 text-center" style={{ color: RED }}>
           (법인묘지, 사설화장시설, 사설봉안시설, 사설자연장지용)
         </p>
         <span className="absolute right-0 top-0">{data.sideLabel}</span>
       </div>
-      <h2 className="my-0.5 text-center text-[12px] font-bold tracking-[0.35em]">거 래 명 세 서 (영수증겸용)</h2>
+      <h2 className="statement-title shrink-0 text-center">거 래 명 세 서 (영수증겸용)</h2>
 
-      <table className="w-full flex-1 border-collapse table-fixed">
+      <table className="statement-table min-h-0 flex-1">
         <tbody>
           <tr>
             <td className={th} rowSpan={3} style={{ width: "9%" }}>
@@ -51,16 +51,16 @@ function CopyBlock({ data }: { data: StatementPayload }) {
               {STATEMENT_FACILITY.address}
             </td>
           </tr>
-          <tr>
+          <tr className="stmt-row-seal">
             <td className={th}>대표자성명</td>
-            <td className={`${cell} relative min-h-[28px]`}>
+            <td className={`${cell} relative`}>
               <span className="relative z-[1]">{STATEMENT_FACILITY.representative}</span>
               <Image
                 src="/images/representative-seal.png"
                 alt=""
-                width={56}
-                height={56}
-                className="pointer-events-none absolute left-[32%] top-1/2 z-[2] -translate-y-1/2 mix-blend-multiply opacity-90"
+                width={64}
+                height={64}
+                className="statement-seal pointer-events-none absolute left-[38%] top-1/2 z-[2] -translate-y-1/2 mix-blend-multiply opacity-90"
                 unoptimized
               />
             </td>
@@ -96,26 +96,32 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             </td>
           </tr>
           <tr>
-            <td className={th} colSpan={3}>
+            <td className={th} colSpan={4} style={{ letterSpacing: "0.45em" }}>
               관리기간
             </td>
-            <td className={th} colSpan={3}>
+            <td className={th} colSpan={2} style={{ letterSpacing: "0.45em" }}>
               금액
             </td>
           </tr>
           <tr>
-            <td className={cell} colSpan={3}>
-              관리비 {data.mgmtPeriod}
+            <td className={th} colSpan={2} style={{ letterSpacing: "0.35em" }}>
+              관리비
             </td>
-            <td className={cell} colSpan={3}>
+            <td className={cell} colSpan={2}>
+              {data.mgmtPeriod}
+            </td>
+            <td className={cell} colSpan={2}>
               {data.mgmtAmount}
             </td>
           </tr>
           <tr>
-            <td className={cell} colSpan={3}>
-              산역비 {data.sanPeriod}
+            <td className={th} colSpan={2} style={{ letterSpacing: "0.35em" }}>
+              산역비
             </td>
-            <td className={cell} colSpan={3}>
+            <td className={cell} colSpan={2}>
+              {data.sanPeriod}
+            </td>
+            <td className={cell} colSpan={2}>
               {data.sanAmount}
             </td>
           </tr>
@@ -140,10 +146,7 @@ function CopyBlock({ data }: { data: StatementPayload }) {
           ))}
         </tbody>
       </table>
-      <p
-        className="mt-0.5 border px-1 py-0.5 text-[7px] leading-tight"
-        style={{ borderColor: RED, color: RED }}
-      >
+      <p className="statement-note shrink-0 border" style={{ borderColor: RED, color: RED }}>
         {STATEMENT_FACILITY.footnote}
       </p>
     </div>
@@ -152,8 +155,11 @@ function CopyBlock({ data }: { data: StatementPayload }) {
 
 export function TransactionStatementPage({ company, customer }: { company: StatementPayload; customer: StatementPayload }) {
   return (
-    <div className="statement-sheet flex h-[190mm] w-[277mm] gap-[2mm] bg-white text-black print:print-color-exact">
+    <div className="statement-sheet flex h-[190mm] w-[277mm] bg-white text-black print:print-color-exact">
       <CopyBlock data={company} />
+      <div className="statement-perforation" aria-hidden="true">
+        <span>절취선</span>
+      </div>
       <CopyBlock data={customer} />
     </div>
   );

@@ -84,10 +84,107 @@
   }
 }
 
+/* 거래명세서 — A4 가로 한 장(좌·우) 기준, 양식 사진에 맞춘 행 높이·글자 */
+.statement-copy {
+  container-type: size;
+  font-size: 1.62cqh;
+}
+
+.statement-banner {
+  height: 2.6cqh;
+  font-size: 0.78em;
+  line-height: 1;
+}
+
+.statement-copy h2.statement-title {
+  height: 3.4cqh;
+  margin: 0;
+  color: #000;
+  font-family: inherit;
+  font-size: 1.45em;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.statement-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.statement-table tr {
+  height: 6.16%;
+}
+
+.statement-table tr.stmt-row-seal {
+  height: 7.6%;
+}
+
+.statement-table td {
+  font-size: 0.92em;
+  line-height: 1.05;
+  padding: 0 0.25em;
+  overflow: hidden;
+}
+
+.statement-note {
+  height: 2.8cqh;
+  margin: 0.15cqh 0 0;
+  padding: 0 0.3em;
+  font-size: 0.72em;
+  line-height: 2.8cqh;
+}
+
+.statement-seal {
+  height: 4.2cqh;
+  width: auto;
+}
+
+.statement-perforation {
+  position: relative;
+  display: flex;
+  flex: 0 0 16mm;
+  align-items: center;
+  justify-content: center;
+  width: 16mm;
+}
+
+.statement-perforation::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 0.35mm dashed #c41e3a;
+}
+
+.statement-perforation span {
+  position: relative;
+  z-index: 1;
+  padding: 1.2mm 0;
+  background: #fff;
+  color: #c41e3a;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  writing-mode: vertical-rl;
+}
+
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    background: #fff !important;
   }
 
   body * {
@@ -103,17 +200,40 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 297mm;
+    margin: 0;
+    padding: 0;
   }
 
   .receipt-print-page {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 297mm;
+    height: 210mm;
     break-after: page;
     page-break-after: always;
+    overflow: hidden;
+  }
+
+  .receipt-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .statement-sheet {
+    width: 277mm;
+    height: 190mm;
+    margin: 0 auto;
+    flex: 0 0 auto;
   }
 
   .receipt-print-root,
   .statement-sheet,
-  .statement-copy {
+  .statement-copy,
+  .statement-perforation,
+  .statement-perforation::before,
+  .statement-perforation span {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
