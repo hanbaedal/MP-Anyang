@@ -7,6 +7,7 @@ export type ManageNavItem = { href: string; i18n: string };
 /** 홈페이지 콘텐츠 편집만 (관리 홈·슈퍼바이저 항목 제외) */
 export function manageNavItems(): ManageNavItem[] {
   return [
+    { href: "/manage/home-hero", i18n: "manage.homeHero" },
     { href: "/manage/gallery", i18n: "manage.gallery" },
     { href: "/manage/funeral", i18n: "manage.funeral" },
     { href: "/manage/notices", i18n: "manage.notices" },

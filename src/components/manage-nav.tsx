@@ -4,6 +4,7 @@ import { SUPERVISOR_NAV } from "@/lib/supervisor-nav";
 import type { SessionUser } from "@/lib/auth-types";
 
 const LABELS: Record<string, string> = {
+  "manage.homeHero": "메인 영상·음악",
   "manage.gallery": "갤러리",
   "manage.funeral": "장례·안치",
   "manage.notices": "공지",

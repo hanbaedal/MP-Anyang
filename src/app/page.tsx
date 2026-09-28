@@ -1,23 +1,23 @@
-import { Photo } from "@/components/page-hero";
 import { HeroCallActions } from "@/components/hero-actions";
+import { HomeHeroMedia } from "@/components/home-hero-media";
+import { getHomeHeroSettings } from "@/lib/home-hero";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
 export default async function HomePage() {
   const locale = await readLocale();
+  const heroMedia = await getHomeHeroSettings();
   return (
     <section className="relative h-full min-h-full overflow-hidden bg-primary text-primary-foreground">
       <div className="absolute inset-0">
-        <Photo
-          src="/images/hero.jpg"
-          alt="(재)안양공원묘원 언덕 묘역 전경"
-          className="absolute inset-0 h-full w-full rounded-none"
-          sizes="100vw"
-          priority
+        <HomeHeroMedia
+          videoSrc={heroMedia.videoSrc}
+          audioSrc={heroMedia.audioSrc}
+          posterSrc={heroMedia.posterSrc}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
       </div>
-      <div className="relative flex h-full min-h-full flex-col justify-end px-4 pb-5 pt-8 sm:px-6 sm:pb-7 md:px-10 md:pb-8">
+      <div className="relative z-10 flex h-full min-h-full flex-col justify-end px-4 pb-5 pt-8 sm:px-6 sm:pb-7 md:px-10 md:pb-8">
         <div className="flex flex-col items-center justify-end gap-4 text-center md:flex-row md:items-end md:justify-between md:gap-8 md:text-left">
           <div className="w-full min-w-0 md:w-auto">
             <p className="text-sm tracking-wide text-primary-foreground/85">{t(locale, "home.kicker")}</p>

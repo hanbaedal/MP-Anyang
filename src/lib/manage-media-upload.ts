@@ -1,0 +1,52 @@
+import { randomBytes } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+const VIDEO_MAX = 25 * 1024 * 1024;
+const AUDIO_MAX = 12 * 1024 * 1024;
+
+export async function saveHomeHeroUpload(
+  file: File,
+  kind: "video" | "audio",
+): Promise<{ ok: true; src: string } | { ok: false; error: string }> {
+  if (!(file instanceof File) || file.size < 1) {
+    return { ok: false, error: "파일을 선택해 주세요." };
+  }
+  const max = kind === "video" ? VIDEO_MAX : AUDIO_MAX;
+  const maxLabel = kind === "video" ? "25MB" : "12MB";
+  if (file.size > max) {
+    return { ok: false, error: `${kind === "video" ? "동영상" : "음악"}은 ${maxLabel} 이하만 올릴 수 있습니다.` };
+  }
+
+  const type = file.type;
+  if (kind === "video") {
+    const okType = type === "video/mp4" || type === "video/webm" || file.name.match(/\.(mp4|webm)$/i);
+    if (!okType) return { ok: false, error: "MP4 또는 WebM 동영상만 올릴 수 있습니다." };
+  } else {
+    const okType =
+      type === "audio/mpeg" ||
+      type === "audio/mp3" ||
+      type === "audio/wav" ||
+      type === "audio/x-wav" ||
+      file.name.match(/\.(mp3|wav|m4a)$/i);
+    if (!okType) return { ok: false, error: "MP3·WAV·M4A 음악만 올릴 수 있습니다." };
+  }
+
+  const ext =
+    kind === "video"
+      ? file.name.match(/\.webm$/i) || type === "video/webm"
+        ? "webm"
+        : "mp4"
+      : file.name.match(/\.wav$/i) || type.includes("wav")
+        ? "wav"
+        : file.name.match(/\.m4a$/i)
+          ? "m4a"
+          : "mp3";
+
+  const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
+  const dir = path.join(process.cwd(), "public", "uploads", "home-hero");
+  await mkdir(dir, { recursive: true });
+  const buf = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(dir, name), buf);
+  return { ok: true, src: `/uploads/home-hero/${name}` };
+}
