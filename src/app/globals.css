@@ -266,27 +266,28 @@
   html,
   body {
     height: auto !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     margin: 0 !important;
+    padding: 0 !important;
     background: #fff !important;
   }
 
-  body * {
-    visibility: hidden !important;
+  body > *:not(#receipt-print-root) {
+    display: none !important;
   }
 
-  .receipt-print-root,
-  .receipt-print-root * {
-    visibility: visible !important;
-  }
-
-  .receipt-print-root {
-    position: absolute;
-    left: 0;
-    top: 0;
+  #receipt-print-root {
+    display: block !important;
+    position: static !important;
     width: 297mm;
     margin: 0;
     padding: 0;
+    visibility: visible !important;
+  }
+
+  #receipt-print-root,
+  #receipt-print-root * {
+    visibility: visible !important;
   }
 
   .receipt-print-page {

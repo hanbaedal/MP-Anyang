@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildStatementPair, RECEIPT_PRINT_MAX } from "@/lib/receipt-statement";
@@ -35,6 +35,13 @@ function toListRow(fee: FeeCopy): ReceiptListRow {
     paidAmount: fee.paidAmount,
     status: fee.status,
   };
+}
+
+function BodyPrintPortal({ children }: { children: React.ReactNode }) {
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => setRoot(document.body), []);
+  if (!root) return null;
+  return createPortal(children, root);
 }
 
 async function fetchSerials(count: number): Promise<string[]> {
@@ -265,13 +272,15 @@ export function WorkReceiptsPanel({
         </DialogContent>
       </Dialog>
 
-      <TransactionStatementPrintRoot>
-        {printPages.map((page, i) => (
-          <div key={i} className="receipt-print-page break-after-page">
-            <TransactionStatementPage company={page.company} customer={page.customer} />
-          </div>
-        ))}
-      </TransactionStatementPrintRoot>
+      <BodyPrintPortal>
+        <TransactionStatementPrintRoot>
+          {printPages.map((page, i) => (
+            <div key={i} className="receipt-print-page">
+              <TransactionStatementPage company={page.company} customer={page.customer} />
+            </div>
+          ))}
+        </TransactionStatementPrintRoot>
+      </BodyPrintPortal>
     </div>
   );
 }

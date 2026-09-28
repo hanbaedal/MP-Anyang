@@ -104,10 +104,7 @@ function CopyBlock({ data }: { data: StatementPayload }) {
               평수
             </td>
             <td className={cell} colSpan={2}>
-              <span className="flex items-center justify-between px-[0.4em]">
-                <span>{data.pyeong}</span>
-                <span>평</span>
-              </span>
+              {data.pyeong ? `${data.pyeong}평` : ""}
             </td>
           </tr>
           <tr>
