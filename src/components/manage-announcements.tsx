@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { AnnouncementDismissScope, SiteAnnouncement } from "@/lib/announcement-types";
-import { isAnnouncementActive } from "@/lib/announcement-types";
+import { ANNOUNCEMENT_SCHEDULE_LABELS, announcementScheduleStatus } from "@/lib/announcement-types";
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -101,7 +101,8 @@ export function ManageAnnouncements({ initial }: { initial: SiteAnnouncement[] }
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-10">
       <p className="text-sm text-muted-foreground">
-        <strong>메인(/) 접속 시</strong>만 모달로 뜹니다. 「사용 안 함」·시작/종료 시각·기간 종료 후에는 자동으로 숨깁니다. 방문자 「닫기」는
+        <strong>메인(/) 접속 시</strong>만 모달로 뜹니다. <strong>노출 시작</strong> 전에는 안 보이고, <strong>종료</strong> 시각이 지나면 자동으로 숨깁니다(1분마다
+        갱신). 「사용 안 함」이면 즉시 OFF. 방문자 「닫기」는
         선택한 범위(session/오늘/기간 끝까지)에 저장됩니다.
       </p>
 
@@ -205,9 +206,9 @@ export function ManageAnnouncements({ initial }: { initial: SiteAnnouncement[] }
                 <div>
                   <p className="font-medium">{item.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.enabled ? (isAnnouncementActive(item) ? "· 지금 노출 중" : "· 기간/설정상 숨김") : "· 사용 안 함"}
-                    {item.startsAt ? ` · 시작 ${new Date(item.startsAt).toLocaleString("ko-KR")}` : ""}
-                    {item.endsAt ? ` · 종료 ${new Date(item.endsAt).toLocaleString("ko-KR")}` : ""}
+                    · {ANNOUNCEMENT_SCHEDULE_LABELS[announcementScheduleStatus(item)]}
+                    {item.startsAt ? ` · 시작 ${new Date(item.startsAt).toLocaleString("ko-KR", { hour12: false })}` : " · 시작 즉시"}
+                    {item.endsAt ? ` · 종료 ${new Date(item.endsAt).toLocaleString("ko-KR", { hour12: false })}` : " · 종료 없음"}
                   </p>
                 </div>
                 <div className="flex gap-2">

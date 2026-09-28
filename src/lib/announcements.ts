@@ -63,7 +63,14 @@ async function writeAll(items: SiteAnnouncement[]) {
     if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
     await db.collection("site_announcements").deleteMany({});
     if (items.length) {
-      await db.collection("site_announcements").insertMany(items.map((item) => ({ ...item, updatedAt: new Date(item.updatedAt) })));
+      await db.collection("site_announcements").insertMany(
+        items.map((item) => ({
+          ...item,
+          startsAt: item.startsAt || "",
+          endsAt: item.endsAt || "",
+          updatedAt: new Date(item.updatedAt),
+        })),
+      );
     }
     return;
   }
@@ -90,11 +97,22 @@ export async function listActiveAnnouncements(at = new Date()): Promise<SiteAnno
   return all.filter((item) => isAnnouncementActive(item, at)).sort((a, b) => a.sortOrder - b.sortOrder || b.createdAt.localeCompare(a.createdAt));
 }
 
+function validateSchedule(startsAt: string, endsAt: string) {
+  const startMs = startsAt.trim() ? new Date(startsAt.trim()).getTime() : null;
+  const endMs = endsAt.trim() ? new Date(endsAt.trim()).getTime() : null;
+  if (startMs !== null && Number.isNaN(startMs)) throw new Error("노출 시작 시각이 올바르지 않습니다.");
+  if (endMs !== null && Number.isNaN(endMs)) throw new Error("노출 종료 시각이 올바르지 않습니다.");
+  if (startMs !== null && endMs !== null && endMs < startMs) {
+    throw new Error("노출 종료는 시작 시각 이후여야 합니다.");
+  }
+}
+
 export async function saveAnnouncement(input: Partial<SiteAnnouncement> & { id?: string }): Promise<SiteAnnouncement> {
   const all = await listAnnouncements();
   const existing = input.id ? all.find((a) => a.id === input.id) : undefined;
   const item = normalize({ ...existing, ...input, id: input.id ?? existing?.id });
   if (!item.title) throw new Error("제목을 입력해 주세요.");
+  validateSchedule(item.startsAt, item.endsAt);
   const idx = all.findIndex((a) => a.id === item.id);
   if (idx >= 0) {
     item.createdAt = all[idx].createdAt;

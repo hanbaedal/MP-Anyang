@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { SiteAnnouncement } from "@/lib/announcement-types";
+import { isAnnouncementActive, type SiteAnnouncement } from "@/lib/announcement-types";
 import { thumbUrl } from "@/lib/media";
 
 function dismissKey(id: string) {
@@ -35,41 +35,60 @@ function rememberDismiss(item: SiteAnnouncement) {
   }
 }
 
+function filterVisible(items: SiteAnnouncement[]) {
+  const now = new Date();
+  return items.filter((item) => isAnnouncementActive(item, now) && !isDismissed(item));
+}
+
 export function SiteAnnouncements() {
   const [queue, setQueue] = useState<SiteAnnouncement[]>([]);
   const [current, setCurrent] = useState<SiteAnnouncement | null>(null);
   const [open, setOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/announcements/active");
-    const json = (await res.json()) as { items?: SiteAnnouncement[] };
-    const items = (json.items ?? []).filter((item) => !isDismissed(item));
-    setQueue(items);
-    if (items[0]) {
-      setCurrent(items[0]);
-      setOpen(true);
-    } else {
-      setCurrent(null);
-      setOpen(false);
-    }
+  const applyQueue = useCallback((items: SiteAnnouncement[]) => {
+    const visible = filterVisible(items);
+    setQueue(visible);
+    setCurrent((prev) => {
+      if (prev && isAnnouncementActive(prev) && !isDismissed(prev)) {
+        return prev;
+      }
+      return visible[0] ?? null;
+    });
+    setOpen(Boolean(visible[0]));
   }, []);
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/announcements/active", { cache: "no-store" });
+    const json = (await res.json()) as { items?: SiteAnnouncement[] };
+    applyQueue(json.items ?? []);
+  }, [applyQueue]);
 
   useEffect(() => {
     void load();
+    const timer = window.setInterval(() => void load(), 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
+
+  useEffect(() => {
+    if (!current) return;
+    if (!isAnnouncementActive(current) || isDismissed(current)) {
+      const rest = queue.filter((item) => item.id !== current.id);
+      applyQueue(rest);
+    }
+  }, [current, queue, applyQueue]);
 
   function closeAndNext() {
     if (!current) return;
     rememberDismiss(current);
     const rest = queue.filter((item) => item.id !== current.id);
-    setQueue(rest);
-    if (rest[0]) {
-      setCurrent(rest[0]);
-      setOpen(true);
-    } else {
-      setCurrent(null);
-      setOpen(false);
-    }
+    applyQueue(rest);
   }
 
   if (!current) return null;

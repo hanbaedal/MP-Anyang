@@ -22,15 +22,39 @@ export type SiteAnnouncement = {
   updatedAt: string;
 };
 
+function parseScheduleInstant(iso: string) {
+  const trimmed = iso.trim();
+  if (!trimmed) return null;
+  const ms = new Date(trimmed).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** 노출 시작 ≤ now ≤ 종료 (종료 시각까지 포함) */
 export function isAnnouncementActive(item: SiteAnnouncement, at = new Date()) {
   if (!item.enabled) return false;
-  if (item.startsAt) {
-    const start = new Date(item.startsAt);
-    if (!Number.isNaN(start.getTime()) && at < start) return false;
-  }
-  if (item.endsAt) {
-    const end = new Date(item.endsAt);
-    if (!Number.isNaN(end.getTime()) && at > end) return false;
-  }
+  const now = at.getTime();
+  const startMs = parseScheduleInstant(item.startsAt);
+  if (startMs !== null && now < startMs) return false;
+  const endMs = parseScheduleInstant(item.endsAt);
+  if (endMs !== null && now > endMs) return false;
   return true;
 }
+
+export type AnnouncementScheduleStatus = "disabled" | "scheduled" | "active" | "ended";
+
+export function announcementScheduleStatus(item: SiteAnnouncement, at = new Date()): AnnouncementScheduleStatus {
+  if (!item.enabled) return "disabled";
+  const now = at.getTime();
+  const startMs = parseScheduleInstant(item.startsAt);
+  if (startMs !== null && now < startMs) return "scheduled";
+  const endMs = parseScheduleInstant(item.endsAt);
+  if (endMs !== null && now > endMs) return "ended";
+  return "active";
+}
+
+export const ANNOUNCEMENT_SCHEDULE_LABELS: Record<AnnouncementScheduleStatus, string> = {
+  disabled: "사용 안 함",
+  scheduled: "예약 (시작 전)",
+  active: "노출 중",
+  ended: "종료됨",
+};
