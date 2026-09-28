@@ -67,11 +67,6 @@ export function contractForTomb(contracts: ContractCopy[], tombNo: string): Cont
   return contracts.find((c) => c.tombNo === t) ?? contracts.find((c) => c.tombNo.includes(t));
 }
 
-export function statementSerial(fee: FeeCopy, index: number) {
-  const base = parseCopyYmd(fee.billedOn) ?? index;
-  return String(100000 + (Number(base) % 900000) + index).slice(-6);
-}
-
 function buildOneSide(
   fee: FeeCopy,
   contract: ContractCopy | undefined,
@@ -113,9 +108,8 @@ function buildOneSide(
   };
 }
 
-export function buildStatementPair(fee: FeeCopy, contracts: ContractCopy[], index: number) {
+export function buildStatementPair(fee: FeeCopy, contracts: ContractCopy[], serial: string) {
   const contract = contractForTomb(contracts, fee.tombNo);
-  const serial = statementSerial(fee, index);
   return {
     company: buildOneSide(fee, contract, "(회사용)", serial),
     customer: buildOneSide(fee, contract, "(고객용)", serial),

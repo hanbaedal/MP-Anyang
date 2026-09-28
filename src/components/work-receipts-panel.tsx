@@ -20,6 +20,8 @@ export type ReceiptListRow = {
   status: string;
 };
 
+type StatementPair = ReturnType<typeof buildStatementPair>;
+
 function toListRow(fee: FeeCopy): ReceiptListRow {
   return {
     id: feeKey(fee),
@@ -30,6 +32,19 @@ function toListRow(fee: FeeCopy): ReceiptListRow {
     paidAmount: fee.paidAmount,
     status: fee.status,
   };
+}
+
+async function fetchSerials(count: number): Promise<string[]> {
+  const res = await fetch("/api/work/statement-serial", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ count }),
+  });
+  const json = (await res.json()) as { ok?: boolean; serials?: string[]; error?: string };
+  if (!res.ok || !json.ok || !json.serials?.length) {
+    throw new Error(json.error || "일련번호를 발급하지 못했습니다.");
+  }
+  return json.serials;
 }
 
 export function WorkReceiptsPanel({
@@ -43,8 +58,10 @@ export function WorkReceiptsPanel({
   const feeById = useMemo(() => new Map(fees.map((f) => [feeKey(f), f])), [fees]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
-  /** 인쇄 대화상자용 — 체크 선택과 분리(모달에서 1건 출력 등) */
-  const [printQueue, setPrintQueue] = useState<FeeCopy[] | null>(null);
+  const [previewPair, setPreviewPair] = useState<StatementPair | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [serialByFeeId, setSerialByFeeId] = useState<Map<string, string>>(() => new Map());
+  const [printPages, setPrintPages] = useState<StatementPair[]>([]);
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
@@ -72,41 +89,82 @@ export function WorkReceiptsPanel({
     return list.slice(0, RECEIPT_PRINT_MAX);
   }, [selected.size, selectedFees, fees]);
 
-  const previewPair = useMemo(() => {
-    if (!previewId) return null;
-    const fee = feeById.get(previewId);
-    if (!fee) return null;
-    return buildStatementPair(fee, contracts, 0);
-  }, [previewId, feeById, contracts]);
+  const ensureSerialMap = useCallback(
+    async (list: FeeCopy[]) => {
+      const missing = list.filter((f) => !serialByFeeId.has(feeKey(f)));
+      if (!missing.length) return new Map(serialByFeeId);
+      const serials = await fetchSerials(missing.length);
+      const next = new Map(serialByFeeId);
+      missing.forEach((f, i) => next.set(feeKey(f), serials[i] ?? serials[0]));
+      setSerialByFeeId(next);
+      return next;
+    },
+    [serialByFeeId],
+  );
 
-  const feesForPrint = printQueue ?? printFees;
-
-  const printPages = useMemo(
-    () => feesForPrint.map((fee, i) => buildStatementPair(fee, contracts, i)),
-    [feesForPrint, contracts],
+  const buildPages = useCallback(
+    (list: FeeCopy[], serialMap: Map<string, string>) =>
+      list.map((fee) => buildStatementPair(fee, contracts, serialMap.get(feeKey(fee)) ?? "000000000")),
+    [contracts],
   );
 
   useEffect(() => {
-    const clear = () => setPrintQueue(null);
+    const clear = () => setPrintPages([]);
     window.addEventListener("afterprint", clear);
     return () => window.removeEventListener("afterprint", clear);
   }, []);
 
-  const triggerPrint = useCallback((list: FeeCopy[]) => {
-    if (!list.length) return;
-    flushSync(() => setPrintQueue(list));
-    requestAnimationFrame(() => window.print());
-  }, []);
+  const triggerPrint = useCallback(
+    async (list: FeeCopy[]) => {
+      if (!list.length) return;
+      try {
+        const serialMap = await ensureSerialMap(list);
+        const pages = buildPages(list, serialMap);
+        flushSync(() => setPrintPages(pages));
+        requestAnimationFrame(() => window.print());
+      } catch {
+        window.alert("일련번호 발급 또는 출력 준비에 실패했습니다.");
+      }
+    },
+    [buildPages, ensureSerialMap],
+  );
+
+  async function openPreview(id: string) {
+    setPreviewId(id);
+    setPreviewPair(null);
+    setPreviewLoading(true);
+    try {
+      const fee = feeById.get(id);
+      if (!fee) return;
+      const serialMap = await ensureSerialMap([fee]);
+      setPreviewPair(buildStatementPair(fee, contracts, serialMap.get(id)!));
+    } catch {
+      window.alert("일련번호를 발급하지 못했습니다.");
+      setPreviewId(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  function closePreview() {
+    setPreviewId(null);
+    setPreviewPair(null);
+  }
 
   function runPrint() {
-    triggerPrint(printFees);
+    void triggerPrint(printFees);
   }
 
   function printPreviewFee() {
     if (!previewId) return;
     const fee = feeById.get(previewId);
     if (!fee) return;
-    triggerPrint([fee]);
+    if (previewPair) {
+      flushSync(() => setPrintPages([previewPair]));
+      requestAnimationFrame(() => window.print());
+      return;
+    }
+    void triggerPrint([fee]);
   }
 
   const selectedAmount = selectedFees.reduce((s, f) => s + (f.paidAmount > 0 ? f.paidAmount : f.billedAmount), 0);
@@ -159,7 +217,7 @@ export function WorkReceiptsPanel({
                 <td className="px-3 py-2 text-right tabular-nums">{row.paidAmount.toLocaleString("ko-KR")}</td>
                 <td className="px-3 py-2">{row.status || "—"}</td>
                 <td className="px-3 py-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => setPreviewId(row.id)}>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void openPreview(row.id)}>
                     보기
                   </Button>
                 </td>
@@ -169,25 +227,29 @@ export function WorkReceiptsPanel({
         </table>
       </div>
 
-      <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
+      <Dialog open={previewId !== null} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
           className="flex h-[min(88vh,720px)] max-h-[min(88vh,720px)] w-[min(98vw,960px)] max-w-[min(98vw,960px)] flex-col gap-2 overflow-hidden p-3 sm:p-4"
           showCloseButton
         >
           <DialogHeader className="shrink-0 gap-0.5 pr-8">
             <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
-            <DialogDescription className="text-xs">왼쪽 회사용 · 오른쪽 고객용 (출력 시 가로 A4)</DialogDescription>
+            <DialogDescription className="text-xs">
+              왼쪽 회사용 · 오른쪽 고객용 · 일련번호 {previewPair?.company.serial ?? "…"} (발급일 KST)
+            </DialogDescription>
           </DialogHeader>
-          {previewPair ? (
+          {previewLoading ? (
+            <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">일련번호 발급 중…</p>
+          ) : previewPair ? (
             <div className="min-h-0 flex-1 overflow-hidden rounded-md bg-muted/30 p-1">
               <TransactionStatementPreview company={previewPair.company} customer={previewPair.customer} />
             </div>
           ) : null}
           <div className="flex shrink-0 justify-end gap-2 border-t pt-3">
-            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewId(null)}>
+            <Button type="button" size="sm" variant="outline" onClick={closePreview}>
               닫기
             </Button>
-            <Button type="button" size="sm" variant="default" disabled={!previewPair} onClick={printPreviewFee}>
+            <Button type="button" size="sm" variant="default" disabled={!previewPair || previewLoading} onClick={printPreviewFee}>
               출력
             </Button>
           </div>

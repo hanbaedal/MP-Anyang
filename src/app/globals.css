@@ -110,4 +110,11 @@
     break-after: page;
     page-break-after: always;
   }
+
+  .receipt-print-root,
+  .statement-sheet,
+  .statement-copy {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
