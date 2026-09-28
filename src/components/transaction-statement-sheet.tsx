@@ -56,11 +56,11 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             <td className={`${cell} relative min-h-[28px]`}>
               <span className="relative z-[1]">{STATEMENT_FACILITY.representative}</span>
               <Image
-                src="/images/representative-seal.svg"
+                src="/images/representative-seal.png"
                 alt=""
-                width={52}
-                height={52}
-                className="pointer-events-none absolute left-[38%] top-1/2 z-[2] -translate-y-1/2 opacity-95"
+                width={56}
+                height={56}
+                className="pointer-events-none absolute left-[32%] top-1/2 z-[2] -translate-y-1/2 mix-blend-multiply opacity-90"
                 unoptimized
               />
             </td>
