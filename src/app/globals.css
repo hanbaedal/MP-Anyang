@@ -90,6 +90,20 @@
   font-size: 1.62cqh;
 }
 
+.statement-serial {
+  height: 3.4mm;
+  margin: 0 0 0.4mm;
+  color: #c41e3a;
+  font-size: 3.2mm;
+  font-weight: 700;
+  line-height: 3.4mm;
+  letter-spacing: 0.06em;
+}
+
+.statement-frame {
+  min-height: 0;
+}
+
 .statement-banner {
   height: 2.6cqh;
   font-size: 0.78em;
@@ -107,19 +121,36 @@
   letter-spacing: 0.22em;
 }
 
+.statement-tables {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
 .statement-table {
   width: 100%;
-  height: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.statement-table tr {
-  height: 6.16%;
+.statement-table-main {
+  flex: 9 1 0;
+  height: 0;
 }
 
-.statement-table tr.stmt-row-seal {
-  height: 7.6%;
+.statement-table-items {
+  flex: 7 1 0;
+  height: 0;
+  margin-top: -1px;
+}
+
+.statement-table-main tr {
+  height: 11.11%;
+}
+
+.statement-table-items tr {
+  height: 14.28%;
 }
 
 .statement-table td {
@@ -137,9 +168,45 @@
   line-height: 2.8cqh;
 }
 
+.statement-table td.statement-rep-cell,
+.statement-table tr.stmt-row-seal {
+  overflow: visible;
+}
+
+.statement-rep {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.statement-rep-name {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  padding: 0 1.5mm;
+  letter-spacing: 0.45em;
+  background: #fff;
+}
+
+.statement-rep-mark {
+  margin-left: auto;
+  margin-right: 1mm;
+  font-size: 0.85em;
+  letter-spacing: 0;
+  color: #222;
+}
+
 .statement-seal {
-  height: 4.2cqh;
-  width: auto;
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: -3mm;
+  width: 15mm;
+  height: 15mm;
+  transform: translateY(-50%);
+  object-fit: contain;
 }
 
 .statement-perforation {
