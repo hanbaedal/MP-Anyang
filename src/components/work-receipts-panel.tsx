@@ -232,9 +232,9 @@ export function WorkReceiptsPanel({
 
       <Dialog open={previewId !== null} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
-          className="flex max-h-[96vh] flex-col gap-2 overflow-hidden p-2 sm:p-3"
+          className="flex h-[min(96vh,920px)] max-h-[96vh] flex-col gap-2 overflow-hidden p-2 sm:p-3"
           style={{
-            width: `min(98vw, calc((96vh - 7.5rem) * ${STATEMENT_SHEET_ASPECT} + 1.5rem))`,
+            width: `min(98vw, calc((min(96vh, 920px) - 7.5rem) * ${STATEMENT_SHEET_ASPECT} + 1.5rem))`,
             maxWidth: "98vw",
           }}
           showCloseButton
@@ -246,14 +246,11 @@ export function WorkReceiptsPanel({
             </DialogDescription>
           </DialogHeader>
           {previewLoading ? (
-            <p className="flex min-h-[min(72vh,calc((98vw-2rem)/277*190))] flex-1 items-center justify-center text-sm text-muted-foreground">
+            <p className="flex min-h-0 flex-1 basis-0 items-center justify-center text-sm text-muted-foreground">
               일련번호 발급 중…
             </p>
           ) : previewPair ? (
-            <div
-              className="min-h-0 flex-1 rounded-md bg-muted/30"
-              style={{ minHeight: "min(72vh, calc((98vw - 2rem) / 277 * 190))" }}
-            >
+            <div className="min-h-0 flex-1 basis-0 overflow-hidden rounded-md bg-muted/30">
               <TransactionStatementPreview company={previewPair.company} customer={previewPair.customer} />
             </div>
           ) : null}
