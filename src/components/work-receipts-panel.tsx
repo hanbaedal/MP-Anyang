@@ -5,7 +5,10 @@ import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildStatementPair, RECEIPT_PRINT_MAX } from "@/lib/receipt-statement";
-import { TransactionStatementPreview } from "@/components/transaction-statement-preview";
+import {
+  STATEMENT_SHEET_ASPECT,
+  TransactionStatementPreview,
+} from "@/components/transaction-statement-preview";
 import { TransactionStatementPage, TransactionStatementPrintRoot } from "@/components/transaction-statement-sheet";
 import type { ContractCopy, FeeCopy } from "@/lib/cemetery-parse";
 import { feeKey } from "@/lib/work-status";
@@ -229,19 +232,28 @@ export function WorkReceiptsPanel({
 
       <Dialog open={previewId !== null} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
-          className="flex h-[min(88vh,720px)] max-h-[min(88vh,720px)] w-[min(98vw,960px)] max-w-[min(98vw,960px)] flex-col gap-2 overflow-hidden p-3 sm:p-4"
+          className="flex max-h-[96vh] flex-col gap-2 overflow-hidden p-2 sm:p-3"
+          style={{
+            width: `min(98vw, calc((96vh - 7.5rem) * ${STATEMENT_SHEET_ASPECT} + 1.5rem))`,
+            maxWidth: "98vw",
+          }}
           showCloseButton
         >
           <DialogHeader className="shrink-0 gap-0.5 pr-8">
             <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
             <DialogDescription className="text-xs">
-              왼쪽 회사용 · 오른쪽 고객용 · 일련번호 {previewPair?.company.serial ?? "…"} (발급일 KST)
+              A4 가로 · 왼쪽 회사용 · 오른쪽 고객용 · 일련번호 {previewPair?.company.serial ?? "…"} (발급일 KST)
             </DialogDescription>
           </DialogHeader>
           {previewLoading ? (
-            <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">일련번호 발급 중…</p>
+            <p className="flex min-h-[min(72vh,calc((98vw-2rem)/277*190))] flex-1 items-center justify-center text-sm text-muted-foreground">
+              일련번호 발급 중…
+            </p>
           ) : previewPair ? (
-            <div className="min-h-0 flex-1 overflow-hidden rounded-md bg-muted/30 p-1">
+            <div
+              className="min-h-0 flex-1 rounded-md bg-muted/30"
+              style={{ minHeight: "min(72vh, calc((98vw - 2rem) / 277 * 190))" }}
+            >
               <TransactionStatementPreview company={previewPair.company} customer={previewPair.customer} />
             </div>
           ) : null}

@@ -4,8 +4,11 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { StatementPayload } from "@/lib/receipt-statement";
 import { TransactionStatementPage } from "@/components/transaction-statement-sheet";
 
-const SHEET_W_MM = 277;
-const SHEET_H_MM = 190;
+/** 인쇄·미리보기 공통 — A4 가로 용지(여백 반영) */
+export const STATEMENT_SHEET_W_MM = 277;
+export const STATEMENT_SHEET_H_MM = 190;
+export const STATEMENT_SHEET_ASPECT = STATEMENT_SHEET_W_MM / STATEMENT_SHEET_H_MM;
+
 const MM_TO_PX = 96 / 25.4;
 
 type Props = {
@@ -13,10 +16,10 @@ type Props = {
   customer: StatementPayload;
 };
 
-/** 모달용 — transform scale + 바깥 박스 크기 맞춤으로 좌·우(회사/고객) 한 번에 표시 */
+/** 가용 영역 안에 A4 가로 양식 전체(회사·고객)가 들어가도록 contain 스케일 */
 export function TransactionStatementPreview({ company, customer }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.34);
+  const [layout, setLayout] = useState({ widthPx: 0, heightPx: 0, scale: 0.4 });
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -24,13 +27,19 @@ export function TransactionStatementPreview({ company, customer }: Props) {
 
     const fit = () => {
       const pad = 8;
-      const w = el.clientWidth - pad;
-      const h = el.clientHeight - pad;
-      if (w < 40 || h < 40) return;
-      const fullW = SHEET_W_MM * MM_TO_PX;
-      const fullH = SHEET_H_MM * MM_TO_PX;
-      const next = Math.min(w / fullW, h / fullH, 0.48);
-      setScale(Math.max(0.26, next));
+      const availW = Math.max(0, el.clientWidth - pad);
+      const availH = Math.max(0, el.clientHeight - pad);
+      if (availW < 40 || availH < 40) return;
+
+      const fullW = STATEMENT_SHEET_W_MM * MM_TO_PX;
+      const fullH = STATEMENT_SHEET_H_MM * MM_TO_PX;
+      const scale = Math.min(availW / fullW, availH / fullH);
+
+      setLayout({
+        widthPx: fullW * scale,
+        heightPx: fullH * scale,
+        scale,
+      });
     };
 
     fit();
@@ -39,26 +48,26 @@ export function TransactionStatementPreview({ company, customer }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  const boxW = SHEET_W_MM * scale;
-  const boxH = SHEET_H_MM * scale;
-
   return (
-    <div ref={containerRef} className="flex h-full min-h-[200px] w-full items-center justify-center">
-      <div
-        className="shrink-0 overflow-hidden rounded-sm border border-neutral-300 bg-white shadow-sm"
-        style={{ width: `${boxW}mm`, height: `${boxH}mm` }}
-      >
+    <div ref={containerRef} className="flex h-full min-h-0 w-full items-center justify-center">
+      {layout.widthPx > 0 ? (
         <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            width: `${SHEET_W_MM}mm`,
-            height: `${SHEET_H_MM}mm`,
-          }}
+          className="shrink-0 overflow-hidden rounded-sm border border-neutral-400 bg-white shadow-md"
+          style={{ width: layout.widthPx, height: layout.heightPx }}
+          aria-label="A4 가로 거래명세서 미리보기"
         >
-          <TransactionStatementPage company={company} customer={customer} />
+          <div
+            style={{
+              transform: `scale(${layout.scale})`,
+              transformOrigin: "top left",
+              width: `${STATEMENT_SHEET_W_MM}mm`,
+              height: `${STATEMENT_SHEET_H_MM}mm`,
+            }}
+          >
+            <TransactionStatementPage company={company} customer={customer} />
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
