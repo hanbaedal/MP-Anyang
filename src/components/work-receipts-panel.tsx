@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildStatementPair, RECEIPT_PRINT_MAX } from "@/lib/receipt-statement";
 import { TransactionStatementPage, TransactionStatementPrintRoot } from "@/components/transaction-statement-sheet";
 import type { ContractCopy, FeeCopy } from "@/lib/cemetery-parse";
@@ -40,6 +42,8 @@ export function WorkReceiptsPanel({
   const feeById = useMemo(() => new Map(fees.map((f) => [feeKey(f), f])), [fees]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
+  /** 인쇄 대화상자용 — 체크 선택과 분리(모달에서 1건 출력 등) */
+  const [printQueue, setPrintQueue] = useState<FeeCopy[] | null>(null);
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {
@@ -74,14 +78,34 @@ export function WorkReceiptsPanel({
     return buildStatementPair(fee, contracts, 0);
   }, [previewId, feeById, contracts]);
 
+  const feesForPrint = printQueue ?? printFees;
+
   const printPages = useMemo(
-    () => printFees.map((fee, i) => buildStatementPair(fee, contracts, i)),
-    [printFees, contracts],
+    () => feesForPrint.map((fee, i) => buildStatementPair(fee, contracts, i)),
+    [feesForPrint, contracts],
   );
 
+  useEffect(() => {
+    const clear = () => setPrintQueue(null);
+    window.addEventListener("afterprint", clear);
+    return () => window.removeEventListener("afterprint", clear);
+  }, []);
+
+  const triggerPrint = useCallback((list: FeeCopy[]) => {
+    if (!list.length) return;
+    flushSync(() => setPrintQueue(list));
+    requestAnimationFrame(() => window.print());
+  }, []);
+
   function runPrint() {
-    if (!printFees.length) return;
-    window.print();
+    triggerPrint(printFees);
+  }
+
+  function printPreviewFee() {
+    if (!previewId) return;
+    const fee = feeById.get(previewId);
+    if (!fee) return;
+    triggerPrint([fee]);
   }
 
   const selectedAmount = selectedFees.reduce((s, f) => s + (f.paidAmount > 0 ? f.paidAmount : f.billedAmount), 0);
@@ -144,20 +168,37 @@ export function WorkReceiptsPanel({
         </table>
       </div>
 
-      {previewPair ? (
-        <section className="rounded-xl border bg-white p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-primary">거래명세서 미리보기</h2>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setPreviewId(null)}>
-              닫기
-            </Button>
+      <Dialog open={previewId !== null} onOpenChange={(open) => !open && setPreviewId(null)}>
+        <DialogContent
+          className="flex max-h-[min(92vh,900px)] max-w-[min(96vw,920px)] flex-col gap-3 overflow-hidden p-4 sm:p-5"
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 gap-1 pr-8">
+            <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
+            <DialogDescription>
+              가로(A4) · 왼쪽 회사용 · 오른쪽 고객용 · PDF는 「출력 / PDF」 또는 인쇄 대화상자에서 저장
+            </DialogDescription>
+          </DialogHeader>
+          {previewPair ? (
+            <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-white p-2">
+              <div className="mx-auto w-max origin-top scale-[0.42] sm:scale-[0.52] md:scale-[0.58] lg:scale-[0.65]">
+                <TransactionStatementPage company={previewPair.company} customer={previewPair.customer} />
+              </div>
+            </div>
+          ) : null}
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t pt-3">
+            <p className="text-xs text-muted-foreground">인쇄 창에서 「PDF로 저장」을 고르면 파일로 보관할 수 있습니다.</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setPreviewId(null)}>
+                닫기
+              </Button>
+              <Button type="button" size="sm" variant="default" disabled={!previewPair} onClick={printPreviewFee}>
+                출력 / PDF
+              </Button>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <TransactionStatementPage company={previewPair.company} customer={previewPair.customer} />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">출력 시 가로(A4) · 왼쪽 회사용 · 오른쪽 고객용 · PDF는 인쇄 대화상자에서 「PDF로 저장」</p>
-        </section>
-      ) : null}
+        </DialogContent>
+      </Dialog>
 
       <TransactionStatementPrintRoot>
         {printPages.map((page, i) => (
