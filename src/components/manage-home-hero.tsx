@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ManageImagePicker } from "@/components/manage-image-picker";
+import { thumbUrl } from "@/lib/media";
 import {
   HOME_HERO_SEASON_LABELS,
   type HomeHeroAsset,
@@ -274,18 +276,16 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   const pickChanged = pickVideoSrc !== settings.videoSrc || pickAudioSrc !== settings.audioSrc;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10 px-4 py-10">
-      <p className="text-sm text-muted-foreground">
-        <strong>계절별 영상·음악</strong>을 라이브러리에 쌓아 두고, 아래에서 <strong>공개 조합</strong>을 고른 뒤 「메인에 적용」을
-        누르면 https://mp-anyang.onrender.com/ 메인에 반영됩니다. 방문자는 <strong>들어오자마자 무음 영상</strong>이 재생되고, 배경음악은
-        「배경음악 재생」을 눌러야 나옵니다(브라우저 정책). DB에는 경로·계절 태그만 저장되며, mp4/mp3 파일은 서버 디스크에 있습니다.
+    <div className="mx-auto max-w-3xl space-y-5 px-3 py-6 sm:px-4">
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        계절별 영상·음악 라이브러리 → 공개 조합 적용 · 메인 무음 자동 재생 · BGM은 방문자가 켬
       </p>
 
-      <section className="space-y-4 rounded-xl border-2 border-primary/30 bg-card p-5">
-        <h2 className="font-medium">라이브러리에서 공개 조합 선택</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="block space-y-1 text-sm">
-            <span className="font-medium">공개 영상</span>
+      <section className="space-y-3 rounded-lg border-2 border-primary/25 bg-card p-3 sm:p-4">
+        <h2 className="text-sm font-medium">공개 조합</h2>
+        <div className="grid gap-2 md:grid-cols-2">
+          <label className="block space-y-0.5 text-xs">
+            <span className="text-muted-foreground">영상</span>
             <select className={field} value={pickVideoSrc} disabled={busy} onChange={(e) => setPickVideoSrc(e.target.value)}>
               {sortedVideos.map((item) => (
                 <option key={item.id} value={item.src}>
@@ -296,8 +296,8 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
               ))}
             </select>
           </label>
-          <label className="block space-y-1 text-sm">
-            <span className="font-medium">공개 음악</span>
+          <label className="block space-y-0.5 text-xs">
+            <span className="text-muted-foreground">음악</span>
             <select className={field} value={pickAudioSrc} disabled={busy} onChange={(e) => setPickAudioSrc(e.target.value)}>
               {sortedAudios.map((item) => (
                 <option key={item.id} value={item.src}>
@@ -309,18 +309,13 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
             </select>
           </label>
         </div>
-        <Button
-          type="button"
-          disabled={busy || !pickChanged}
-          onClick={() => void applySelection({ videoSrc: pickVideoSrc, audioSrc: pickAudioSrc })}
-        >
-          선택한 영상·음악을 메인에 적용
+        <Button type="button" size="sm" disabled={busy || !pickChanged} onClick={() => void applySelection({ videoSrc: pickVideoSrc, audioSrc: pickAudioSrc })}>
+          메인에 적용
         </Button>
-        {!pickChanged ? <p className="text-xs text-muted-foreground">목록에서 다른 영상·음악을 고르면 적용 버튼이 활성화됩니다.</p> : null}
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-card p-5">
-        <h2 className="font-medium">지금 공개 중 (미리보기)</h2>
+      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
+        <h2 className="text-sm font-medium">공개 중 미리보기</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="mb-2 text-xs text-muted-foreground">영상</p>
@@ -332,14 +327,14 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
           </div>
         </div>
         <div>
-          <p className="mb-2 text-xs text-muted-foreground">재생 전 포스터</p>
+          <p className="mb-1 text-[10px] text-muted-foreground">재생 전 포스터</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={settings.posterSrc} alt="" className="max-h-40 rounded-lg object-cover" />
+          <img src={thumbUrl(settings.posterSrc)} alt="" className="max-h-28 rounded-md object-cover" />
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border bg-card p-5">
-        <h2 className="font-medium">새로 등록 (Create)</h2>
+      <section className="space-y-3 rounded-lg border bg-card p-3 sm:p-4">
+        <h2 className="text-sm font-medium">새 파일 등록</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-sm">
             <span className="font-medium">표시 이름 (선택)</span>
@@ -389,24 +384,15 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
             />
           </label>
         </div>
-        <label className="block space-y-2 text-sm">
-          <span className="font-medium">포스터 이미지</span>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            disabled={busy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload("poster", file);
-              e.target.value = "";
-            }}
-          />
-        </label>
+        <div>
+          <p className="mb-1 text-xs text-muted-foreground">포스터</p>
+          <ManageImagePicker src={settings.posterSrc} disabled={busy} label="포스터 선택" onFile={(file) => upload("poster", file)} />
+        </div>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-card p-5">
+      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-medium">영상 라이브러리 (Read · Update · Delete)</h2>
+          <h2 className="text-sm font-medium">영상 라이브러리</h2>
           <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void refresh()}>
             새로고침
           </Button>
@@ -428,8 +414,8 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
         </ul>
       </section>
 
-      <section className="space-y-3 rounded-xl border bg-card p-5">
-        <h2 className="font-medium">음악 라이브러리 (Read · Update · Delete)</h2>
+      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
+        <h2 className="text-sm font-medium">음악 라이브러리</h2>
         <ul className="space-y-3">
           {sortedAudios.map((item) => (
             <AssetRow
