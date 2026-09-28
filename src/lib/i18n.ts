@@ -455,7 +455,7 @@ const ko: Record<string, string> = {
   "work.feeStateHold": "보류",
   "work.feeQuerySummary": "조회 합계",
   "work.receiptsLead":
-    "청구일·납부 구분으로 관리비를 조회한 뒤, 선택하거나 전체로 거래명세서(영수증겸용)를 출력·PDF 저장합니다. 거래일은 청구일 기준입니다.",
+    "청구일·납부 구분으로 관리비를 조회한 뒤, 선택하거나 전체로 거래명세서(영수증겸용)를 출력합니다. 거래일은 청구일 기준입니다.",
   "work.feeFilterLead": "청구일 기간과 납부·미납·보류로 조회합니다. 구역 필드가 없어 「구역 없음」으로만 보여 줍니다.",
   "work.feeFilterEmpty": "조건에 맞는 관리비 복사본이 없습니다.",
   "work.feeFilterCount": "조회 결과 {n}건",
@@ -895,7 +895,7 @@ const en: Record<string, string> = {
   "work.feeStateUnpaid": "Unpaid",
   "work.feeStateHold": "Hold",
   "work.feeQuerySummary": "Query totals",
-  "work.receiptsLead": "Query fees by billing date and payment status, then print transaction statements for selected or all rows.",
+  "work.receiptsLead": "Query fees by billing date and payment status, then print transaction statements for selected or all rows. Billing date is used as the transaction date.",
   "work.feeFilterLead": "Filter by billed date and paid/unpaid. There is no zone field, so the list is labeled No zone.",
   "work.feeFilterEmpty": "No fee rows match the filter.",
   "work.feeFilterCount": "{n} matching rows",

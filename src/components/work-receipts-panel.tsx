@@ -114,7 +114,7 @@ export function WorkReceiptsPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="default" disabled={!printFees.length} onClick={runPrint}>
-          {selected.size > 0 ? `선택 ${selected.size}건 출력 / PDF` : `조회 결과 전체 ${printFees.length}건 출력 / PDF`}
+          {selected.size > 0 ? `선택 ${selected.size}건 출력` : `조회 결과 전체 ${printFees.length}건 출력`}
         </Button>
         <p className="text-xs text-muted-foreground">
           {selected.size > 0
@@ -175,9 +175,7 @@ export function WorkReceiptsPanel({
         >
           <DialogHeader className="shrink-0 gap-1 pr-8">
             <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
-            <DialogDescription>
-              가로(A4) · 왼쪽 회사용 · 오른쪽 고객용 · PDF는 「출력 / PDF」 또는 인쇄 대화상자에서 저장
-            </DialogDescription>
+            <DialogDescription>가로(A4) · 왼쪽 회사용 · 오른쪽 고객용</DialogDescription>
           </DialogHeader>
           {previewPair ? (
             <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-white p-2">
@@ -186,16 +184,13 @@ export function WorkReceiptsPanel({
               </div>
             </div>
           ) : null}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t pt-3">
-            <p className="text-xs text-muted-foreground">인쇄 창에서 「PDF로 저장」을 고르면 파일로 보관할 수 있습니다.</p>
-            <div className="flex gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={() => setPreviewId(null)}>
-                닫기
-              </Button>
-              <Button type="button" size="sm" variant="default" disabled={!previewPair} onClick={printPreviewFee}>
-                출력 / PDF
-              </Button>
-            </div>
+          <div className="flex shrink-0 justify-end gap-2 border-t pt-3">
+            <Button type="button" size="sm" variant="outline" onClick={() => setPreviewId(null)}>
+              닫기
+            </Button>
+            <Button type="button" size="sm" variant="default" disabled={!previewPair} onClick={printPreviewFee}>
+              출력
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
