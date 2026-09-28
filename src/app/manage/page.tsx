@@ -27,6 +27,10 @@ export default async function ManageHomePage() {
           <h2 className="font-medium">메인 영상·음악</h2>
           <p className="mt-1 text-sm text-muted-foreground">메인 배경 동영상·BGM을 올리거나 목록에서 골라 공개합니다.</p>
         </Link>
+        <Link href="/manage/announcements" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
+          <h2 className="font-medium">메인 이벤트·팝업</h2>
+          <p className="mt-1 text-sm text-muted-foreground">메인 접속 시 포스터·소식 모달. 기간·끄기·닫기 설정.</p>
+        </Link>
         <Link href="/manage/gallery" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
           <h2 className="font-medium">갤러리 사진</h2>
           <p className="mt-1 text-sm text-muted-foreground">올리고 고치고 지웁니다. Render 재배포 시 업로드 파일은 사라질 수 있습니다.</p>

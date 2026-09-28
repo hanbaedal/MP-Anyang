@@ -28,9 +28,16 @@ export default async function BurialPage() {
       <div className="mx-auto max-w-6xl px-4 py-12">
         <Prose>{cms?.body ? <Paragraphs text={cms.body} /> : <p>{t(locale, "burial.body")}</p>}</Prose>
         <ul className="mt-10 grid gap-6 md:grid-cols-3">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <li key={item.id || item.title} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-              {item.image ? <ExpandablePhoto src={item.image} alt={item.title} className="aspect-[4/3] rounded-none" /> : null}
+              {item.image ? (
+                <ExpandablePhoto
+                  src={item.image}
+                  alt={item.title}
+                  className="aspect-[4/3] rounded-none"
+                  priority={index < 3}
+                />
+              ) : null}
               <div className="p-4">
                 <h2 className="text-lg">{item.title}</h2>
                 {item.text ? <p className="mt-1 text-sm text-muted-foreground">{item.text}</p> : null}

@@ -5,6 +5,7 @@ import type { SessionUser } from "@/lib/auth-types";
 
 const LABELS: Record<string, string> = {
   "manage.homeHero": "메인 영상·음악",
+  "manage.announcements": "메인 이벤트·팝업",
   "manage.gallery": "갤러리",
   "manage.funeral": "장례·안치",
   "manage.notices": "공지",

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { mediaUrl } from "@/lib/media";
+import { mediaUrl, thumbUrl } from "@/lib/media";
 
 export function PageHero({
   kicker,
@@ -18,7 +18,7 @@ export function PageHero({
     <section className="relative overflow-hidden border-b bg-primary text-primary-foreground">
       {image ? (
         <Image
-          src={mediaUrl(image.src)}
+          src={thumbUrl(image.src)}
           alt={image.alt}
           fill
           priority

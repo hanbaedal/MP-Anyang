@@ -1,5 +1,6 @@
 import { HeroCallActions } from "@/components/hero-actions";
 import { HomeHeroMedia } from "@/components/home-hero-media";
+import { SiteAnnouncements } from "@/components/site-announcements";
 import { getHomeHeroSettings } from "@/lib/home-hero";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -8,7 +9,9 @@ export default async function HomePage() {
   const locale = await readLocale();
   const heroMedia = await getHomeHeroSettings();
   return (
-    <section className="relative h-full min-h-full overflow-hidden bg-primary text-primary-foreground">
+    <>
+      <SiteAnnouncements />
+      <section className="relative h-full min-h-full overflow-hidden bg-primary text-primary-foreground">
       <div className="absolute inset-0">
         <HomeHeroMedia
           videoSrc={heroMedia.videoSrc}
@@ -55,5 +58,6 @@ export default async function HomePage() {
         </div>
       </div>
     </section>
+    </>
   );
 }

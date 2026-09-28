@@ -1,6 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { saveUploadImageWithThumb } from "@/lib/upload-image-thumb";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -18,9 +18,7 @@ export async function saveManageUpload(file: File): Promise<{ ok: true; src: str
     return { ok: false, error: "JPG, PNG, WebP, GIF만 올릴 수 있습니다." };
   }
   const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
   const buf = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, name), buf);
-  return { ok: true, src: `/uploads/${name}` };
+  const { src } = await saveUploadImageWithThumb(name, buf);
+  return { ok: true, src };
 }
