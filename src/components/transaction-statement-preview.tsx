@@ -46,16 +46,8 @@ function computeCopyLayout(availW: number) {
   };
 }
 
-function initialStacked() {
-  return typeof window !== "undefined" && window.innerWidth < STACK_BELOW_PX;
-}
-
 function initialLayout() {
-  if (typeof window === "undefined") {
-    return computeLayout(FULL_W_PX, FULL_H_PX);
-  }
-  if (initialStacked()) return computeCopyLayout(window.innerWidth * 0.94);
-  return computeLayout(window.innerWidth * 0.94, window.innerHeight * 0.62);
+  return computeLayout(FULL_W_PX, FULL_H_PX);
 }
 
 type Props = {
@@ -66,7 +58,7 @@ type Props = {
 /** 가용 영역 안에 A4 가로 양식 전체(회사·고객)가 들어가도록 contain 스케일 */
 export function TransactionStatementPreview({ company, customer }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [stacked, setStacked] = useState(initialStacked);
+  const [stacked, setStacked] = useState(false);
   const [layout, setLayout] = useState(initialLayout);
 
   useLayoutEffect(() => {
