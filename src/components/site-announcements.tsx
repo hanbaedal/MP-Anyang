@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { isAnnouncementActive, type SiteAnnouncement } from "@/lib/announcement-types";
 import { thumbUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -18,6 +16,36 @@ function filterVisible(items: SiteAnnouncement[], dismissedIds: ReadonlySet<stri
 }
 
 function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismiss: () => void }) {
+  const href = item.linkHref.trim();
+  const media = item.imageSrc ? (
+    <div className="relative aspect-[3/4] w-full bg-muted md:aspect-[4/5]">
+      <Image
+        src={thumbUrl(item.imageSrc)}
+        alt=""
+        fill
+        className="object-cover"
+        sizes="(max-width:768px) 168px, 272px"
+      />
+    </div>
+  ) : (
+    <div className="aspect-[3/4] w-full bg-muted/80 md:aspect-[4/5]" aria-hidden />
+  );
+  const copy = (
+    <div className="flex flex-1 flex-col items-center gap-2 px-3 py-3 text-center md:px-4 md:py-3.5">
+      <h3 className="line-clamp-2 w-full text-sm font-semibold leading-snug tracking-tight md:text-[15px]">
+        {item.title}
+      </h3>
+      {item.body ? (
+        <p className="line-clamp-3 w-full text-xs leading-relaxed text-muted-foreground md:text-[13px] md:leading-snug">
+          {item.body}
+        </p>
+      ) : null}
+      {href && item.linkLabel ? (
+        <span className="mt-auto text-xs font-medium text-primary underline-offset-4">{item.linkLabel}</span>
+      ) : null}
+    </div>
+  );
+
   return (
     <article
       className={cn(
@@ -33,34 +61,23 @@ function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismi
       >
         <X className="size-3.5" aria-hidden />
       </button>
-      {item.imageSrc ? (
-        <div className="relative aspect-[3/4] w-full bg-muted md:aspect-[4/5]">
-          <Image
-            src={thumbUrl(item.imageSrc)}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="(max-width:768px) 168px, 272px"
-          />
-        </div>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={item.linkLabel || `${item.title} 새 페이지로 열기`}
+        >
+          {media}
+          {copy}
+        </a>
       ) : (
-        <div className="aspect-[3/4] w-full bg-muted/80 md:aspect-[4/5]" aria-hidden />
+        <>
+          {media}
+          {copy}
+        </>
       )}
-      <div className="flex flex-1 flex-col items-center gap-2 px-3 py-3 text-center md:px-4 md:py-3.5">
-        <h3 className="line-clamp-2 w-full text-sm font-semibold leading-snug tracking-tight md:text-[15px]">
-          {item.title}
-        </h3>
-        {item.body ? (
-          <p className="line-clamp-3 w-full text-xs leading-relaxed text-muted-foreground md:text-[13px] md:leading-snug">
-            {item.body}
-          </p>
-        ) : null}
-        {item.linkHref ? (
-          <Button asChild size="sm" variant="secondary" className="mt-auto h-8 min-w-[7rem] px-4 text-xs">
-            <Link href={item.linkHref}>{item.linkLabel || "자세히 보기"}</Link>
-          </Button>
-        ) : null}
-      </div>
     </article>
   );
 }
