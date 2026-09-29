@@ -17,31 +17,31 @@ function filterVisible(items: SiteAnnouncement[], dismissedIds: ReadonlySet<stri
 
 function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismiss: () => void }) {
   const href = item.linkHref.trim();
-  const media = item.imageSrc ? (
-    <div className="relative aspect-[3/4] w-full bg-muted md:aspect-[4/5]">
-      <Image
-        src={thumbUrl(item.imageSrc)}
-        alt=""
-        fill
-        className="object-cover"
-        sizes="(max-width:768px) 168px, 272px"
-      />
-    </div>
-  ) : (
-    <div className="aspect-[3/4] w-full bg-muted/80 md:aspect-[4/5]" aria-hidden />
-  );
-  const copy = (
-    <div className="flex flex-1 flex-col items-center gap-2 px-3 py-3 text-center md:px-4 md:py-3.5">
-      <h3 className="line-clamp-2 w-full text-sm font-semibold leading-snug tracking-tight md:text-[15px]">
+  const media = (
+    <div className="relative h-[148px] w-full shrink-0 bg-muted sm:h-[168px] md:h-[196px]">
+      {item.imageSrc ? (
+        <Image
+          src={thumbUrl(item.imageSrc)}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="(max-width:768px) 168px, 272px"
+        />
+      ) : null}
+      <h3 className="absolute inset-x-0 top-0 z-[1] line-clamp-2 bg-gradient-to-b from-black/75 via-black/45 to-transparent px-8 pb-6 pt-2 text-center text-sm font-semibold leading-snug tracking-tight text-white md:text-[15px]">
         {item.title}
       </h3>
+    </div>
+  );
+  const copy = (
+    <div className="flex shrink-0 flex-col items-center gap-1.5 px-3 py-2.5 text-center md:gap-2 md:px-4 md:py-3">
       {item.body ? (
-        <p className="line-clamp-3 w-full text-xs leading-relaxed text-muted-foreground md:text-[13px] md:leading-snug">
+        <p className="line-clamp-4 w-full whitespace-pre-line text-xs leading-relaxed text-muted-foreground md:text-[13px] md:leading-snug">
           {item.body}
         </p>
       ) : null}
       {href && item.linkLabel ? (
-        <span className="mt-auto text-xs font-medium text-primary underline-offset-4">{item.linkLabel}</span>
+        <span className="text-xs font-medium text-primary underline-offset-4">{item.linkLabel}</span>
       ) : null}
     </div>
   );
@@ -115,7 +115,7 @@ export function SiteAnnouncements() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-12 z-30 max-h-[min(48vh,480px)] overflow-y-auto px-2 py-2.5 sm:px-3 lg:left-36 lg:px-4"
+      className="pointer-events-none fixed inset-x-0 top-12 z-30 max-h-[min(78vh,640px)] overflow-y-auto px-2 py-2.5 sm:px-3 lg:left-36 lg:px-4"
       aria-label="이벤트·소식"
     >
       <div
