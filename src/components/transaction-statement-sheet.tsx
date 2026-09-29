@@ -3,7 +3,7 @@ import type { StatementPayload } from "@/lib/receipt-statement";
 import { STATEMENT_FACILITY } from "@/lib/receipt-statement";
 
 const RED = "#c41e3a";
-const cell = "border border-black text-center align-middle whitespace-nowrap";
+const cell = "border border-black text-center align-middle";
 const th = `${cell} bg-[#f5f5f5] font-normal`;
 
 function spacedName(name: string) {
@@ -22,11 +22,10 @@ function CopyBlock({ data }: { data: StatementPayload }) {
         {data.serial}
       </div>
       <div className="statement-frame flex min-h-0 flex-1 flex-col border-2 border-black p-[1.5px]">
-      <div className="statement-banner relative shrink-0">
-        <p className="px-8 text-center" style={{ color: RED }}>
-          (법인묘지, 사설화장시설, 사설봉안시설, 사설자연장지용)
-        </p>
-        <span className="absolute right-0 top-0">{data.sideLabel}</span>
+      <div className="statement-banner shrink-0">
+        <span className="w-[8mm] shrink-0" aria-hidden />
+        <p style={{ color: RED }}>(법인묘지, 사설화장시설, 사설봉안시설, 사설자연장지용)</p>
+        <span className="statement-side">{data.sideLabel}</span>
       </div>
       <h2 className="statement-title shrink-0 text-center">거 래 명 세 서 (영수증겸용)</h2>
 
@@ -183,6 +182,17 @@ function CopyBlock({ data }: { data: StatementPayload }) {
         {STATEMENT_FACILITY.footnote}
       </p>
       </div>
+    </div>
+  );
+}
+
+/** 절취선(16mm)을 뺀 한 쪽(회사·고객) 폭 */
+export const STATEMENT_COPY_W_MM = (277 - 16) / 2;
+
+export function TransactionStatementCopy({ data }: { data: StatementPayload }) {
+  return (
+    <div className="bg-white text-black" style={{ width: `${STATEMENT_COPY_W_MM}mm`, height: "190mm" }}>
+      <CopyBlock data={data} />
     </div>
   );
 }
