@@ -155,12 +155,20 @@ export function parseReceiptRows(html: string): ReceiptCopy[] {
   });
 }
 
+export type ReportTask = { tombNo: string; progress: string; result: string };
+export type ReportPlan = { tombNo: string; note: string };
+
 export type ReportCopy = {
   date: string;
   handledCount: number;
   claimMaterial: string;
   inboundMaterial: string;
   note: string;
+  attendance?: string;
+  reportDate?: string;
+  reportNo?: string;
+  tasks?: ReportTask[];
+  plans?: ReportPlan[];
 };
 
 export function parseReportRows(html: string): ReportCopy[] {
@@ -172,7 +180,66 @@ export function parseReportRows(html: string): ReportCopy[] {
       claimMaterial: c[2] ?? "",
       inboundMaterial: c[3] ?? "",
       note: c[4] ?? "",
+      attendance: c[5] ?? "",
+      reportDate: row.arg1,
+      reportNo: row.arg2,
     };
+  });
+}
+
+function inputValue(html: string, name: string) {
+  const tag = html.match(new RegExp(`<(?:input|textarea)\\b[^>]*name=["']${name}["'][^>]*>`, "i"))?.[0] ?? "";
+  const value = tag.match(/\bvalue=["']([^"']*)["']/i)?.[1];
+  if (value !== undefined) return value;
+  const area = html.match(new RegExp(`<textarea\\b[^>]*name=["']${name}["'][^>]*>([\\s\\S]*?)<\\/textarea>`, "i"));
+  return area ? stripTags(area[1]) : "";
+}
+
+function selectedText(html: string, name: string) {
+  const block = html.match(new RegExp(`<select\\b[^>]*name=["']${name}["'][\\s\\S]*?<\\/select>`, "i"))?.[0] ?? "";
+  const chosen = block.match(/<option\b[^>]*\bselected\b[^>]*>([\s\S]*?)<\/option>/i);
+  return chosen ? stripTags(chosen[1]) : "";
+}
+
+export function parseWorkReportDetail(html: string) {
+  const tasks: ReportTask[] = [];
+  const plans: ReportPlan[] = [];
+  for (const row of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const chunk = row[1];
+    if (/name=["']no_tomb["']/.test(chunk)) {
+      const tombNo = inputValue(chunk, "no_tomb");
+      const progress = inputValue(chunk, "work_note");
+      const result = selectedText(chunk, "result");
+      if (tombNo || progress || result) tasks.push({ tombNo, progress, result });
+    }
+    if (/name=["']pre_no_tomb["']/.test(chunk)) {
+      const tombNo = inputValue(chunk, "pre_no_tomb");
+      const note = inputValue(chunk, "pre_work_note");
+      if (tombNo || note) plans.push({ tombNo, note });
+    }
+  }
+  return {
+    tasks,
+    plans,
+    claimMaterial: inputValue(html, "charge_mat"),
+    inboundMaterial: inputValue(html, "ipgo_mat"),
+    note: inputValue(html, "note"),
+  };
+}
+
+export type BaseKind = "cost" | "stone" | "company" | "user" | "consult";
+
+export type BaseItem = {
+  kind: BaseKind;
+  key: string;
+  values: string[];
+};
+
+export function parseBaseRows(html: string, kind: BaseKind): BaseItem[] {
+  const skip = kind === "user" ? new Set([1]) : new Set<number>();
+  return tableBodyRows(html).map((row) => {
+    const values = row.cells.filter((_, index) => !skip.has(index));
+    return { kind, key: row.arg1 || values[0] || "", values };
   });
 }
 

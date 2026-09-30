@@ -5,7 +5,7 @@ import type { ContractListFilters, ContractListKind } from "./contract-book";
 import { contractLookupFields } from "./contract-book";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo, mongoDbName, mongoUriSet, requireDb } from "./mongo";
-import type { CemeteryInfoCopy, ContractCopy, ContractFileCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
+import type { CemeteryInfoCopy, ContractCopy, ContractFileCopy, FeeCopy, ReceiptCopy, ReportCopy, BaseItem } from "./cemetery-parse";
 
 export type WorkMeta = {
   syncedAt: string;
@@ -57,6 +57,7 @@ const files = {
   reports: dataFile("work-reports.local.json"),
   cemetery: dataFile("work-cemetery.local.json"),
   contractFiles: dataFile("work-contract-files.local.json"),
+  baseItems: dataFile("work-base-items.local.json"),
 };
 
 const DOT = ".";
@@ -668,6 +669,75 @@ export async function searchSupervisorContracts(filters: ContractListFilters & {
     .sort((a, b) => a.tombNo.localeCompare(b.tombNo, "ko") || a.contractNo.localeCompare(b.contractNo, "ko"))
     .slice((page - 1) * pageSize, page * pageSize);
   return { hits, total: rows.length, matched: matchedRows.length, page, pageSize };
+}
+
+export async function readStoredReports(): Promise<ReportCopy[]> {
+  if (mongoUriSet()) {
+    const db = await getDb();
+    if (db) {
+      const docs = await db.collection("work_reports").find({}).toArray();
+      if (docs.length) return withoutMongoId<ReportCopy>(docs);
+    }
+  }
+  return readJsonFile<ReportCopy[]>(files.reports, []);
+}
+
+export async function readStoredCemetery(): Promise<CemeteryInfoCopy[]> {
+  if (mongoUriSet()) {
+    const db = await getDb();
+    if (db) {
+      const docs = await db.collection("cemetery_info").find({}).toArray();
+      if (docs.length) return withoutMongoId<CemeteryInfoCopy>(docs);
+    }
+  }
+  return readJsonFile<CemeteryInfoCopy[]>(files.cemetery, []);
+}
+
+export async function readBaseItems(kind: BaseItem["kind"]): Promise<BaseItem[]> {
+  if (mongoUriSet()) {
+    const db = await getDb();
+    if (db) {
+      const docs = await db.collection("base_items").find({ kind }).toArray();
+      return withoutMongoId<BaseItem>(docs);
+    }
+  }
+  const rows = await readJsonFile<BaseItem[]>(files.baseItems, []);
+  return rows.filter((row) => row.kind === kind);
+}
+
+export async function saveReportDetails(rows: ReportCopy[]) {
+  if (!mongoUriSet() || !rows.length) return 0;
+  const db = await requireDb();
+  const col = db.collection("work_reports");
+  let saved = 0;
+  for (const row of rows) {
+    const encoded = toMongoDocs([row])[0] as ReportCopy;
+    const result = await col.updateOne(
+      { date: row.date },
+      {
+        $set: {
+          attendance: row.attendance ?? "",
+          reportDate: row.reportDate ?? "",
+          reportNo: row.reportNo ?? "",
+          tasks: encoded.tasks ?? [],
+          plans: encoded.plans ?? [],
+        },
+      },
+    );
+    if (result.matchedCount) saved += 1;
+  }
+  return saved;
+}
+
+export async function saveBaseItems(rows: BaseItem[]) {
+  if (!rows.length) return 0;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    await replaceCollection(db, "base_items", rows);
+    return rows.length;
+  }
+  await writeJsonFile(files.baseItems, rows);
+  return rows.length;
 }
 
 export async function readStoredReceipts(): Promise<ReceiptCopy[]> {

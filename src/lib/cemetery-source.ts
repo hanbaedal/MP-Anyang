@@ -8,12 +8,15 @@ import {
   parseNamedInputs,
   parseReceiptRows,
   parseReportRows,
+  parseWorkReportDetail,
+  parseBaseRows,
   type CemeteryInfoCopy,
   type ContractCopy,
   type ContractFileCopy,
   type FeeCopy,
   type ReceiptCopy,
   type ReportCopy,
+  type BaseItem,
 } from "./cemetery-parse";
 
 const DEFAULT_URL = "http://1.255.226.45:88/Cemetery";
@@ -35,6 +38,7 @@ export type SourceSyncResult = {
   reports: ReportCopy[];
   cemetery: CemeteryInfoCopy[];
   contractFiles: ContractFileCopy[];
+  baseItems: BaseItem[];
   listedContractTotal: number;
 };
 
@@ -409,6 +413,73 @@ export async function pullReceiptCopies(creds: SourceLogin) {
   return { ok: true as const, receipts };
 }
 
+async function fillReportDetails(jar: Map<string, string>, creds: SourceLogin, reports: ReportCopy[]) {
+  for (const row of reports) {
+    if (!row.reportDate || !row.reportNo) continue;
+    try {
+      const item = await request(jar, "/workReportDetail.do", {
+        method: "POST",
+        form: {
+          pageNo: "workreport",
+          select_dt_busilog: row.reportDate,
+          select_no_busilog: row.reportNo,
+          subRow: "1",
+          pg_sub: "1",
+          cd_company: companyCode(),
+          id_user_s: creds.id,
+        },
+      });
+      if (item.status >= 400 || /name=["']passwd["']/.test(item.html)) continue;
+      const detail = parseWorkReportDetail(item.html);
+      row.tasks = detail.tasks;
+      row.plans = detail.plans;
+      if (detail.claimMaterial) row.claimMaterial = detail.claimMaterial;
+      if (detail.inboundMaterial) row.inboundMaterial = detail.inboundMaterial;
+      if (detail.note) row.note = detail.note;
+    } catch {
+      /* keep the list row when one diary fails */
+    }
+  }
+}
+
+async function readBaseItems(jar: Map<string, string>, user: string, company: string) {
+  const specs: { path: string; kind: BaseItem["kind"]; form: Record<string, string> }[] = [
+    { path: "/managementCostList.do", kind: "cost", form: { pageNo: "1", seq: "", cd_company: company, id_user_s: user } },
+    { path: "/stoneCodeList.do", kind: "stone", form: { pageNo: "1", cd_seokmul: "", cd_company: company, id_user_s: user } },
+    { path: "/companyInfoList.do", kind: "company", form: { pageNo: "1", cd_company: company, id_user_s: user } },
+    { path: "/userInfoList.do", kind: "user", form: { pageNo: "1", id_user: "", cd_company: company, id_user_s: user } },
+    { path: "/counselCodeList.do", kind: "consult", form: { pageNo: "1", cd_consult: "", cd_company: company, id_user_s: user } },
+  ];
+  const items: BaseItem[] = [];
+  for (const spec of specs) {
+    const pull = await pagedHtml(jar, spec.path, spec.form, "100", { skipErrors: true });
+    items.push(...pull.pages.flatMap((html) => parseBaseRows(html, spec.kind)));
+  }
+  return items;
+}
+
+export async function pullReportAndBase(creds: SourceLogin) {
+  const jar = new Map<string, string>();
+  const auth = await login(jar, creds);
+  if (!auth.ok) return { ok: false as const, error: auth.error, reports: [] as ReportCopy[], baseItems: [] as BaseItem[] };
+  const reportsPull = await pagedHtml(jar, "/workReport.do", {
+    pageNo: "workreport",
+    pg_sub: "1",
+    ps_sub: "8",
+    select_dt_busilog: "",
+    select_no_busilog: "",
+    del_seq: "",
+    reverseRowNumber: "1",
+    subRow: "1",
+    cd_company: companyCode(),
+    id_user_s: creds.id,
+  }, "23");
+  const reports = reportsPull.pages.flatMap(parseReportRows);
+  await fillReportDetails(jar, creds, reports);
+  const baseItems = await readBaseItems(jar, creds.id, companyCode());
+  return { ok: true as const, reports, baseItems };
+}
+
 export async function pullCemeterySource(
   creds: SourceLogin,
   opts: {
@@ -424,6 +495,7 @@ export async function pullCemeterySource(
     reports: [],
     cemetery: [],
     contractFiles: [],
+    baseItems: [],
     listedContractTotal: 0,
   };
   try {
@@ -519,6 +591,8 @@ export async function pullCemeterySource(
       { onPage: (done, total) => opts.onPull?.("reports", done, total) },
     );
     const reports = reportsPull.pages.flatMap(parseReportRows);
+    await fillReportDetails(jar, creds, reports);
+    const baseItems = await readBaseItems(jar, user, company);
 
     const cemeteryPull = await pagedHtml(
       jar,
@@ -549,6 +623,7 @@ export async function pullCemeterySource(
       reports,
       cemetery,
       contractFiles,
+      baseItems,
       listedContractTotal: contractsPull.listed || contracts.length,
     };
   } catch (err) {

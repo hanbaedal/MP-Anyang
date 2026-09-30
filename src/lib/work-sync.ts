@@ -6,7 +6,7 @@ import {
   mongoUriSet,
   mongoUserMessage,
 } from "./mongo";
-import { applyNightlySourceDiff, saveContractFiles, saveWorkDump, summarizeFees, upsertContractFiles } from "./work-store";
+import { applyNightlySourceDiff, saveBaseItems, saveContractFiles, saveWorkDump, summarizeFees, upsertContractFiles } from "./work-store";
 import {
   beginWorkSyncProgress,
   finishWorkSyncProgress,
@@ -117,6 +117,7 @@ export async function syncWorkFromSource(creds: SourceLogin): Promise<WorkSyncOk
     }
     return { ok: false, error: FILE_SAVE_FAILED, message: FILE_SAVE_FAILED };
   }
+  if (pulled.baseItems.length) await saveBaseItems(pulled.baseItems);
   return {
     ok: true as const,
     message: meta.message,
@@ -176,6 +177,7 @@ export async function syncWorkDiffFromSource(creds: SourceLogin): Promise<WorkSy
       return { ok: false, error: FILE_SAVE_FAILED, message: FILE_SAVE_FAILED };
     }
   }
+  if (pulled.baseItems.length) await saveBaseItems(pulled.baseItems);
   const feeSum = summarizeFees(pulled.fees);
   const message = `원본과 비교했습니다. 계약 ${diff.changed}건, 계약서 ${fileCount}건, 관리비 ${diff.feeCount ? pulled.fees.length : 0}건, 영수증 ${diff.receiptCount ? pulled.receipts.length : 0}건을 갱신했습니다.`;
   return {
