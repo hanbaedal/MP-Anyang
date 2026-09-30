@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { after } from "next/server";
-import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import { ANON_VISITOR_COOKIE, isValidVisitorId } from "@/lib/analytics-cookie";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { StaffActivityBeacon } from "@/components/staff-activity-beacon";
@@ -19,17 +18,8 @@ import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
-const sans = Noto_Sans_KR({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const serif = Noto_Serif_KR({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
+const FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap";
 
 export const metadata: Metadata = {
   metadataBase: metadataBase(),
@@ -62,7 +52,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     });
   });
   return (
-    <html lang={LOCALE_HTML[locale]} className={`${sans.variable} ${serif.variable} h-full overflow-hidden`}>
+    <html lang={LOCALE_HTML[locale]} className="h-full overflow-hidden">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={FONT_HREF} />
+      </head>
       <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <LocaleProvider locale={locale}>
           <PageViewTracker />
