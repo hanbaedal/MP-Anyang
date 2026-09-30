@@ -3,6 +3,7 @@ import type { SessionUser } from "./auth-types";
 import { isValidVisitorId, newVisitorId } from "./analytics-cookie";
 import { lookupIpPlaces } from "./ip-place";
 import { getDb, mongoUriSet } from "./mongo";
+import { isStaffWorkHour } from "./work-hours";
 
 export { ANON_VISITOR_COOKIE, anonVisitorCookieOptions, isValidVisitorId, newVisitorId } from "./analytics-cookie";
 
@@ -63,6 +64,26 @@ type StaffPresenceDoc = {
   activeSeconds?: number;
 };
 
+/** $inc와 $setOnInsert가 같은 칸을 만지면 MongoDB가 업데이트 전체를 거절한다. */
+function dailyCounterUpdate(incField: "publicPv" | "staffPv" | "publicUv", now?: Date) {
+  const setOnInsert: { publicPv?: number; publicUv?: number; staffPv?: number; paths: Record<string, number> } = {
+    paths: {},
+  };
+  if (incField !== "publicPv") setOnInsert.publicPv = 0;
+  if (incField !== "publicUv") setOnInsert.publicUv = 0;
+  if (incField !== "staffPv") setOnInsert.staffPv = 0;
+  const update: {
+    $inc: Record<string, number>;
+    $set?: { updatedAt: Date };
+    $setOnInsert: typeof setOnInsert;
+  } = {
+    $inc: { [incField]: 1 },
+    $setOnInsert: setOnInsert,
+  };
+  if (now) update.$set = { updatedAt: now };
+  return update;
+}
+
 async function recordPublicVisitorForDay(date: string, visitorId: string) {
   const db = await getDb();
   if (!db) return;
@@ -73,25 +94,24 @@ async function recordPublicVisitorForDay(date: string, visitorId: string) {
     { upsert: true },
   );
   if (inserted.upsertedCount !== 1) return;
-  await db.collection<DailyDoc>("analytics_daily").updateOne(
-    { _id: date },
-    {
-      $inc: { publicUv: 1 },
-      $setOnInsert: { publicPv: 0, publicUv: 0, staffPv: 0, paths: {} },
-    },
-    { upsert: true },
-  );
+  await db.collection<DailyDoc>("analytics_daily").updateOne({ _id: date }, dailyCounterUpdate("publicUv"), { upsert: true });
 }
 
-async function countDistinctPublicVisitors(sinceDateInclusive: string) {
+/** 한국시간으로 날짜가 지난 방문자별 기록은 지운다. 그날 UV는 analytics_daily에 이미 들어 있다. */
+async function purgeClosedVisitorDetails(today: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.collection<PublicUvMarker>("analytics_public_uv").deleteMany({ date: { $lt: today } });
+}
+
+async function sumDailyPublicUv(sinceDateInclusive: string) {
   const db = await getDb();
   if (!db) return 0;
   const rows = await db
-    .collection<PublicUvMarker>("analytics_public_uv")
+    .collection<DailyDoc>("analytics_daily")
     .aggregate<{ n: number }>([
-      { $match: { date: { $gte: sinceDateInclusive } } },
-      { $group: { _id: "$visitorId" } },
-      { $count: "n" },
+      { $match: { _id: { $gte: sinceDateInclusive } } },
+      { $group: { _id: null, n: { $sum: "$publicUv" } } },
     ])
     .toArray();
   return rows[0]?.n ?? 0;
@@ -118,11 +138,7 @@ export async function trackPageView(input: {
     const col = db.collection<DailyDoc>("analytics_daily");
     await col.updateOne(
       { _id: date },
-      {
-        $inc: { [isStaff ? "staffPv" : "publicPv"]: 1 },
-        $set: { updatedAt: new Date() },
-        $setOnInsert: { publicPv: 0, publicUv: 0, staffPv: 0, paths: {} },
-      },
+      dailyCounterUpdate(isStaff ? "staffPv" : "publicPv", new Date()),
       { upsert: true },
     );
     if (!isStaff && isValidVisitorId(input.visitorId)) {
@@ -136,6 +152,7 @@ export async function trackPageView(input: {
     if (session) {
       await touchStaffPresence(session, input.ip ?? null, false);
     }
+    await purgeClosedVisitorDetails(date);
   } catch (err) {
     console.error("[site-analytics] trackPageView failed");
     console.error(err);
@@ -179,6 +196,7 @@ export async function recordStaffLogin(user: SessionUser, ip?: string | null, us
 }
 
 async function touchStaffPresence(user: SessionUser, ip: string | null, force: boolean) {
+  if (!isStaffWorkHour()) return;
   const db = await getDb();
   if (!db) return;
   const now = new Date();
@@ -206,7 +224,7 @@ async function touchStaffPresence(user: SessionUser, ip: string | null, force: b
 }
 
 export async function recordStaffHeartbeat(user: SessionUser, ip?: string | null) {
-  if (!mongoUriSet()) return;
+  if (!mongoUriSet() || !isStaffWorkHour()) return;
   try {
     const db = await getDb();
     if (!db) return;
@@ -300,11 +318,12 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     const staffPv = sumRows[0]?.staffPv ?? 0;
     const today = kstDateKey();
     const todayRow = await db.collection<DailyDoc>("analytics_daily").findOne({ _id: today });
+    await purgeClosedVisitorDetails(today);
     const publicUvToday = todayRow?.publicUv ?? 0;
     const publicPvToday = todayRow?.publicPv ?? 0;
-    const publicUv7d = await countDistinctPublicVisitors(kstDateKeyDaysAgo(6));
-    const publicUv30d = await countDistinctPublicVisitors(kstDateKeyDaysAgo(29));
-    const publicUvAll = await countDistinctPublicVisitors("1970-01-01");
+    const publicUv7d = await sumDailyPublicUv(kstDateKeyDaysAgo(6));
+    const publicUv30d = await sumDailyPublicUv(kstDateKeyDaysAgo(29));
+    const publicUvAll = await sumDailyPublicUv("1970-01-01");
     for (const row of daily.slice(-7)) {
       for (const [path, n] of Object.entries(row.paths ?? {})) {
         pathAcc.set(path, (pathAcc.get(path) ?? 0) + n);

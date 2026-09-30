@@ -141,6 +141,7 @@ export default async function SupervisorStatsPage() {
 
       <section className="space-y-3">
         <h2 className="font-medium text-primary">{t(locale, "supervisor.statsPresence")}</h2>
+        <p className="text-sm text-muted-foreground">{t(locale, "supervisor.statsPresenceHint")}</p>
         {data.staffPresence.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t(locale, "supervisor.statsEmpty")}</p>
         ) : (

@@ -6,6 +6,7 @@ import {
   isValidVisitorId,
   newVisitorId,
 } from "@/lib/analytics-cookie";
+import { clientIp } from "@/lib/ip-place";
 import { trackPageView } from "@/lib/site-analytics";
 import { cookies } from "next/headers";
 
@@ -28,10 +29,7 @@ export async function POST(request: Request) {
     freshVisitor = true;
   }
 
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip")?.trim() ||
-    "";
+  const ip = clientIp(request.headers);
   const userAgent = request.headers.get("user-agent");
 
   await trackPageView({

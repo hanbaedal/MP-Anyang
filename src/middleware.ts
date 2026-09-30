@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { ANON_VISITOR_COOKIE, anonVisitorCookieOptions, isValidVisitorId } from "@/lib/analytics-cookie";
+import { isStaffWorkHour } from "@/lib/work-hours";
+
+const STAFF_COOKIE = "anyang_sid";
 
 export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -17,6 +20,10 @@ export function middleware(request: NextRequest) {
 
   if (needsCookie) {
     response.cookies.set(ANON_VISITOR_COOKIE, visitorId!, anonVisitorCookieOptions());
+  }
+
+  if (!isStaffWorkHour() && request.cookies.get(STAFF_COOKIE)?.value) {
+    response.cookies.set(STAFF_COOKIE, "", { path: "/", httpOnly: true, sameSite: "lax", maxAge: 0 });
   }
 
   return response;

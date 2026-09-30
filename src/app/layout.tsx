@@ -13,6 +13,7 @@ import { SITE, metadataBase } from "@/lib/site";
 import { LOCALE_HTML, t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 import { readSession } from "@/lib/auth";
+import { clientIp } from "@/lib/ip-place";
 import { trackPageView } from "@/lib/site-analytics";
 import "./globals.css";
 
@@ -46,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const h = await headers();
   const pathname = h.get("x-pathname") ?? "/";
   const userAgent = h.get("user-agent");
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip")?.trim() ?? null;
+  const ip = clientIp(h) || null;
   let visitorId = h.get("x-visitor-id");
   if (!isValidVisitorId(visitorId)) {
     visitorId = (await cookies()).get(ANON_VISITOR_COOKIE)?.value ?? null;
