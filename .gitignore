@@ -50,6 +50,8 @@ data/work-cemetery.local.json
 data/work-partners.local.json
 data/work-purchases.local.json
 data/work-inventory.local.json
+data/work-orders.local.json
+data/work-sales.local.json
 public/uploads/*
 !public/uploads/.gitkeep
 

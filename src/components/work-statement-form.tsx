@@ -7,8 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { TransactionStatementPreview } from "@/components/transaction-statement-preview";
 import { TransactionStatementPage, TransactionStatementPrintRoot } from "@/components/transaction-statement-sheet";
+import { DateSpan, ViewToggle, inDateRange } from "@/components/work-ledger-controls";
 import type { ContractCopy } from "@/lib/cemetery-parse";
+import { ledgerRequest } from "@/lib/ledger-client";
 import { koreanWonAmount } from "@/lib/korean-won";
+import type { Sale } from "@/lib/work-ledgers";
 import type { DateParts, StatementLine, StatementPayload } from "@/lib/receipt-statement";
 
 const LINE_COUNT = 6;
@@ -150,6 +153,14 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
   const [lookupOpen, setLookupOpen] = useState(false);
   const [matches, setMatches] = useState<ContractCopy[]>([]);
   const [dismissedFor, setDismissedFor] = useState("");
+  const [mode, setMode] = useState<"input" | "list">("input");
+  const [saleId, setSaleId] = useState<string | null>(null);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [listKind, setListKind] = useState<"item" | "date">("date");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [itemQuery, setItemQuery] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (lockMgmt) return;
@@ -223,6 +234,13 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
   ]);
 
   useEffect(() => {
+    if (mode !== "list") return;
+    void ledgerRequest<{ rows: Sale[] }>("/api/work/sales", "GET")
+      .then((json) => setSales(json.rows))
+      .catch((reason: unknown) => setSaveError(reason instanceof Error ? reason.message : "매출 목록을 읽지 못했습니다."));
+  }, [mode]);
+
+  useEffect(() => {
     const clear = () => setPrintPair(null);
     window.addEventListener("afterprint", clear);
     return () => window.removeEventListener("afterprint", clear);
@@ -245,9 +263,64 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
     setLookupOpen(false);
   }
 
+  async function persistSale(nextSerial = serial) {
+    const body = {
+      soldOn: transaction,
+      serial: nextSerial,
+      deceased,
+      familyName,
+      burial,
+      tombNo,
+      pyeong,
+      amount,
+      mgmtFrom,
+      mgmtTo,
+      mgmtAmount,
+      sanFrom,
+      sanTo,
+      sanAmount,
+      lines,
+    };
+    const json = await ledgerRequest<{ row: Sale }>("/api/work/sales", saleId ? "PATCH" : "POST", saleId ? { ...body, id: saleId } : body);
+    setSaleId(json.row.id);
+    if (nextSerial) setSerial(nextSerial);
+    return json.row;
+  }
+
+  function loadSale(row: Sale) {
+    setSaleId(row.id);
+    setDeceased(row.deceased);
+    setFamilyName(row.familyName);
+    setBurial(row.burial);
+    setTombNo(row.tombNo);
+    setPyeong(row.pyeong);
+    setTransaction(row.soldOn);
+    setAmount(row.amount);
+    setMgmtFrom(row.mgmtFrom);
+    setMgmtTo(row.mgmtTo);
+    setMgmtAmount(row.mgmtAmount);
+    setSanFrom(row.sanFrom);
+    setSanTo(row.sanTo);
+    setSanAmount(row.sanAmount);
+    setLines(row.lines.length ? row.lines : Array.from({ length: LINE_COUNT }, emptyLine));
+    setLockMgmt(true);
+    setLockSan(true);
+    setSerial(row.serial);
+    setMode("input");
+  }
+
+  async function removeSale(id: string) {
+    if (!window.confirm("이 매출을 지울까요? 빠진 재고 수량은 되돌아갑니다.")) return;
+    await ledgerRequest("/api/work/sales", "DELETE", { id });
+    if (saleId === id) setSaleId(null);
+    const json = await ledgerRequest<{ rows: Sale[] }>("/api/work/sales", "GET");
+    setSales(json.rows);
+  }
+
   async function printStatement() {
     try {
       const nextSerial = serial || (await fetchSerial());
+      await persistSale(nextSerial);
       const shared = { ...draft.company, serial: nextSerial };
       const pair = {
         company: { ...shared, sideLabel: "(회사용)" as const },
@@ -263,7 +336,89 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
     }
   }
 
+  const rangedSales = sales.filter((row) => inDateRange(row.soldOn, from, to));
+  const itemRows = rangedSales.flatMap((sale) =>
+    sale.lines
+      .filter((line) => line.item && (!itemQuery.trim() || line.item.includes(itemQuery.trim())))
+      .map((line) => ({ sale, line })),
+  );
+
   return (
+    <div className="space-y-4">
+      <ViewToggle mode={mode} onChange={setMode} />
+      {mode === "list" ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <Button type="button" size="sm" variant={listKind === "item" ? "default" : "outline"} onClick={() => setListKind("item")}>품목별</Button>
+            <Button type="button" size="sm" variant={listKind === "date" ? "default" : "outline"} onClick={() => setListKind("date")}>일자별</Button>
+            {listKind === "item" ? (
+              <Input className="h-8 w-40 text-xs" value={itemQuery} placeholder="품목" onChange={(event) => setItemQuery(event.target.value)} />
+            ) : null}
+            <DateSpan from={from} to={to} onFrom={setFrom} onTo={setTo} />
+          </div>
+          {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+          <div className="overflow-x-auto rounded-xl border bg-card">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
+                {listKind === "item" ? (
+                  <tr>
+                    <th className="px-3 py-2 font-medium">거래일</th>
+                    <th className="px-3 py-2 font-medium">품목</th>
+                    <th className="px-3 py-2 font-medium">규격</th>
+                    <th className="px-3 py-2 text-right font-medium">수량</th>
+                    <th className="px-3 py-2 text-right font-medium">금액</th>
+                    <th className="px-3 py-2 font-medium">고인</th>
+                    <th className="px-3 py-2 font-medium" />
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-3 py-2 font-medium">거래일</th>
+                    <th className="px-3 py-2 font-medium">고인</th>
+                    <th className="px-3 py-2 font-medium">묘지번호</th>
+                    <th className="px-3 py-2 text-right font-medium">거래금액</th>
+                    <th className="px-3 py-2 font-medium">일련번호</th>
+                    <th className="px-3 py-2 font-medium" />
+                  </tr>
+                )}
+              </thead>
+              <tbody>
+                {listKind === "item" ? (
+                  itemRows.length === 0 ? (
+                    <tr><td className="px-3 py-6 text-muted-foreground" colSpan={7}>매출 품목이 없습니다.</td></tr>
+                  ) : itemRows.map(({ sale, line }, index) => (
+                    <tr key={`${sale.id}-${index}`} className="border-b last:border-b-0">
+                      <td className="px-3 py-2">{sale.soldOn}</td>
+                      <td className="px-3 py-2">{line.item}</td>
+                      <td className="px-3 py-2">{line.spec || "—"}</td>
+                      <td className="px-3 py-2 text-right">{line.qty || "—"}</td>
+                      <td className="px-3 py-2 text-right">{line.amount || "—"}</td>
+                      <td className="px-3 py-2">{sale.deceased || "—"}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Button type="button" size="sm" variant="outline" onClick={() => loadSale(sale)}>수정</Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => void removeSale(sale.id)}>삭제</Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : rangedSales.length === 0 ? (
+                  <tr><td className="px-3 py-6 text-muted-foreground" colSpan={6}>매출이 없습니다.</td></tr>
+                ) : rangedSales.map((sale) => (
+                  <tr key={sale.id} className="border-b last:border-b-0">
+                    <td className="px-3 py-2">{sale.soldOn}</td>
+                    <td className="px-3 py-2">{sale.deceased || "—"}</td>
+                    <td className="px-3 py-2">{sale.tombNo || "—"}</td>
+                    <td className="px-3 py-2 text-right">{sale.amount || "—"}</td>
+                    <td className="px-3 py-2">{sale.serial || "—"}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Button type="button" size="sm" variant="outline" onClick={() => loadSale(sale)}>수정</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => void removeSale(sale.id)}>삭제</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
     <div className="grid items-start gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
       <form
         className="space-y-3 rounded-xl border bg-card p-3"
@@ -352,11 +507,25 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">{serial ? `일련번호 ${serial}` : "출력할 때 일련번호가 붙습니다."}</p>
-          <Button type="submit" size="sm">
-            출력
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                void persistSale().then(() => setMode("list")).catch((reason: unknown) => {
+                  window.alert(reason instanceof Error ? reason.message : "저장하지 못했습니다.");
+                });
+              }}
+            >
+              저장
+            </Button>
+            <Button type="submit" size="sm">
+              출력
+            </Button>
+          </div>
         </div>
       </form>
 
@@ -411,6 +580,8 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
           ) : null}
         </TransactionStatementPrintRoot>
       </BodyPrintPortal>
+    </div>
+      )}
     </div>
   );
 }

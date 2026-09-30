@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ViewToggle } from "@/components/work-ledger-controls";
 import { Input } from "@/components/ui/input";
 import { ledgerRequest } from "@/lib/ledger-client";
 import type { Partner, PartnerKind } from "@/lib/work-ledgers";
@@ -22,6 +23,7 @@ export function WorkPartnersPanel() {
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"input" | "list">("input");
 
   async function reload() {
     const json = await ledgerRequest<{ rows: Partner[] }>("/api/work/partners", "GET");
@@ -43,6 +45,7 @@ export function WorkPartnersPanel() {
       await ledgerRequest("/api/work/partners", editing ? "PATCH" : "POST", editing ? { ...form, id: editing } : form);
       setForm(empty);
       setEditing(null);
+      setMode("list");
       await reload();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "저장하지 못했습니다.");
@@ -68,6 +71,8 @@ export function WorkPartnersPanel() {
 
   return (
     <div className="space-y-4">
+      <ViewToggle mode={mode} onChange={setMode} />
+      {mode === "input" ? (
       <form
         className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2"
         onSubmit={(event) => {
@@ -113,6 +118,7 @@ export function WorkPartnersPanel() {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       </form>
+      ) : (
       <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
@@ -158,6 +164,7 @@ export function WorkPartnersPanel() {
                           address: row.address,
                           note: row.note,
                         });
+                        setMode("input");
                       }}
                     >
                       수정
@@ -172,6 +179,7 @@ export function WorkPartnersPanel() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

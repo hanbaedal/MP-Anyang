@@ -34,21 +34,62 @@ export type InventoryItem = {
   id: string;
   name: string;
   spec: string;
-  unit: string;
   qty: number;
-  unitCost: number;
+  parQty: number;
+  inPrice: number;
+  outPrice: number;
   note: string;
+  updatedAt: string;
+};
+
+export type Order = {
+  id: string;
+  orderedOn: string;
+  partnerId: string;
+  partnerName: string;
+  item: string;
+  spec: string;
+  qty: number;
+  unitPrice: number;
+  amount: number;
+  note: string;
+  updatedAt: string;
+};
+
+export type SaleLine = { item: string; spec: string; qty: string; unitPrice: string; amount: string };
+
+export type Sale = {
+  id: string;
+  soldOn: string;
+  serial: string;
+  deceased: string;
+  familyName: string;
+  burial: string;
+  tombNo: string;
+  pyeong: string;
+  amount: string;
+  mgmtFrom: string;
+  mgmtTo: string;
+  mgmtAmount: string;
+  sanFrom: string;
+  sanTo: string;
+  sanAmount: string;
+  lines: SaleLine[];
   updatedAt: string;
 };
 
 const PARTNERS = "work_partners";
 const PURCHASES = "work_purchases";
 const INVENTORY = "work_inventory";
+const ORDERS = "work_orders";
+const SALES = "work_sales";
 
 const files = {
   partners: dataFile("work-partners.local.json"),
   purchases: dataFile("work-purchases.local.json"),
   inventory: dataFile("work-inventory.local.json"),
+  orders: dataFile("work-orders.local.json"),
+  sales: dataFile("work-sales.local.json"),
 };
 
 function nowIso() {
@@ -144,16 +185,31 @@ export function purchaseFromInput(input: Partial<Purchase>, previous?: Purchase)
 
 export function inventoryFromInput(input: Partial<InventoryItem>, previous?: InventoryItem): InventoryItem {
   const name = cleanText(input.name);
-  if (!name) throw new Error("품목명을 입력해 주세요.");
+  if (!name) throw new Error("품명을 입력해 주세요.");
   return {
     id: previous?.id ?? randomUUID(),
     name,
     spec: cleanText(input.spec),
-    unit: cleanText(input.unit) || "개",
     qty: cleanNumber(input.qty),
-    unitCost: cleanNumber(input.unitCost),
+    parQty: cleanNumber(input.parQty),
+    inPrice: cleanNumber(input.inPrice),
+    outPrice: cleanNumber(input.outPrice),
     note: cleanText(input.note),
     updatedAt: nowIso(),
+  };
+}
+
+function normalizeInventory(row: Partial<InventoryItem> & { id?: string; unitCost?: number }): InventoryItem {
+  return {
+    id: row.id || randomUUID(),
+    name: cleanText(row.name),
+    spec: cleanText(row.spec),
+    qty: cleanNumber(row.qty),
+    parQty: cleanNumber(row.parQty),
+    inPrice: cleanNumber(row.inPrice ?? row.unitCost),
+    outPrice: cleanNumber(row.outPrice),
+    note: cleanText(row.note),
+    updatedAt: row.updatedAt || nowIso(),
   };
 }
 
@@ -188,7 +244,9 @@ export async function listPurchases() {
 async function applyStock(item: string, spec: string, deltaQty: number, unitCost: number) {
   const name = item.trim();
   if (!name || !deltaQty) return;
-  const rows = await readCollection<InventoryItem>(INVENTORY, files.inventory);
+  const rows = (await readCollection<InventoryItem>(INVENTORY, files.inventory)).map((row) =>
+    normalizeInventory(row as InventoryItem & { unitCost?: number }),
+  );
   const key = stockKey(name, spec);
   const index = rows.findIndex((row) => stockKey(row.name, row.spec) === key);
   if (index < 0) {
@@ -197,9 +255,10 @@ async function applyStock(item: string, spec: string, deltaQty: number, unitCost
       id: randomUUID(),
       name,
       spec: spec.trim(),
-      unit: "개",
       qty: deltaQty,
-      unitCost,
+      parQty: 0,
+      inPrice: unitCost,
+      outPrice: 0,
       note: "",
       updatedAt: nowIso(),
     });
@@ -208,7 +267,7 @@ async function applyStock(item: string, spec: string, deltaQty: number, unitCost
     rows[index] = {
       ...current,
       qty: current.qty + deltaQty,
-      unitCost: unitCost || current.unitCost,
+      inPrice: unitCost || current.inPrice,
       updatedAt: nowIso(),
     };
   }
@@ -243,7 +302,9 @@ export async function deletePurchase(id: string) {
 
 export async function listInventory() {
   const rows = await readCollection<InventoryItem>(INVENTORY, files.inventory);
-  return rows.sort((a, b) => a.name.localeCompare(b.name, "ko") || a.spec.localeCompare(b.spec, "ko"));
+  return rows
+    .map((row) => normalizeInventory(row as InventoryItem & { unitCost?: number }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko") || a.spec.localeCompare(b.spec, "ko"));
 }
 
 export async function saveInventory(input: Partial<InventoryItem>, id?: string) {
@@ -262,4 +323,144 @@ export async function deleteInventory(id: string) {
   const next = rows.filter((row) => row.id !== id);
   if (next.length === rows.length) throw new Error("재고를 찾지 못했습니다.");
   await writeCollection(INVENTORY, files.inventory, next);
+}
+
+function datedDoc<T extends { id: string }>(
+  input: {
+    date: string;
+    partnerId?: string;
+    partnerName?: string;
+    item?: string;
+    spec?: string;
+    qty?: unknown;
+    unitPrice?: unknown;
+    note?: string;
+  },
+  dateKey: "purchasedOn" | "orderedOn",
+  dateLabel: string,
+  previous?: T & { id: string },
+) {
+  const item = cleanText(input.item);
+  if (!item) throw new Error("품목을 입력해 주세요.");
+  const on = cleanText(input.date);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(on)) throw new Error(`${dateLabel}을 선택해 주세요.`);
+  const qty = cleanNumber(input.qty);
+  const unitPrice = cleanNumber(input.unitPrice);
+  return {
+    id: previous?.id ?? randomUUID(),
+    [dateKey]: on,
+    partnerId: cleanText(input.partnerId),
+    partnerName: cleanText(input.partnerName),
+    item,
+    spec: cleanText(input.spec),
+    qty,
+    unitPrice,
+    amount: Math.round(qty * unitPrice),
+    note: cleanText(input.note),
+    updatedAt: nowIso(),
+  };
+}
+
+export async function listOrders() {
+  const rows = await readCollection<Order>(ORDERS, files.orders);
+  return rows.sort((a, b) => b.orderedOn.localeCompare(a.orderedOn) || b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function saveOrder(input: Partial<Order>, id?: string) {
+  const rows = await listOrders();
+  const index = id ? rows.findIndex((row) => row.id === id) : -1;
+  if (id && index < 0) throw new Error("주문을 찾지 못했습니다.");
+  const next = datedDoc(
+    { ...input, date: input.orderedOn ?? "" },
+    "orderedOn",
+    "주문일",
+    index >= 0 ? rows[index] : undefined,
+  ) as Order;
+  if (index >= 0) rows[index] = next;
+  else rows.push(next);
+  await writeCollection(ORDERS, files.orders, rows);
+  return next;
+}
+
+export async function deleteOrder(id: string) {
+  const rows = await listOrders();
+  const next = rows.filter((row) => row.id !== id);
+  if (next.length === rows.length) throw new Error("주문을 찾지 못했습니다.");
+  await writeCollection(ORDERS, files.orders, next);
+}
+
+function lineQty(line: SaleLine) {
+  const n = Number(String(line.qty ?? "").replaceAll(",", "").trim());
+  return Number.isFinite(n) ? n : 0;
+}
+
+async function applySaleLines(lines: SaleLine[], sign: number) {
+  for (const line of lines) {
+    await applyStock(line.item, line.spec, sign * lineQty(line), 0);
+  }
+}
+
+export function saleFromInput(input: Partial<Sale>, previous?: Sale): Sale {
+  const soldOn = cleanText(input.soldOn);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(soldOn)) throw new Error("거래년월일을 선택해 주세요.");
+  const lines = Array.isArray(input.lines)
+    ? input.lines.slice(0, 6).map((line) => ({
+        item: cleanText(line?.item),
+        spec: cleanText(line?.spec),
+        qty: cleanText(line?.qty),
+        unitPrice: cleanText(line?.unitPrice),
+        amount: cleanText(line?.amount),
+      }))
+    : [];
+  while (lines.length < 6) lines.push({ item: "", spec: "", qty: "", unitPrice: "", amount: "" });
+  return {
+    id: previous?.id ?? randomUUID(),
+    soldOn,
+    serial: cleanText(input.serial),
+    deceased: cleanText(input.deceased),
+    familyName: cleanText(input.familyName),
+    burial: cleanText(input.burial),
+    tombNo: cleanText(input.tombNo),
+    pyeong: cleanText(input.pyeong),
+    amount: cleanText(input.amount),
+    mgmtFrom: cleanText(input.mgmtFrom),
+    mgmtTo: cleanText(input.mgmtTo),
+    mgmtAmount: cleanText(input.mgmtAmount),
+    sanFrom: cleanText(input.sanFrom),
+    sanTo: cleanText(input.sanTo),
+    sanAmount: cleanText(input.sanAmount),
+    lines,
+    updatedAt: nowIso(),
+  };
+}
+
+export async function listSales() {
+  const rows = await readCollection<Sale>(SALES, files.sales);
+  return rows.sort((a, b) => b.soldOn.localeCompare(a.soldOn) || b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function saveSale(input: Partial<Sale>, id?: string) {
+  const rows = await listSales();
+  const index = id ? rows.findIndex((row) => row.id === id) : -1;
+  if (id && index < 0) throw new Error("매출을 찾지 못했습니다.");
+  const previous = index >= 0 ? rows[index] : undefined;
+  const next = saleFromInput(input, previous);
+  if (previous) await applySaleLines(previous.lines, 1);
+  await applySaleLines(next.lines, -1);
+  if (index >= 0) rows[index] = next;
+  else rows.push(next);
+  await writeCollection(SALES, files.sales, rows);
+  return next;
+}
+
+export async function deleteSale(id: string) {
+  const rows = await listSales();
+  const current = rows.find((row) => row.id === id);
+  if (!current) throw new Error("매출을 찾지 못했습니다.");
+  await applySaleLines(current.lines, 1);
+  await writeCollection(
+    SALES,
+    files.sales,
+    rows.filter((row) => row.id !== id),
+  );
 }
