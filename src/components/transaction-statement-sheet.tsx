@@ -11,6 +11,7 @@ function spacedName(name: string) {
 }
 
 function dateLine(parts: { year: string; month: string; day: string }, twoDigitYear = false) {
+  if (!parts.year) return "";
   const y = twoDigitYear ? parts.year.slice(-2) : parts.year;
   return `${y}년 ${parts.month}월 ${parts.day}일`;
 }
@@ -113,7 +114,7 @@ function CopyBlock({ data }: { data: StatementPayload }) {
             </td>
             <td className={th}>거래금액</td>
             <td className={cell} colSpan={2}>
-              일금 {data.amountKr} 원정
+              {data.amountKr ? `일금 ${data.amountKr} 원정` : ""}
             </td>
           </tr>
           <tr>
