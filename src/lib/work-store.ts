@@ -686,7 +686,7 @@ export async function readStoredCemetery(): Promise<CemeteryInfoCopy[]> {
   if (mongoUriSet()) {
     const db = await getDb();
     if (db) {
-      const docs = await db.collection("cemetery_info").find({}).toArray();
+      const docs = await db.collection("cemetery_info").find({}).sort({ _id: 1 }).toArray();
       if (docs.length) return withoutMongoId<CemeteryInfoCopy>(docs);
     }
   }

@@ -50,7 +50,6 @@ export default async function SupervisorBasePage({
     tab === "plot"
       ? (await readStoredCemetery())
           .filter((row) => !tomb || row.tombNo.includes(tomb))
-          .sort((a, b) => a.tombNo.localeCompare(b.tombNo, "ko"))
           .map((row) => ({ key: row.tombNo, values: plotValues(row), detail: detailFor("plot", plotFields(row)) }))
       : (await readBaseItems(tab))
           .filter((row) => !tomb || (row.values[spec.searchAt] ?? "").includes(tomb))
