@@ -10,6 +10,7 @@ import {
   parseReportRows,
   parseWorkReportDetail,
   parseBaseRows,
+  parseDetailFields,
   type CemeteryInfoCopy,
   type ContractCopy,
   type ContractFileCopy,
@@ -455,7 +456,38 @@ async function readBaseItems(jar: Map<string, string>, user: string, company: st
     const pull = await pagedHtml(jar, spec.path, spec.form, "100", { skipErrors: true });
     items.push(...pull.pages.flatMap((html) => parseBaseRows(html, spec.kind)));
   }
+  await fillBaseDetails(jar, user, company, items);
   return items;
+}
+
+async function fillBaseDetails(jar: Map<string, string>, user: string, company: string, items: BaseItem[]) {
+  const specs: Record<BaseItem["kind"], { path: string; pageNo: string; keyName: string }> = {
+    cost: { path: "/managementCostDetailList.do", pageNo: "2", keyName: "seq" },
+    stone: { path: "/stoneCodeDetailList.do", pageNo: "3", keyName: "cd_seokmul" },
+    company: { path: "/companyInfoDetailList.do", pageNo: "4", keyName: "selt_company" },
+    user: { path: "/userInfoDetailList.do", pageNo: "5", keyName: "id_user" },
+    consult: { path: "/counselCodeDetailList.do", pageNo: "6", keyName: "cd_consult" },
+  };
+  const batch = 4;
+  for (let index = 0; index < items.length; index += batch) {
+    const slice = items.slice(index, index + batch);
+    await Promise.all(
+      slice.map(async (item) => {
+        const spec = specs[item.kind];
+        if (!spec || !item.key) return;
+        try {
+          const detail = await request(jar, spec.path, {
+            method: "POST",
+            form: { pageNo: spec.pageNo, [spec.keyName]: item.key, cd_company: company, id_user_s: user },
+          });
+          if (detail.status >= 400 || /name=["']passwd["']/.test(detail.html)) return;
+          item.fields = parseDetailFields(detail.html);
+        } catch {
+          /* keep the list row when one detail fails */
+        }
+      }),
+    );
+  }
 }
 
 export async function pullReportAndBase(creds: SourceLogin) {

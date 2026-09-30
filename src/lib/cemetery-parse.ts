@@ -233,6 +233,7 @@ export type BaseItem = {
   kind: BaseKind;
   key: string;
   values: string[];
+  fields?: Record<string, string>;
 };
 
 export function parseBaseRows(html: string, kind: BaseKind): BaseItem[] {
@@ -275,6 +276,19 @@ export type ContractFileCopy = {
   tables: { headers: string[]; rows: string[][] }[];
   inputs: Record<string, string>;
 };
+
+export function parseDetailFields(html: string) {
+  const out = parseNamedInputs(html);
+  for (const key of Object.keys(out)) {
+    if (/pass|passwd|password|pw_user/i.test(key)) delete out[key];
+  }
+  const photos = [...html.matchAll(/<img\b[^>]*>/gi)].filter((tag) => {
+    const src = tag[0].match(/\bsrc=["']([^"']*)["']/i)?.[1] ?? "";
+    return /\.(jpe?g|png|gif)(?:\?|$)/i.test(src);
+  }).length;
+  if (photos) out["사진"] = String(photos);
+  return out;
+}
 
 export function parseNamedInputs(html: string) {
   const out: Record<string, string> = {};
