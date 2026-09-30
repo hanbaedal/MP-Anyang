@@ -74,6 +74,46 @@ export function contractKey(row: { tombNo: string; contractNo: string }) {
   return `${row.tombNo}::${row.contractNo}`;
 }
 
+export function parseContractKey(id: string) {
+  const cut = id.indexOf("::");
+  if (cut < 0) return null;
+  const tombNo = id.slice(0, cut);
+  const contractNo = id.slice(cut + 2);
+  if (!tombNo) return null;
+  return { tombNo, contractNo };
+}
+
+export type ContractListKind = "all" | "contract" | "move";
+
+export type ContractListFilters = {
+  tomb: string;
+  user: string;
+  family: string;
+  phone: string;
+  kind: ContractListKind;
+};
+
+export function contractListHref(filters: ContractListFilters & { page?: number; id?: string }) {
+  const params = new URLSearchParams();
+  if (filters.tomb) params.set("tomb", filters.tomb);
+  if (filters.user) params.set("user", filters.user);
+  if (filters.family) params.set("family", filters.family);
+  if (filters.phone) params.set("phone", filters.phone);
+  if (filters.kind !== "all") params.set("kind", filters.kind);
+  if (filters.page && filters.page > 1) params.set("page", String(filters.page));
+  if (filters.id) params.set("id", filters.id);
+  const query = params.toString();
+  return query ? `/supervisor/contracts?${query}` : "/supervisor/contracts";
+}
+
+export function contractLookupFields(inputs: Record<string, string> | undefined) {
+  const value = (key: string) => inputs?.[key]?.trim() ?? "";
+  const phoneDigits = [value("contractContract.tel_con"), value("contractFamily.no_hp"), value("contractFamily.no_home")]
+    .join("")
+    .replace(/\D/g, "");
+  return { moveKind: value("contractContract.tp_mov"), phoneDigits };
+}
+
 export function toContractHit(row: ContractCopy): ContractHit {
   return {
     key: contractKey(row),

@@ -65,6 +65,8 @@ export type ContractCopy = {
   pyeong: string;
   address: string;
   extra?: Record<string, string>;
+  moveKind?: string;
+  phoneDigits?: string;
 };
 
 export function parseContractRows(html: string): ContractCopy[] {

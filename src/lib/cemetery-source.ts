@@ -216,6 +216,20 @@ async function oneContractFile(
   }
 }
 
+export async function pullSelectedContractFiles(
+  creds: SourceLogin,
+  rows: { tombNo: string; contractNo: string }[],
+  onDone?: (done: number, total: number) => void,
+) {
+  const targets = rows.filter((row) => row.tombNo && row.contractNo);
+  if (targets.length === 0) return { ok: true as const, files: [] as ContractFileCopy[] };
+  const jar = new Map<string, string>();
+  const auth = await login(jar, creds);
+  if (!auth.ok) return { ok: false as const, error: auth.error, files: [] as ContractFileCopy[] };
+  const files = await readContractFiles(jar, creds, targets, onDone);
+  return { ok: true as const, files };
+}
+
 export async function pullContractFiles(
   creds: SourceLogin,
   onDone?: (done: number, total: number) => void,

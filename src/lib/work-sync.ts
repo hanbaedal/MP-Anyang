@@ -1,4 +1,4 @@
-import { pullCemeterySource, resolveSourceLogin, SOURCE_LOGIN_MISSING, type SourceLogin } from "./cemetery-source";
+import { pullCemeterySource, pullSelectedContractFiles, resolveSourceLogin, SOURCE_LOGIN_MISSING, type SourceLogin } from "./cemetery-source";
 import {
   isMongoFailure,
   logMongoFailure,
@@ -6,7 +6,7 @@ import {
   mongoUriSet,
   mongoUserMessage,
 } from "./mongo";
-import { saveContractFiles, saveWorkDump, summarizeFees } from "./work-store";
+import { applyNightlySourceDiff, saveContractFiles, saveWorkDump, summarizeFees, upsertContractFiles } from "./work-store";
 import {
   beginWorkSyncProgress,
   finishWorkSyncProgress,
@@ -132,6 +132,75 @@ export async function syncWorkFromSource(creds: SourceLogin): Promise<WorkSyncOk
   };
 }
 
+/** 01:00 timer and cron. Reads the source lists, writes only rows that differ, and opens a contract form only when that list row changed. */
+export async function syncWorkDiffFromSource(creds: SourceLogin): Promise<WorkSyncOk | WorkSyncFail> {
+  setWorkSyncPhase("login", "원본과 비교하는 중…");
+  const pulled = await pullCemeterySource(creds, {
+    skipContractFiles: true,
+    onPull: (list, done, total) => {
+      setWorkSyncPhase("pull");
+      setCollectionProgress(mapPullCollection(list), done, total, 80);
+    },
+  });
+  if (!pulled.ok) {
+    return { ok: false as const, error: pulled.error || PULL_FAILED, message: pulled.error || PULL_FAILED };
+  }
+  setWorkSyncPhase("write", "차이나는 자료만 넣는 중…");
+  const diff = await applyNightlySourceDiff({
+    contracts: pulled.contracts,
+    fees: pulled.fees,
+    receipts: pulled.receipts,
+    reports: pulled.reports,
+    cemetery: pulled.cemetery,
+    listedContractTotal: pulled.listedContractTotal,
+    sourceHost: (process.env.CEMETERY_SOURCE_URL?.trim() || "http://1.255.226.45:88/Cemetery").replace(/\/$/, ""),
+  });
+  let fileCount = 0;
+  if (diff.refresh.length) {
+    setWorkSyncPhase("pull", `바뀐 계약서 ${diff.refresh.length}건을 읽는 중…`);
+    const files = await pullSelectedContractFiles(creds, diff.refresh, (done, total) => {
+      setCollectionProgress("contract_files", done, total, 90);
+    });
+    if (!files.ok) {
+      return { ok: false, error: files.error || PULL_FAILED, message: files.error || PULL_FAILED };
+    }
+    try {
+      fileCount = await upsertContractFiles(files.files);
+      setCollectionProgress("contract_files", fileCount, Math.max(fileCount, 1), 100);
+    } catch (err) {
+      if (mongoUriSet()) {
+        logMongoFailure("contract file diff write", err);
+        const message = mongoUserMessage(err);
+        return { ok: false, error: message, message };
+      }
+      return { ok: false, error: FILE_SAVE_FAILED, message: FILE_SAVE_FAILED };
+    }
+  }
+  const feeSum = summarizeFees(pulled.fees);
+  const message = `원본과 비교했습니다. 계약 ${diff.changed}건, 계약서 ${fileCount}건, 관리비 ${diff.feeCount ? pulled.fees.length : 0}건, 영수증 ${diff.receiptCount ? pulled.receipts.length : 0}건을 갱신했습니다.`;
+  return {
+    ok: true as const,
+    message,
+    contractCount: pulled.contracts.length,
+    feeCount: pulled.fees.length,
+    receiptCount: pulled.receipts.length,
+    reportCount: pulled.reports.length,
+    cemeteryCount: pulled.cemetery.length,
+    savedTo: mongoUriSet() ? "mongo" : "file",
+    mongoDb: mongoDbName(),
+    collections: {
+      contracts: diff.changed,
+      fees: diff.feeCount,
+      receipts: diff.receiptCount,
+      work_reports: diff.reportCount,
+      cemetery_info: diff.cemeteryCount,
+      contract_files: fileCount,
+      work_meta: 1,
+    },
+    ...feeSum,
+  };
+}
+
 /** Supervisor button, 01:00 timer, and cron share this. Env only. Never logs secrets. */
 export async function runWorkSyncFromEnv(source: "button" | "timer" | "cron"): Promise<WorkSyncResult> {
   if (syncing) {
@@ -146,7 +215,7 @@ export async function runWorkSyncFromEnv(source: "button" | "timer" | "cron"): P
   syncing = true;
   beginWorkSyncProgress("원본에서 복사하는 중…");
   try {
-    const result = await syncWorkFromSource(creds);
+    const result = source === "button" ? await syncWorkFromSource(creds) : await syncWorkDiffFromSource(creds);
     if (result.ok) {
       console.log(
         `[work-sync] ok ${source} savedTo=${result.savedTo} contracts=${result.contractCount} fees=${result.feeCount} receipts=${result.receiptCount}`,

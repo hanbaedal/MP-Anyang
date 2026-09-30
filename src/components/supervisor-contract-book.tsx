@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { emptyContractBook, type ContractBook, type ContractHit } from "@/lib/contract-book";
+import { emptyContractBook, contractListHref, type ContractBook, type ContractHit, type ContractListFilters } from "@/lib/contract-book";
 
 const TABS = ["묘지계약서", "사용자관리", "연고자관리", "관리비청구", "묘지위치", "상담관리", "석물관리"] as const;
 const TOMB_TYPES = ["묘태석", "상석", "비석", "화병", "향로", "판석", "기타"];
@@ -233,15 +233,19 @@ function FamilyForm({ book, patch }: { book: ContractBook; patch: (partial: Part
 }
 
 export function SupervisorContractBook({
-  query,
+  filters,
+  page,
+  pageSize,
   total,
-  shown,
+  matched,
   hits,
   book,
 }: {
-  query: string;
+  filters: ContractListFilters;
+  page: number;
+  pageSize: number;
   total: number;
-  shown: number;
+  matched: number;
   hits: ContractHit[];
   book: ContractBook | null;
 }) {
@@ -285,7 +289,7 @@ export function SupervisorContractBook({
     setKept("저장했습니다.");
     setCreating(false);
     const id = `${data.tombNo}::${data.contractNo ?? ""}`;
-    router.push(`/supervisor/contracts?q=${encodeURIComponent(data.tombNo)}&id=${encodeURIComponent(id)}`);
+    router.push(contractListHref({ tomb: data.tombNo, user: "", family: "", phone: "", kind: "all", id }));
     router.refresh();
   }
 
@@ -312,25 +316,55 @@ export function SupervisorContractBook({
     router.refresh();
   }
 
+  const pages = Math.max(1, Math.ceil(matched / pageSize));
+  const from = matched === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(matched, page * pageSize);
+  const prevHref = contractListHref({ ...filters, page: page - 1, id: book?.key });
+  const nextHref = contractListHref({ ...filters, page: page + 1, id: book?.key });
+
   return (
     <div className="space-y-3 text-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-[#9db7d0] bg-[#f4f8fc] px-2 py-2">
-        <form action="/supervisor/contracts" className="flex flex-wrap items-center gap-1">
-          <input
-            name="q"
-            defaultValue={query}
-            placeholder="묘지번호, 계약번호, 사용자, 연고자"
-            className="h-7 w-64 border border-[#b7c6d6] bg-white px-2 text-xs"
-          />
+        <form action="/supervisor/contracts" className="flex flex-wrap items-end gap-2">
+          <label className="text-[11px] text-slate-600">
+            묘지번호
+            <input name="tomb" defaultValue={filters.tomb} className="mt-0.5 block h-7 w-28 border border-[#b7c6d6] bg-white px-2 text-xs" />
+          </label>
+          <label className="text-[11px] text-slate-600">
+            사용자
+            <input name="user" defaultValue={filters.user} className="mt-0.5 block h-7 w-28 border border-[#b7c6d6] bg-white px-2 text-xs" />
+          </label>
+          <label className="text-[11px] text-slate-600">
+            연고자
+            <input name="family" defaultValue={filters.family} className="mt-0.5 block h-7 w-28 border border-[#b7c6d6] bg-white px-2 text-xs" />
+          </label>
+          <label className="text-[11px] text-slate-600">
+            전화번호
+            <input name="phone" defaultValue={filters.phone} className="mt-0.5 block h-7 w-32 border border-[#b7c6d6] bg-white px-2 text-xs" />
+          </label>
+          <fieldset className="flex h-7 items-center gap-2 border border-[#b7c6d6] bg-white px-2 text-[11px]">
+            <legend className="sr-only">조회조건</legend>
+            {(
+              [
+                ["contract", "계약"],
+                ["move", "이장"],
+                ["all", "전체"],
+              ] as const
+            ).map(([value, label]) => (
+              <label key={value} className="inline-flex items-center gap-1">
+                <input type="radio" name="kind" value={value} defaultChecked={filters.kind === value} />
+                {label}
+              </label>
+            ))}
+          </fieldset>
           <button type="submit" className="h-7 bg-[#6b7280] px-3 text-xs text-white">
             검색
           </button>
           <a href="/supervisor/contracts" className="inline-flex h-7 items-center bg-[#6b7280] px-3 text-xs text-white">
             새조건
           </a>
-          <span className="px-2 text-[11px] text-slate-500">
-            계약 {total.toLocaleString("ko-KR")}건
-            {query ? ` · 검색 ${shown.toLocaleString("ko-KR")}건` : ""}
+          <span className="px-1 text-[11px] text-slate-500">
+            {matched.toLocaleString("ko-KR")} / {total.toLocaleString("ko-KR")}
           </span>
         </form>
         <div className="flex gap-1">
@@ -350,22 +384,22 @@ export function SupervisorContractBook({
       </div>
 
       {kept ? <p className="text-xs text-slate-600">{kept}</p> : null}
-      {query ? (
-        <div className="max-h-40 overflow-auto border border-[#9db7d0]">
-          <table className="w-full border-collapse text-xs">
-            <thead className="sticky top-0 bg-[#d7ebfb]">
-              <tr>
-                {["묘지번호", "계약번호", "사용자", "연고자", "매장일자", "평수"].map((header) => (
-                  <th key={header} className="border border-[#c5d4e4] px-1 py-1 text-left font-medium">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {hits.map((hit) => {
+      <div className="max-h-56 overflow-auto border border-[#9db7d0]">
+        <table className="w-full border-collapse text-xs">
+          <thead className="sticky top-0 bg-[#d7ebfb]">
+            <tr>
+              {["묘지번호", "매장일자", "사용자", "연고자", "평수"].map((header) => (
+                <th key={header} className="border border-[#c5d4e4] px-1 py-1 text-left font-medium">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {hits.length ? (
+              hits.map((hit) => {
                 const open = current?.key === hit.key;
-                const href = `/supervisor/contracts?q=${encodeURIComponent(query)}&id=${encodeURIComponent(hit.key)}`;
+                const href = contractListHref({ ...filters, page, id: hit.key });
                 return (
                   <tr key={hit.key} className={open ? "bg-[#fff4e5]" : "odd:bg-white"}>
                     <td className="border border-[#e2e8f0] px-1 py-0.5">
@@ -373,18 +407,42 @@ export function SupervisorContractBook({
                         {hit.tombNo}
                       </a>
                     </td>
-                    <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.contractNo}</td>
+                    <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.burialDate}</td>
                     <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.userName}</td>
                     <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.familyName}</td>
-                    <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.burialDate}</td>
                     <td className="border border-[#e2e8f0] px-1 py-0.5">{hit.pyeong}</td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+              })
+            ) : (
+              <tr>
+                <td colSpan={5} className="border border-[#e2e8f0] px-1 py-4 text-center text-slate-400">
+                  조건에 맞는 계약이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center gap-2 text-[11px] text-slate-600">
+        {page > 1 ? (
+          <a href={prevHref} className="border border-[#b7c6d6] bg-white px-2 py-1">
+            이전
+          </a>
+        ) : (
+          <span className="border border-[#e2e8f0] px-2 py-1 text-slate-300">이전</span>
+        )}
+        <span>
+          {from.toLocaleString("ko-KR")}-{to.toLocaleString("ko-KR")} / {matched.toLocaleString("ko-KR")} · {page} / {pages}
+        </span>
+        {page < pages ? (
+          <a href={nextHref} className="border border-[#b7c6d6] bg-white px-2 py-1">
+            다음
+          </a>
+        ) : (
+          <span className="border border-[#e2e8f0] px-2 py-1 text-slate-300">다음</span>
+        )}
+      </div>
 
       <div className="flex flex-wrap border-b border-[#7aa2c4] bg-[#f7fbfe]">
         {TABS.map((item) => (
@@ -495,7 +553,7 @@ export function SupervisorContractBook({
         </div>
       ) : (
         <p className="border border-[#9db7d0] bg-white px-3 py-8 text-center text-sm text-slate-500">
-          묘지번호, 계약번호, 사용자, 연고자로 계약을 찾으면 계약서가 열립니다.
+          목록에서 묘지번호를 누르면 계약서가 열립니다.
         </p>
       )}
     </div>

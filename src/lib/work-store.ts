@@ -1,5 +1,8 @@
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cache } from "react";
+import type { ContractListFilters, ContractListKind } from "./contract-book";
+import { contractLookupFields } from "./contract-book";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo, mongoDbName, mongoUriSet, requireDb } from "./mongo";
 import type { CemeteryInfoCopy, ContractCopy, ContractFileCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
@@ -14,6 +17,10 @@ export type WorkMeta = {
   reportCount: number;
   cemeteryCount: number;
   message: string;
+  feeDigest?: string;
+  receiptDigest?: string;
+  reportDigest?: string;
+  cemeteryDigest?: string;
 };
 
 export type WorkStorage = {
@@ -406,9 +413,12 @@ export async function upsertSupervisorContract(
       await filesCol.deleteOne({ tombNo: previous.tombNo, contractNo: previous.contractNo });
     }
     const existing = await contracts.findOne({ tombNo: contract.tombNo, contractNo: contract.contractNo });
+    const lookup = contractLookupFields(file.inputs);
     const merged = {
       ...(existing ? (withoutMongoId<ContractCopy>([existing])[0] ?? {}) : {}),
       ...contract,
+      ...(lookup.moveKind ? { moveKind: lookup.moveKind } : {}),
+      ...(lookup.phoneDigits ? { phoneDigits: lookup.phoneDigits } : {}),
     };
     await contracts.replaceOne(
       { tombNo: contract.tombNo, contractNo: contract.contractNo },
@@ -488,4 +498,410 @@ export function summarizeFees(fees: FeeCopy[]) {
     }
   }
   return { paidCount, paidAmount, unpaidCount, unpaidAmount };
+}
+
+const CONTRACT_PAGE = 30;
+const MOV = "contractContract\uFF0Etp_mov";
+const TEL = "contractContract\uFF0Etel_con";
+const HP = "contractFamily\uFF0Eno_hp";
+const HOME = "contractFamily\uFF0Eno_home";
+
+let lookupReady: Promise<void> | null = null;
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function contains(value: string) {
+  return { $regex: escapeRegex(value), $options: "i" };
+}
+
+function stable(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((item) => stable(item)).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => key !== "_id" && key !== "sourceHash" && key !== "sourceKey")
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stable(item)}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+function digestOf(rows: object[]) {
+  const hash = createHash("sha1");
+  for (const part of rows.map((row) => stable(row)).sort()) hash.update(part).update("\n");
+  return hash.digest("hex");
+}
+
+function contractBody(row: {
+  tombNo?: string;
+  contractNo?: string;
+  burialDate?: string;
+  userName?: string;
+  familyName?: string;
+  pyeong?: string;
+  address?: string;
+}) {
+  return {
+    tombNo: row.tombNo ?? "",
+    contractNo: row.contractNo ?? "",
+    burialDate: row.burialDate ?? "",
+    userName: row.userName ?? "",
+    familyName: row.familyName ?? "",
+    pyeong: row.pyeong ?? "",
+    address: row.address ?? "",
+  };
+}
+
+async function ensureContractIndexes(db: NonNullable<Awaited<ReturnType<typeof getDb>>>) {
+  await Promise.all([
+    db.collection("contracts").createIndex({ tombNo: 1, contractNo: 1 }).catch(() => undefined),
+    db.collection("contracts").createIndex({ moveKind: 1 }).catch(() => undefined),
+    db.collection("fees").createIndex({ tombNo: 1 }).catch(() => undefined),
+    db.collection("receipts").createIndex({ tombNo: 1 }).catch(() => undefined),
+    db.collection("contract_files").createIndex({ tombNo: 1, contractNo: 1 }).catch(() => undefined),
+  ]);
+}
+
+async function backfillContractLookup(db: NonNullable<Awaited<ReturnType<typeof getDb>>>) {
+  const missing = await db.collection("contracts").countDocuments({ moveKind: { $exists: false } });
+  if (missing === 0) return;
+  const cursor = db.collection("contract_files").find(
+    {},
+    { projection: { tombNo: 1, contractNo: 1, [`inputs.${MOV}`]: 1, [`inputs.${TEL}`]: 1, [`inputs.${HP}`]: 1, [`inputs.${HOME}`]: 1 } },
+  );
+  const ops: { updateOne: { filter: { tombNo: string; contractNo: string }; update: { $set: { moveKind: string; phoneDigits: string } } } }[] = [];
+  const flush = async () => {
+    if (!ops.length) return;
+    await db.collection("contracts").bulkWrite(ops, { ordered: false });
+    ops.length = 0;
+  };
+  for await (const doc of cursor) {
+    const inputs = (doc.inputs ?? {}) as Record<string, string>;
+    const moveKind = String(inputs[MOV] ?? "").trim();
+    const phoneDigits = [inputs[TEL], inputs[HP], inputs[HOME]].join("").replace(/\D/g, "");
+    const tombNo = String(doc.tombNo ?? "");
+    const contractNo = String(doc.contractNo ?? "");
+    if (!tombNo) continue;
+    ops.push({ updateOne: { filter: { tombNo, contractNo }, update: { $set: { moveKind, phoneDigits } } } });
+    if (ops.length >= 400) await flush();
+  }
+  await flush();
+  await db.collection("contracts").updateMany({ moveKind: { $exists: false } }, { $set: { moveKind: "", phoneDigits: "" } });
+}
+
+export function ensureContractLookup() {
+  if (!mongoUriSet()) return Promise.resolve();
+  if (!lookupReady) {
+    lookupReady = (async () => {
+      const db = await getDb();
+      if (!db) return;
+      await ensureContractIndexes(db);
+      await backfillContractLookup(db);
+    })().catch((err) => {
+      lookupReady = null;
+      console.error("[work-store] contract lookup backfill failed");
+      console.error(err);
+    });
+  }
+  return lookupReady;
+}
+
+function kindMove(kind: ContractListKind) {
+  if (kind === "contract") return "매장";
+  if (kind === "move") return "이장";
+  return "";
+}
+
+export async function searchSupervisorContracts(filters: ContractListFilters & { page: number }) {
+  const pageSize = CONTRACT_PAGE;
+  const phone = filters.phone.replace(/\D/g, "");
+  const kind = kindMove(filters.kind);
+  if (mongoUriSet()) {
+    await ensureContractLookup();
+    const db = await getDb();
+    if (db) {
+      const query: Record<string, unknown> = {};
+      if (filters.tomb) query.tombNo = contains(filters.tomb);
+      if (filters.user) query.userName = contains(filters.user);
+      if (filters.family) query.familyName = contains(filters.family);
+      if (phone) query.phoneDigits = contains(phone);
+      if (kind) query.moveKind = kind;
+      const col = db.collection("contracts");
+      const [total, matched] = await Promise.all([
+        col.countDocuments({}),
+        col.countDocuments(query),
+      ]);
+      const pages = Math.max(1, Math.ceil(matched / pageSize));
+      const page = Math.min(Math.max(1, filters.page), pages);
+      const docs = await col
+        .find(query, { projection: { tombNo: 1, contractNo: 1, burialDate: 1, userName: 1, familyName: 1, pyeong: 1, address: 1 } })
+        .sort({ tombNo: 1, contractNo: 1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray();
+      return { hits: withoutMongoId<ContractCopy>(docs), total, matched, page, pageSize };
+    }
+  }
+  const rows = await readJsonFile<ContractCopy[]>(files.contracts, []);
+  const needsFile = Boolean(phone || kind);
+  const filesByKey = new Map<string, ContractFileCopy>();
+  if (needsFile) {
+    const stored = await readJsonFile<ContractFileCopy[]>(files.contractFiles, []);
+    for (const file of stored) filesByKey.set(`${file.tombNo}\0${file.contractNo}`, file);
+  }
+  const matchedRows = rows.filter((row) => {
+    if (filters.tomb && !row.tombNo.toLowerCase().includes(filters.tomb.toLowerCase())) return false;
+    if (filters.user && !row.userName.toLowerCase().includes(filters.user.toLowerCase())) return false;
+    if (filters.family && !row.familyName.toLowerCase().includes(filters.family.toLowerCase())) return false;
+    const lookup = row.moveKind
+      ? { moveKind: row.moveKind, phoneDigits: row.phoneDigits ?? "" }
+      : contractLookupFields(filesByKey.get(`${row.tombNo}\0${row.contractNo}`)?.inputs);
+    if (kind && lookup.moveKind !== kind) return false;
+    if (phone && !(lookup.phoneDigits ?? "").includes(phone)) return false;
+    return true;
+  });
+  const pages = Math.max(1, Math.ceil(matchedRows.length / pageSize));
+  const page = Math.min(Math.max(1, filters.page), pages);
+  const hits = matchedRows
+    .slice()
+    .sort((a, b) => a.tombNo.localeCompare(b.tombNo, "ko") || a.contractNo.localeCompare(b.contractNo, "ko"))
+    .slice((page - 1) * pageSize, page * pageSize);
+  return { hits, total: rows.length, matched: matchedRows.length, page, pageSize };
+}
+
+export async function readContractBundle(tombNo: string, contractNo: string) {
+  const contract = mongoUriSet()
+    ? await (async () => {
+        const db = await getDb();
+        const doc = db ? await db.collection("contracts").findOne({ tombNo, contractNo }) : null;
+        return doc ? (withoutMongoId<ContractCopy>([doc])[0] ?? null) : null;
+      })()
+    : (await readJsonFile<ContractCopy[]>(files.contracts, [])).find((row) => row.tombNo === tombNo && row.contractNo === contractNo) ?? null;
+  const file = await readContractFile(tombNo, contractNo);
+  const fees = await readRowsForTomb<FeeCopy>("fees", files.fees, tombNo);
+  const receipts = await readRowsForTomb<ReceiptCopy>("receipts", files.receipts, tombNo);
+  return { contract, file, fees, receipts };
+}
+
+async function readRowsForTomb<T>(collection: string, path: string, tombNo: string) {
+  const plain = tombNo.replace(/\s/g, "");
+  if (mongoUriSet()) {
+    const db = await getDb();
+    if (db) {
+      const docs = await db
+        .collection(collection)
+        .find(plain === tombNo ? { tombNo } : { $or: [{ tombNo }, { tombNo: plain }] })
+        .toArray();
+      return withoutMongoId<T>(docs);
+    }
+  }
+  const rows = await readJsonFile<Array<T & { tombNo?: string }>>(path, []);
+  return rows.filter((row) => row.tombNo === tombNo || row.tombNo?.replace(/\s/g, "") === plain);
+}
+
+export async function readStoredWorkMeta() {
+  if (mongoUriSet()) {
+    const db = await getDb();
+    const doc = db ? await db.collection("work_meta").findOne({ _id: "current" } as never) : null;
+    return doc ? (withoutMongoId<WorkMeta>([doc])[0] ?? null) : null;
+  }
+  return readJsonFile<WorkMeta | null>(files.meta, null);
+}
+
+async function writeStoredWorkMeta(meta: WorkMeta) {
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    const body = toMongoDocs([meta])[0] as Record<string, unknown>;
+    await db.collection("work_meta").replaceOne({ _id: "current" } as never, { _id: "current", ...body }, { upsert: true });
+    return;
+  }
+  await writeJsonFile(files.meta, meta);
+}
+
+export async function upsertContractFiles(rows: ContractFileCopy[]) {
+  if (!rows.length) return 0;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    const filesCol = db.collection("contract_files");
+    const contracts = db.collection("contracts");
+    for (let i = 0; i < rows.length; i += 200) {
+      const chunk = rows.slice(i, i + 200);
+      await filesCol.bulkWrite(
+        chunk.map((file) => ({
+          replaceOne: {
+            filter: { tombNo: file.tombNo, contractNo: file.contractNo },
+            replacement: toMongoDocs([file])[0],
+            upsert: true,
+          },
+        })),
+        { ordered: false },
+      );
+      const updates = chunk.flatMap((file) => {
+        const lookup = contractLookupFields(file.inputs);
+        const $set = {
+          ...(lookup.moveKind ? { moveKind: lookup.moveKind } : {}),
+          ...(lookup.phoneDigits ? { phoneDigits: lookup.phoneDigits } : {}),
+        };
+        if (!Object.keys($set).length) return [];
+        return [{ updateOne: { filter: { tombNo: file.tombNo, contractNo: file.contractNo }, update: { $set } } }];
+      });
+      if (updates.length) await contracts.bulkWrite(updates, { ordered: false });
+    }
+    return rows.length;
+  }
+  const stored = await readJsonFile<ContractFileCopy[]>(files.contractFiles, []);
+  if (stored.length === 0) return 0;
+  const next = new Map(stored.map((row) => [`${row.tombNo}\0${row.contractNo}`, row]));
+  for (const row of rows) next.set(`${row.tombNo}\0${row.contractNo}`, row);
+  await writeJsonFile(files.contractFiles, [...next.values()]);
+  return rows.length;
+}
+
+export type SourceDiffInput = {
+  contracts: ContractCopy[];
+  fees: FeeCopy[];
+  receipts: ReceiptCopy[];
+  reports: ReportCopy[];
+  cemetery: CemeteryInfoCopy[];
+  listedContractTotal: number;
+  sourceHost: string;
+};
+
+export async function applyNightlySourceDiff(input: SourceDiffInput) {
+  const meta = (await readStoredWorkMeta()) ?? {
+    syncedAt: "",
+    sourceHost: input.sourceHost,
+    contractCount: 0,
+    listedContractTotal: 0,
+    feeCount: 0,
+    receiptCount: 0,
+    reportCount: 0,
+    cemeteryCount: 0,
+    message: "",
+  };
+  const feeDigest = input.fees.length ? digestOf(input.fees) : meta.feeDigest;
+  const receiptDigest = input.receipts.length ? digestOf(input.receipts) : meta.receiptDigest;
+  const reportDigest = input.reports.length ? digestOf(input.reports) : meta.reportDigest;
+  const cemeteryDigest = input.cemetery.length ? digestOf(input.cemetery) : meta.cemeteryDigest;
+  let feeCount = 0;
+  let receiptCount = 0;
+  let reportCount = 0;
+  let cemeteryCount = 0;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    if (input.fees.length && feeDigest !== meta.feeDigest) {
+      await replaceCollection(db, "fees", input.fees);
+      feeCount = input.fees.length;
+    }
+    if (input.receipts.length && receiptDigest !== meta.receiptDigest) {
+      await replaceCollection(db, "receipts", input.receipts);
+      receiptCount = input.receipts.length;
+    }
+    if (input.reports.length && reportDigest !== meta.reportDigest) {
+      await replaceCollection(db, "work_reports", input.reports);
+      reportCount = input.reports.length;
+    }
+    if (input.cemetery.length && cemeteryDigest !== meta.cemeteryDigest) {
+      await replaceCollection(db, "cemetery_info", input.cemetery);
+      cemeteryCount = input.cemetery.length;
+    }
+    await ensureContractIndexes(db);
+  }
+  const contractDiff = input.contracts.length ? await diffContractList(input.contracts) : { changed: 0, refresh: [] as { tombNo: string; contractNo: string }[] };
+  const nextMeta: WorkMeta = {
+    ...meta,
+    syncedAt: new Date().toISOString(),
+    sourceHost: input.sourceHost,
+    contractCount: input.contracts.length || meta.contractCount,
+    listedContractTotal: input.listedContractTotal || meta.listedContractTotal,
+    feeCount: input.fees.length || meta.feeCount,
+    receiptCount: input.receipts.length || meta.receiptCount,
+    reportCount: input.reports.length || meta.reportCount,
+    cemeteryCount: input.cemetery.length || meta.cemeteryCount,
+    feeDigest,
+    receiptDigest,
+    reportDigest,
+    cemeteryDigest,
+    message: `새벽 맞춤: 계약 ${contractDiff.changed}건, 계약서 ${contractDiff.refresh.length}건, 관리비 ${feeCount ? input.fees.length : 0}건, 영수증 ${receiptCount ? input.receipts.length : 0}건을 갱신했습니다.`,
+  };
+  await writeStoredWorkMeta(nextMeta);
+  return { ...contractDiff, feeCount, receiptCount, reportCount, cemeteryCount, message: nextMeta.message };
+}
+
+async function diffContractList(rows: ContractCopy[]) {
+  const refresh: { tombNo: string; contractNo: string }[] = [];
+  let changed = 0;
+  if (!mongoUriSet()) {
+    const stored = await readJsonFile<ContractCopy[]>(files.contracts, []);
+    const byKey = new Map(stored.map((row) => [`${row.tombNo}\0${row.contractNo}`, row]));
+    let dirty = false;
+    for (const row of rows) {
+      const key = `${row.tombNo}\0${row.contractNo}`;
+      const prev = byKey.get(key);
+      const body = contractBody(row);
+      const nextHash = createHash("sha1").update(stable(body)).digest("hex");
+      if (!prev || stable(contractBody(prev)) !== stable(body)) {
+        byKey.set(key, { ...(prev ?? {}), ...body });
+        refresh.push({ tombNo: body.tombNo, contractNo: body.contractNo });
+        changed += 1;
+        dirty = true;
+      } else if ((prev as ContractCopy & { sourceHash?: string }).sourceHash !== nextHash) {
+        byKey.set(key, { ...prev, sourceHash: nextHash } as ContractCopy);
+        dirty = true;
+      }
+    }
+    if (dirty && stored.length > 0) await writeJsonFile(files.contracts, [...byKey.values()]);
+    return { changed, refresh };
+  }
+  const db = await requireDb();
+  const col = db.collection("contracts");
+  const filesCol = db.collection("contract_files");
+  const [existing, fileDocs] = await Promise.all([
+    col
+      .find({}, { projection: { tombNo: 1, contractNo: 1, burialDate: 1, userName: 1, familyName: 1, pyeong: 1, address: 1, sourceHash: 1 } })
+      .toArray(),
+    filesCol.find({}, { projection: { tombNo: 1, contractNo: 1 } }).toArray(),
+  ]);
+  const byKey = new Map(existing.map((doc) => [`${doc.tombNo ?? ""}\0${doc.contractNo ?? ""}`, doc]));
+  const fileKeys = new Set(fileDocs.map((doc) => `${doc.tombNo ?? ""}\0${doc.contractNo ?? ""}`));
+  const ops: object[] = [];
+  for (const row of rows) {
+    const body = contractBody(row);
+    const key = `${body.tombNo}\0${body.contractNo}`;
+    const nextHash = createHash("sha1").update(stable(body)).digest("hex");
+    const prev = byKey.get(key) as { sourceHash?: string; tombNo?: string; contractNo?: string; burialDate?: string; userName?: string; familyName?: string; pyeong?: string; address?: string } | undefined;
+    const bodySame = Boolean(prev) && stable(contractBody(prev ?? {})) === stable(body);
+    if (!prev) {
+      ops.push({ insertOne: { document: { ...body, sourceHash: nextHash, sourceKey: key } } });
+      refresh.push({ tombNo: body.tombNo, contractNo: body.contractNo });
+      changed += 1;
+      continue;
+    }
+    if (!bodySame) {
+      ops.push({
+        updateOne: {
+          filter: { tombNo: body.tombNo, contractNo: body.contractNo },
+          update: { $set: { ...body, sourceHash: nextHash, sourceKey: key } },
+        },
+      });
+      refresh.push({ tombNo: body.tombNo, contractNo: body.contractNo });
+      changed += 1;
+      continue;
+    }
+    if (prev.sourceHash !== nextHash) {
+      ops.push({
+        updateOne: {
+          filter: { tombNo: body.tombNo, contractNo: body.contractNo },
+          update: { $set: { sourceHash: nextHash, sourceKey: key } },
+        },
+      });
+    }
+    if (!fileKeys.has(key)) refresh.push({ tombNo: body.tombNo, contractNo: body.contractNo });
+  }
+  for (let i = 0; i < ops.length; i += 400) {
+    const chunk = ops.slice(i, i + 400);
+    if (chunk.length) await col.bulkWrite(chunk as never, { ordered: false });
+  }
+  return { changed, refresh };
 }
