@@ -1,6 +1,7 @@
 import type { Filter } from "mongodb";
 import type { SessionUser } from "./auth-types";
 import { isValidVisitorId, newVisitorId } from "./analytics-cookie";
+import { lookupIpPlaces } from "./ip-place";
 import { getDb, mongoUriSet } from "./mongo";
 
 export { ANON_VISITOR_COOKIE, anonVisitorCookieOptions, isValidVisitorId, newVisitorId } from "./analytics-cookie";
@@ -246,6 +247,7 @@ export type AnalyticsDashboard = {
     name: string;
     role: string;
     ip: string;
+    place: string;
   }[];
   staffPresence: {
     username: string;
@@ -313,12 +315,13 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
       .slice(0, 15)
       .map(([path, views]) => ({ path: pathStatKeyToLabel(path), views }));
 
-    const recentLogins = await db
+    const recentLoginDocs = await db
       .collection<{ at: Date; username: string; name: string; role: string; ip?: string }>("staff_audit")
       .find({ action: "login" })
       .sort({ at: -1 })
       .limit(25)
       .toArray();
+    const places = await lookupIpPlaces(recentLoginDocs.map((row) => row.ip ?? ""));
 
     const presence = await db
       .collection<StaffPresenceDoc>("staff_presence")
@@ -344,12 +347,13 @@ export async function readAnalyticsDashboard(): Promise<AnalyticsDashboard> {
         staffPv: row.staffPv ?? 0,
       })),
       topPaths,
-      recentLogins: recentLogins.map((row) => ({
+      recentLogins: recentLoginDocs.map((row) => ({
         at: row.at.toISOString(),
         username: row.username,
         name: row.name,
         role: row.role,
         ip: row.ip ?? "",
+        place: places.get((row.ip ?? "").trim()) ?? "",
       })),
       staffPresence: presence.map((row) => ({
         username: row.username,

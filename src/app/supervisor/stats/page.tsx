@@ -186,6 +186,7 @@ export default async function SupervisorStatsPage() {
                   <th className="px-3 py-2 font-medium">계정</th>
                   <th className="px-3 py-2 font-medium">역할</th>
                   <th className="px-3 py-2 font-medium">IP</th>
+                  <th className="px-3 py-2 font-medium">위치</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,6 +198,7 @@ export default async function SupervisorStatsPage() {
                     </td>
                     <td className="px-3 py-2">{row.role}</td>
                     <td className="px-3 py-2 font-mono text-xs">{row.ip || "—"}</td>
+                    <td className="px-3 py-2 text-xs">{row.place || "—"}</td>
                   </tr>
                 ))}
               </tbody>
