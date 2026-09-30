@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
 
-export type PartnerKind = "매입" | "매출" | "공통";
+export type PartnerKind = "매입" | "공통";
 
 export type Partner = {
   id: string;
@@ -11,16 +11,21 @@ export type Partner = {
   bizNo: string;
   representative: string;
   phone: string;
+  email: string;
   address: string;
   note: string;
   updatedAt: string;
 };
+
+export type StockKind = "상품" | "부자재";
 
 export type Purchase = {
   id: string;
   purchasedOn: string;
   partnerId: string;
   partnerName: string;
+  stockKind: StockKind;
+  itemId: string;
   item: string;
   spec: string;
   qty: number;
@@ -47,6 +52,8 @@ export type Order = {
   orderedOn: string;
   partnerId: string;
   partnerName: string;
+  stockKind: StockKind;
+  itemId: string;
   item: string;
   spec: string;
   qty: number;
@@ -56,7 +63,62 @@ export type Order = {
   updatedAt: string;
 };
 
-export type SaleLine = { item: string; spec: string; qty: string; unitPrice: string; amount: string };
+export type Material = {
+  id: string;
+  name: string;
+  spec: string;
+  unit: string;
+  inPrice: number;
+  parQty: number;
+  openingQty: number;
+  qty: number;
+  note: string;
+  updatedAt: string;
+};
+
+export type ProductPart = { materialId: string; qty: number };
+
+export type Product = {
+  id: string;
+  name: string;
+  spec: string;
+  outPrice: number;
+  inPrice: number;
+  parQty: number;
+  openingQty: number;
+  qty: number;
+  note: string;
+  parts: ProductPart[];
+  updatedAt: string;
+};
+
+export type SaleStockUse = {
+  productId: string;
+  productQty: number;
+  materials: { materialId: string; qty: number }[];
+};
+
+export type SaleLine = {
+  item: string;
+  spec: string;
+  qty: string;
+  unitPrice: string;
+  amount: string;
+  productId?: string;
+  stockUse?: SaleStockUse;
+};
+
+export type StockView = {
+  kind: StockKind;
+  id: string;
+  name: string;
+  spec: string;
+  qty: number;
+  parQty: number;
+  inPrice: number;
+  outPrice: number;
+  note: string;
+};
 
 export type Sale = {
   id: string;
@@ -83,6 +145,8 @@ const PURCHASES = "work_purchases";
 const INVENTORY = "work_inventory";
 const ORDERS = "work_orders";
 const SALES = "work_sales";
+const MATERIALS = "work_materials";
+const PRODUCTS = "work_products";
 
 const files = {
   partners: dataFile("work-partners.local.json"),
@@ -90,6 +154,8 @@ const files = {
   inventory: dataFile("work-inventory.local.json"),
   orders: dataFile("work-orders.local.json"),
   sales: dataFile("work-sales.local.json"),
+  materials: dataFile("work-materials.local.json"),
+  products: dataFile("work-products.local.json"),
 };
 
 function nowIso() {
@@ -145,7 +211,7 @@ async function writeCollection<T extends { id: string }>(name: string, file: str
 }
 
 export function partnerFromInput(input: Partial<Partner>, previous?: Partner): Partner {
-  const kind = input.kind === "매출" || input.kind === "공통" ? input.kind : "매입";
+  const kind = input.kind === "공통" ? "공통" : "매입";
   const name = cleanText(input.name);
   if (!name) throw new Error("상호를 입력해 주세요.");
   return {
@@ -155,6 +221,7 @@ export function partnerFromInput(input: Partial<Partner>, previous?: Partner): P
     bizNo: cleanText(input.bizNo),
     representative: cleanText(input.representative),
     phone: cleanText(input.phone),
+    email: cleanText(input.email),
     address: cleanText(input.address),
     note: cleanText(input.note),
     updatedAt: nowIso(),
@@ -173,6 +240,8 @@ export function purchaseFromInput(input: Partial<Purchase>, previous?: Purchase)
     purchasedOn,
     partnerId: cleanText(input.partnerId),
     partnerName: cleanText(input.partnerName),
+    stockKind: input.stockKind === "부자재" ? "부자재" : "상품",
+    itemId: cleanText(input.itemId),
     item,
     spec: cleanText(input.spec),
     qty,
@@ -215,7 +284,13 @@ function normalizeInventory(row: Partial<InventoryItem> & { id?: string; unitCos
 
 export async function listPartners() {
   const rows = await readCollection<Partner>(PARTNERS, files.partners);
-  return rows.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  return rows
+    .map((row) => ({
+      ...row,
+      kind: (row.kind === "공통" ? "공통" : "매입") as PartnerKind,
+      email: row.email ?? "",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 }
 
 export async function savePartner(input: Partial<Partner>, id?: string) {
@@ -241,37 +316,40 @@ export async function listPurchases() {
   return rows.sort((a, b) => b.purchasedOn.localeCompare(a.purchasedOn) || b.updatedAt.localeCompare(a.updatedAt));
 }
 
-async function applyStock(item: string, spec: string, deltaQty: number, unitCost: number) {
-  const name = item.trim();
-  if (!name || !deltaQty) return;
-  const rows = (await readCollection<InventoryItem>(INVENTORY, files.inventory)).map((row) =>
-    normalizeInventory(row as InventoryItem & { unitCost?: number }),
-  );
-  const key = stockKey(name, spec);
-  const index = rows.findIndex((row) => stockKey(row.name, row.spec) === key);
-  if (index < 0) {
-    if (deltaQty < 0) return;
-    rows.push({
-      id: randomUUID(),
-      name,
-      spec: spec.trim(),
-      qty: deltaQty,
-      parQty: 0,
-      inPrice: unitCost,
-      outPrice: 0,
-      note: "",
-      updatedAt: nowIso(),
-    });
-  } else {
+async function applyPurchaseStock(row: Purchase, sign: number) {
+  const delta = sign * row.qty;
+  if (!row.item.trim() || !delta) return;
+  if (row.stockKind === "부자재") {
+    const rows = await listMaterials();
+    const index = rows.findIndex((item) => item.id === row.itemId || (item.name === row.item && item.spec === row.spec));
+    if (index < 0) {
+      if (sign < 0) return;
+      throw new Error("부자재를 등록에서 먼저 골라 주세요.");
+    }
     const current = rows[index];
     rows[index] = {
       ...current,
-      qty: current.qty + deltaQty,
-      inPrice: unitCost || current.inPrice,
+      qty: current.qty + delta,
+      inPrice: sign > 0 && row.unitPrice ? row.unitPrice : current.inPrice,
       updatedAt: nowIso(),
     };
+    await writeCollection(MATERIALS, files.materials, rows);
+    return;
   }
-  await writeCollection(INVENTORY, files.inventory, rows);
+  const rows = await listProducts();
+  const index = rows.findIndex((item) => item.id === row.itemId || (item.name === row.item && item.spec === row.spec));
+  if (index < 0) {
+    if (sign < 0) return;
+    throw new Error("상품을 등록에서 먼저 골라 주세요.");
+  }
+  const current = rows[index];
+  rows[index] = {
+    ...current,
+    qty: current.qty + delta,
+    inPrice: sign > 0 && row.unitPrice ? row.unitPrice : current.inPrice,
+    updatedAt: nowIso(),
+  };
+  await writeCollection(PRODUCTS, files.products, rows);
 }
 
 export async function savePurchase(input: Partial<Purchase>, id?: string) {
@@ -280,8 +358,8 @@ export async function savePurchase(input: Partial<Purchase>, id?: string) {
   if (id && index < 0) throw new Error("매입 내역을 찾지 못했습니다.");
   const previous = index >= 0 ? rows[index] : undefined;
   const next = purchaseFromInput(input, previous);
-  if (previous) await applyStock(previous.item, previous.spec, -previous.qty, previous.unitPrice);
-  await applyStock(next.item, next.spec, next.qty, next.unitPrice);
+  if (previous) await applyPurchaseStock(previous, -1);
+  await applyPurchaseStock(next, 1);
   if (index >= 0) rows[index] = next;
   else rows.push(next);
   await writeCollection(PURCHASES, files.purchases, rows);
@@ -292,7 +370,7 @@ export async function deletePurchase(id: string) {
   const rows = await listPurchases();
   const current = rows.find((row) => row.id === id);
   if (!current) throw new Error("매입 내역을 찾지 못했습니다.");
-  await applyStock(current.item, current.spec, -current.qty, current.unitPrice);
+  await applyPurchaseStock(current, -1);
   await writeCollection(
     PURCHASES,
     files.purchases,
@@ -300,29 +378,163 @@ export async function deletePurchase(id: string) {
   );
 }
 
-export async function listInventory() {
-  const rows = await readCollection<InventoryItem>(INVENTORY, files.inventory);
-  return rows
-    .map((row) => normalizeInventory(row as InventoryItem & { unitCost?: number }))
-    .sort((a, b) => a.name.localeCompare(b.name, "ko") || a.spec.localeCompare(b.spec, "ko"));
+const PART_SLOTS = 10;
+
+function partsFromInput(input: ProductPart[] | undefined) {
+  const parts: ProductPart[] = [];
+  for (const row of (input ?? []).slice(0, PART_SLOTS)) {
+    const materialId = cleanText(row?.materialId);
+    const qty = cleanNumber(row?.qty);
+    if (!materialId || qty <= 0) continue;
+    parts.push({ materialId, qty });
+  }
+  return parts;
 }
 
-export async function saveInventory(input: Partial<InventoryItem>, id?: string) {
-  const rows = await listInventory();
+export async function listMaterials() {
+  const rows = await readCollection<Material>(MATERIALS, files.materials);
+  return rows.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+export async function saveMaterial(input: Partial<Material>, id?: string) {
+  const rows = await listMaterials();
   const index = id ? rows.findIndex((row) => row.id === id) : -1;
-  if (id && index < 0) throw new Error("재고를 찾지 못했습니다.");
-  const next = inventoryFromInput(input, index >= 0 ? rows[index] : undefined);
+  if (id && index < 0) throw new Error("부자재를 찾지 못했습니다.");
+  const previous = index >= 0 ? rows[index] : undefined;
+  const name = cleanText(input.name);
+  if (!name) throw new Error("부자재 이름을 입력해 주세요.");
+  const openingQty = cleanNumber(input.openingQty);
+  const qty = previous ? previous.qty + (openingQty - previous.openingQty) : openingQty;
+  const next: Material = {
+    id: previous?.id ?? randomUUID(),
+    name,
+    spec: cleanText(input.spec),
+    unit: cleanText(input.unit),
+    inPrice: cleanNumber(input.inPrice),
+    parQty: cleanNumber(input.parQty),
+    openingQty,
+    qty,
+    note: cleanText(input.note),
+    updatedAt: nowIso(),
+  };
   if (index >= 0) rows[index] = next;
   else rows.push(next);
-  await writeCollection(INVENTORY, files.inventory, rows);
+  await writeCollection(MATERIALS, files.materials, rows);
   return next;
 }
 
-export async function deleteInventory(id: string) {
-  const rows = await listInventory();
+export async function deleteMaterial(id: string) {
+  const products = await listProducts();
+  if (products.some((row) => row.parts.some((part) => part.materialId === id))) {
+    throw new Error("상품 구성에 들어 있는 부자재는 지울 수 없습니다.");
+  }
+  const rows = await listMaterials();
   const next = rows.filter((row) => row.id !== id);
-  if (next.length === rows.length) throw new Error("재고를 찾지 못했습니다.");
-  await writeCollection(INVENTORY, files.inventory, next);
+  if (next.length === rows.length) throw new Error("부자재를 찾지 못했습니다.");
+  await writeCollection(MATERIALS, files.materials, next);
+}
+
+export async function listProducts() {
+  const rows = await readCollection<Product>(PRODUCTS, files.products);
+  return rows
+    .map((row) => ({ ...row, parts: partsFromInput(row.parts) }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+export async function saveProduct(input: Partial<Product>, id?: string) {
+  const rows = await listProducts();
+  const index = id ? rows.findIndex((row) => row.id === id) : -1;
+  if (id && index < 0) throw new Error("상품을 찾지 못했습니다.");
+  const previous = index >= 0 ? rows[index] : undefined;
+  const name = cleanText(input.name);
+  if (!name) throw new Error("상품명을 입력해 주세요.");
+  const openingQty = cleanNumber(input.openingQty);
+  const qty = previous ? previous.qty + (openingQty - previous.openingQty) : openingQty;
+  const next: Product = {
+    id: previous?.id ?? randomUUID(),
+    name,
+    spec: cleanText(input.spec),
+    outPrice: cleanNumber(input.outPrice),
+    inPrice: cleanNumber(input.inPrice ?? previous?.inPrice),
+    parQty: cleanNumber(input.parQty),
+    openingQty,
+    qty,
+    note: cleanText(input.note),
+    parts: partsFromInput(input.parts),
+    updatedAt: nowIso(),
+  };
+  if (index >= 0) rows[index] = next;
+  else rows.push(next);
+  await writeCollection(PRODUCTS, files.products, rows);
+  return next;
+}
+
+export async function deleteProduct(id: string) {
+  const rows = await listProducts();
+  const next = rows.filter((row) => row.id !== id);
+  if (next.length === rows.length) throw new Error("상품을 찾지 못했습니다.");
+  await writeCollection(PRODUCTS, files.products, next);
+}
+
+export async function assembleProduct(id: string, count: number) {
+  if (!(count > 0)) throw new Error("만들 수량을 입력해 주세요.");
+  const products = await listProducts();
+  const materials = await listMaterials();
+  const product = products.find((row) => row.id === id);
+  if (!product) throw new Error("상품을 찾지 못했습니다.");
+  const parts = product.parts.filter((part) => part.materialId && part.qty > 0);
+  if (!parts.length) throw new Error("조합할 부자재가 없습니다.");
+  for (const part of parts) {
+    const material = materials.find((row) => row.id === part.materialId);
+    const need = part.qty * count;
+    if (!material || material.qty < need) throw new Error(`${material?.name || "부자재"} 재고가 부족합니다.`);
+  }
+  for (const part of parts) {
+    const material = materials.find((row) => row.id === part.materialId);
+    if (!material) continue;
+    material.qty -= part.qty * count;
+    material.updatedAt = nowIso();
+  }
+  product.qty += count;
+  product.updatedAt = nowIso();
+  await writeCollection(MATERIALS, files.materials, materials);
+  await writeCollection(PRODUCTS, files.products, products);
+  return product;
+}
+
+export async function listInventory(): Promise<StockView[]> {
+  const [products, materials] = await Promise.all([listProducts(), listMaterials()]);
+  const goods: StockView[] = products.map((row) => ({
+    kind: "상품",
+    id: row.id,
+    name: row.name,
+    spec: row.spec,
+    qty: row.qty,
+    parQty: row.parQty,
+    inPrice: row.inPrice,
+    outPrice: row.outPrice,
+    note: row.note,
+  }));
+  const parts: StockView[] = materials.map((row) => ({
+    kind: "부자재",
+    id: row.id,
+    name: row.name,
+    spec: row.spec,
+    qty: row.qty,
+    parQty: row.parQty,
+    inPrice: row.inPrice,
+    outPrice: 0,
+    note: row.note,
+  }));
+  return [...goods, ...parts];
+}
+
+export async function saveInventory(_input: Partial<InventoryItem>, _id?: string): Promise<StockView> {
+  throw new Error("재고 수량은 상품과 부자재 등록에서 바꿉니다.");
+}
+
+export async function deleteInventory(_id: string) {
+  throw new Error("재고 수량은 상품과 부자재 등록에서 바꿉니다.");
 }
 
 function datedDoc<T extends { id: string }>(
@@ -330,6 +542,8 @@ function datedDoc<T extends { id: string }>(
     date: string;
     partnerId?: string;
     partnerName?: string;
+    stockKind?: StockKind;
+    itemId?: string;
     item?: string;
     spec?: string;
     qty?: unknown;
@@ -351,6 +565,8 @@ function datedDoc<T extends { id: string }>(
     [dateKey]: on,
     partnerId: cleanText(input.partnerId),
     partnerName: cleanText(input.partnerName),
+    stockKind: input.stockKind === "부자재" ? "부자재" : "상품",
+    itemId: cleanText(input.itemId),
     item,
     spec: cleanText(input.spec),
     qty,
@@ -394,10 +610,64 @@ function lineQty(line: SaleLine) {
   return Number.isFinite(n) ? n : 0;
 }
 
-async function applySaleLines(lines: SaleLine[], sign: number) {
-  for (const line of lines) {
-    await applyStock(line.item, line.spec, sign * lineQty(line), 0);
+function findProduct(rows: Product[], line: SaleLine) {
+  if (line.productId) {
+    const hit = rows.find((row) => row.id === line.productId);
+    if (hit) return hit;
   }
+  const name = line.item.trim();
+  return rows.find((row) => row.name === name && row.spec === line.spec.trim());
+}
+
+function applySaleLine(products: Product[], materials: Material[], line: SaleLine): SaleStockUse {
+  const qty = lineQty(line);
+  if (!line.item.trim() || qty <= 0) return { productId: "", productQty: 0, materials: [] };
+  const product = findProduct(products, line);
+  if (!product) throw new Error(`${line.item} 상품을 등록에서 먼저 골라 주세요.`);
+  const fromProduct = Math.min(Math.max(0, product.qty), qty);
+  const shortfall = qty - fromProduct;
+  const used: { materialId: string; qty: number }[] = [];
+  if (shortfall > 0) {
+    const parts = product.parts.filter((part) => part.materialId && part.qty > 0);
+    if (!parts.length) throw new Error(`${product.name} 재고가 부족합니다.`);
+    for (const part of parts) {
+      const need = part.qty * shortfall;
+      const material = materials.find((row) => row.id === part.materialId);
+      if (!material || material.qty < need) throw new Error(`${material?.name || "부자재"} 재고가 부족합니다.`);
+      used.push({ materialId: part.materialId, qty: need });
+    }
+  }
+  product.qty -= fromProduct;
+  product.updatedAt = nowIso();
+  for (const part of used) {
+    const material = materials.find((row) => row.id === part.materialId);
+    if (!material) continue;
+    material.qty -= part.qty;
+    material.updatedAt = nowIso();
+  }
+  return { productId: product.id, productQty: fromProduct, materials: used };
+}
+
+function restoreSaleLine(products: Product[], materials: Material[], line: SaleLine) {
+  const use = line.stockUse;
+  if (use?.productId) {
+    const product = products.find((row) => row.id === use.productId);
+    if (product) {
+      product.qty += use.productQty;
+      product.updatedAt = nowIso();
+    }
+    for (const part of use.materials) {
+      const material = materials.find((row) => row.id === part.materialId);
+      if (!material) continue;
+      material.qty += part.qty;
+      material.updatedAt = nowIso();
+    }
+    return;
+  }
+  const product = findProduct(products, line);
+  if (!product) return;
+  product.qty += lineQty(line);
+  product.updatedAt = nowIso();
 }
 
 export function saleFromInput(input: Partial<Sale>, previous?: Sale): Sale {
@@ -410,9 +680,10 @@ export function saleFromInput(input: Partial<Sale>, previous?: Sale): Sale {
         qty: cleanText(line?.qty),
         unitPrice: cleanText(line?.unitPrice),
         amount: cleanText(line?.amount),
+        productId: cleanText(line?.productId),
       }))
     : [];
-  while (lines.length < 6) lines.push({ item: "", spec: "", qty: "", unitPrice: "", amount: "" });
+  while (lines.length < 6) lines.push({ item: "", spec: "", qty: "", unitPrice: "", amount: "", productId: "" });
   return {
     id: previous?.id ?? randomUUID(),
     soldOn,
@@ -445,8 +716,14 @@ export async function saveSale(input: Partial<Sale>, id?: string) {
   if (id && index < 0) throw new Error("매출을 찾지 못했습니다.");
   const previous = index >= 0 ? rows[index] : undefined;
   const next = saleFromInput(input, previous);
-  if (previous) await applySaleLines(previous.lines, 1);
-  await applySaleLines(next.lines, -1);
+  const products = await listProducts();
+  const materials = await listMaterials();
+  if (previous) {
+    for (const line of previous.lines) restoreSaleLine(products, materials, line);
+  }
+  next.lines = next.lines.map((line) => ({ ...line, stockUse: applySaleLine(products, materials, line) }));
+  await writeCollection(PRODUCTS, files.products, products);
+  await writeCollection(MATERIALS, files.materials, materials);
   if (index >= 0) rows[index] = next;
   else rows.push(next);
   await writeCollection(SALES, files.sales, rows);
@@ -457,7 +734,11 @@ export async function deleteSale(id: string) {
   const rows = await listSales();
   const current = rows.find((row) => row.id === id);
   if (!current) throw new Error("매출을 찾지 못했습니다.");
-  await applySaleLines(current.lines, 1);
+  const products = await listProducts();
+  const materials = await listMaterials();
+  for (const line of current.lines) restoreSaleLine(products, materials, line);
+  await writeCollection(PRODUCTS, files.products, products);
+  await writeCollection(MATERIALS, files.materials, materials);
   await writeCollection(
     SALES,
     files.sales,

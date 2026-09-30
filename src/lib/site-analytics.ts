@@ -3,7 +3,7 @@ import type { SessionUser } from "./auth-types";
 import { isValidVisitorId, newVisitorId } from "./analytics-cookie";
 import { lookupIpPlaces } from "./ip-place";
 import { getDb, mongoUriSet } from "./mongo";
-import { isStaffWorkHour } from "./work-hours";
+import { isStaffWorkHour, isWorkHourLimitedRole } from "./work-hours";
 
 export { ANON_VISITOR_COOKIE, anonVisitorCookieOptions, isValidVisitorId, newVisitorId } from "./analytics-cookie";
 
@@ -196,7 +196,7 @@ export async function recordStaffLogin(user: SessionUser, ip?: string | null, us
 }
 
 async function touchStaffPresence(user: SessionUser, ip: string | null, force: boolean) {
-  if (!isStaffWorkHour()) return;
+  if (isWorkHourLimitedRole(user.role) && !isStaffWorkHour()) return;
   const db = await getDb();
   if (!db) return;
   const now = new Date();
@@ -224,7 +224,8 @@ async function touchStaffPresence(user: SessionUser, ip: string | null, force: b
 }
 
 export async function recordStaffHeartbeat(user: SessionUser, ip?: string | null) {
-  if (!mongoUriSet() || !isStaffWorkHour()) return;
+  if (!mongoUriSet()) return;
+  if (isWorkHourLimitedRole(user.role) && !isStaffWorkHour()) return;
   try {
     const db = await getDb();
     if (!db) return;

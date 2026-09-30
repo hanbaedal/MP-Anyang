@@ -3,6 +3,8 @@ export const WORK_NAV = [
   { href: "/work/fees", i18n: "work.fees" },
   { href: "/work/receipts", i18n: "work.receipts" },
   { href: "/work/partners", i18n: "work.partners" },
+  { href: "/work/materials", i18n: "work.materials" },
+  { href: "/work/products", i18n: "work.products" },
   { href: "/work/orders", i18n: "work.orders" },
   { href: "/work/purchases", i18n: "work.purchases" },
   { href: "/work/statements", i18n: "work.statements" },

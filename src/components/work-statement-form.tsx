@@ -5,19 +5,22 @@ import { createPortal, flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { TransactionStatementPreview } from "@/components/transaction-statement-preview";
+import { TransactionStatementPreview, STATEMENT_SHEET_ASPECT } from "@/components/transaction-statement-preview";
+import { CatalogItemSelect } from "@/components/work-catalog-select";
 import { TransactionStatementPage, TransactionStatementPrintRoot } from "@/components/transaction-statement-sheet";
 import { DateSpan, ViewToggle, inDateRange } from "@/components/work-ledger-controls";
 import type { ContractCopy } from "@/lib/cemetery-parse";
 import { ledgerRequest } from "@/lib/ledger-client";
 import { koreanWonAmount } from "@/lib/korean-won";
-import type { Sale } from "@/lib/work-ledgers";
+import type { Product, Sale } from "@/lib/work-ledgers";
 import type { DateParts, StatementLine, StatementPayload } from "@/lib/receipt-statement";
 
 const LINE_COUNT = 6;
 
-function emptyLine(): StatementLine {
-  return { item: "", spec: "", qty: "", unitPrice: "", amount: "" };
+type FormLine = StatementLine & { productId?: string };
+
+function emptyLine(): FormLine {
+  return { item: "", spec: "", qty: "", unitPrice: "", amount: "", productId: "" };
 }
 
 function kstToday() {
@@ -145,7 +148,7 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
   const [sanFrom, setSanFrom] = useState("");
   const [sanTo, setSanTo] = useState("");
   const [sanAmount, setSanAmount] = useState("");
-  const [lines, setLines] = useState<StatementLine[]>(() => Array.from({ length: LINE_COUNT }, emptyLine));
+  const [lines, setLines] = useState<FormLine[]>(() => Array.from({ length: LINE_COUNT }, emptyLine));
   const [lockMgmt, setLockMgmt] = useState(false);
   const [lockSan, setLockSan] = useState(false);
   const [serial, setSerial] = useState("");
@@ -161,6 +164,14 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
   const [to, setTo] = useState("");
   const [itemQuery, setItemQuery] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    void ledgerRequest<{ rows: Product[] }>("/api/work/products", "GET")
+      .then((json) => setProducts(json.rows))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (lockMgmt) return;
@@ -419,12 +430,12 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
           </div>
         </div>
       ) : (
-    <div className="grid items-start gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+    <div className="grid items-start gap-4 min-[1600px]:h-[calc(100dvh-10rem)] min-[1600px]:grid-cols-[24rem_minmax(0,1fr)]">
       <form
         className="space-y-3 rounded-xl border bg-card p-3"
         onSubmit={(event) => {
           event.preventDefault();
-          void printStatement();
+          if (window.matchMedia("(min-width: 1600px)").matches) void printStatement();
         }}
       >
         <Field label="고인성명">
@@ -493,7 +504,33 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
             <tbody>
               {lines.map((line, index) => (
                 <tr key={index}>
-                  {(["item", "spec", "qty", "unitPrice", "amount"] as const).map((key) => (
+                  <td className="p-0.5">
+                    <CatalogItemSelect
+                      products={products}
+                      materials={[]}
+                      includeMaterials={false}
+                      priceOf="out"
+                      stockKind="상품"
+                      itemId={line.productId || ""}
+                      onChange={(next) => {
+                        if (index === 0) setLockMgmt(true);
+                        if (index === 1) setLockSan(true);
+                        setLines((prev) => prev.map((row, i) => {
+                          if (i !== index) return row;
+                          const qty = Number(String(row.qty).replaceAll(",", "")) || 0;
+                          return {
+                            ...row,
+                            productId: next.itemId,
+                            item: next.item,
+                            spec: next.spec,
+                            unitPrice: String(next.unitPrice || ""),
+                            amount: qty && next.unitPrice ? String(Math.round(qty * next.unitPrice)) : row.amount,
+                          };
+                        }));
+                      }}
+                    />
+                  </td>
+                  {(["spec", "qty", "unitPrice", "amount"] as const).map((key) => (
                     <td key={key} className="p-0.5">
                       <Input
                         className="h-8 px-2 text-xs"
@@ -522,16 +559,44 @@ export function WorkStatementForm({ contracts }: { contracts: ContractCopy[] }) 
             >
               저장
             </Button>
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" className="hidden min-[1600px]:inline-flex">
               출력
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="min-[1600px]:hidden"
+              disabled={!saleId}
+              onClick={() => setPreviewOpen(true)}
+            >
+              보기
             </Button>
           </div>
         </div>
       </form>
 
-      <div className="h-[min(78vh,820px)] min-h-[420px] overflow-hidden rounded-md border bg-muted/30">
+      <div className="hidden h-full min-h-0 overflow-hidden rounded-md border bg-muted/30 min-[1600px]:block">
         <TransactionStatementPreview company={draft.company} customer={draft.customer} />
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent
+          className="flex h-[min(96vh,920px)] max-h-[96vh] flex-col gap-2 overflow-hidden p-2 sm:p-3"
+          style={{
+            width: `min(98vw, calc((min(96vh, 920px) - 7.5rem) * ${STATEMENT_SHEET_ASPECT} + 1.5rem))`,
+            maxWidth: "98vw",
+          }}
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 gap-0.5 pr-8">
+            <DialogTitle className="text-base">거래명세서 미리보기</DialogTitle>
+            <DialogDescription className="text-xs">A4 가로 · 왼쪽 회사용 · 오른쪽 고객용</DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 basis-0 overflow-hidden rounded-md bg-muted/30">
+            <TransactionStatementPreview company={draft.company} customer={draft.customer} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={lookupOpen}

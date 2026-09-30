@@ -52,6 +52,8 @@ data/work-purchases.local.json
 data/work-inventory.local.json
 data/work-orders.local.json
 data/work-sales.local.json
+data/work-materials.local.json
+data/work-products.local.json
 public/uploads/*
 !public/uploads/.gitkeep
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { EXEC_HOME } from "./exec-nav";
 import { afterLoginPath, isCmsStaff, isStaffRole, isStatusStaff, type SessionUser } from "./auth-types";
 import { ensureAuthSeed, findStaffByUsername } from "./staff";
-import { isStaffWorkHour } from "./work-hours";
+import { isStaffWorkHour, isWorkHourLimitedRole } from "./work-hours";
 import { verifyPassword } from "./passwords";
 
 export { isStaffRole, isCmsStaff, isCeo, isStatusStaff, afterLoginPath } from "./auth-types";
@@ -75,7 +75,7 @@ export function sessionCookieOptions() {
 export async function readSession(): Promise<SessionUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = decodeSession(token);
-  if (session && !isStaffWorkHour()) return null;
+  if (session && isWorkHourLimitedRole(session.role) && !isStaffWorkHour()) return null;
   return session;
 }
 

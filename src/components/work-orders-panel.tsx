@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ledgerRequest } from "@/lib/ledger-client";
+import { CatalogItemSelect } from "@/components/work-catalog-select";
 import { DateSpan, ViewToggle, inDateRange } from "@/components/work-ledger-controls";
-import type { Order, Partner } from "@/lib/work-ledgers";
+import type { Material, Order, Partner, Product, StockKind } from "@/lib/work-ledgers";
 
 function today() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -16,11 +17,13 @@ function today() {
   }).format(new Date());
 }
 
-const empty = { orderedOn: "", partnerId: "", item: "", spec: "", qty: "", unitPrice: "", note: "" };
+const empty = { orderedOn: "", partnerId: "", stockKind: "상품" as StockKind, itemId: "", item: "", spec: "", qty: "", unitPrice: "", note: "" };
 
 export function WorkOrdersPanel() {
   const [rows, setRows] = useState<Order[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [form, setForm] = useState({ ...empty, orderedOn: today() });
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -32,12 +35,16 @@ export function WorkOrdersPanel() {
   const [partnerFilter, setPartnerFilter] = useState("");
 
   async function reload() {
-    const [orders, partnerList] = await Promise.all([
+    const [orders, partnerList, productList, materialList] = await Promise.all([
       ledgerRequest<{ rows: Order[] }>("/api/work/orders", "GET"),
       ledgerRequest<{ rows: Partner[] }>("/api/work/partners", "GET"),
+      ledgerRequest<{ rows: Product[] }>("/api/work/products", "GET"),
+      ledgerRequest<{ rows: Material[] }>("/api/work/materials", "GET"),
     ]);
     setRows(orders.rows);
     setPartners(partnerList.rows.filter((row) => row.kind === "매입" || row.kind === "공통"));
+    setProducts(productList.rows);
+    setMaterials(materialList.rows);
   }
 
   useEffect(() => {
@@ -114,7 +121,22 @@ export function WorkOrdersPanel() {
           </label>
           <label className="space-y-1 text-xs text-muted-foreground">
             품목
-            <Input value={form.item} onChange={(event) => setField("item", event.target.value)} />
+            <CatalogItemSelect
+              products={products}
+              materials={materials}
+              includeMaterials
+              priceOf="in"
+              stockKind={form.stockKind}
+              itemId={form.itemId}
+              onChange={(next) => setForm((prev) => ({
+                ...prev,
+                stockKind: next.stockKind,
+                itemId: next.itemId,
+                item: next.item,
+                spec: next.spec,
+                unitPrice: String(next.unitPrice || ""),
+              }))}
+            />
           </label>
           <label className="space-y-1 text-xs text-muted-foreground">
             규격
@@ -196,6 +218,8 @@ export function WorkOrdersPanel() {
                             setForm({
                               orderedOn: row.orderedOn,
                               partnerId: row.partnerId,
+                              stockKind: row.stockKind === "부자재" ? "부자재" : "상품",
+                              itemId: row.itemId || "",
                               item: row.item,
                               spec: row.spec,
                               qty: String(row.qty),

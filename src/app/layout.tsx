@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <LocaleProvider locale={locale}>
           <PageViewTracker />
-          {session ? <StaffActivityBeacon /> : null}
+          {session ? <StaffActivityBeacon limited={session.role === "admin"} /> : null}
           <a
             href="#content"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"

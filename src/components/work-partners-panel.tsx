@@ -8,11 +8,12 @@ import { ledgerRequest } from "@/lib/ledger-client";
 import type { Partner, PartnerKind } from "@/lib/work-ledgers";
 
 const empty = {
-  kind: "공통" as PartnerKind,
+  kind: "매입" as PartnerKind,
   name: "",
   bizNo: "",
   representative: "",
   phone: "",
+  email: "",
   address: "",
   note: "",
 };
@@ -87,15 +88,15 @@ export function WorkPartnersPanel() {
             value={form.kind}
             onChange={(event) => setField("kind", event.target.value)}
           >
-            <option value="공통">공통</option>
             <option value="매입">매입</option>
-            <option value="매출">매출</option>
+            <option value="공통">공통</option>
           </select>
         </label>
         <Field label="상호" value={form.name} onChange={(value) => setField("name", value)} />
         <Field label="사업자번호" value={form.bizNo} onChange={(value) => setField("bizNo", value)} />
         <Field label="대표자" value={form.representative} onChange={(value) => setField("representative", value)} />
         <Field label="전화" value={form.phone} onChange={(value) => setField("phone", value)} />
+        <Field label="이메일" value={form.email} onChange={(value) => setField("email", value)} />
         <Field label="주소" value={form.address} onChange={(value) => setField("address", value)} />
         <Field label="메모" value={form.note} onChange={(value) => setField("note", value)} />
         <div className="flex items-end gap-2 sm:col-span-2">
@@ -128,6 +129,7 @@ export function WorkPartnersPanel() {
               <th className="px-3 py-2 font-medium">사업자번호</th>
               <th className="px-3 py-2 font-medium">대표자</th>
               <th className="px-3 py-2 font-medium">전화</th>
+              <th className="px-3 py-2 font-medium">이메일</th>
               <th className="px-3 py-2 font-medium">주소</th>
               <th className="px-3 py-2 font-medium" />
             </tr>
@@ -135,7 +137,7 @@ export function WorkPartnersPanel() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
+                <td className="px-3 py-6 text-muted-foreground" colSpan={8}>
                   등록된 거래처가 없습니다.
                 </td>
               </tr>
@@ -147,6 +149,7 @@ export function WorkPartnersPanel() {
                   <td className="px-3 py-2">{row.bizNo || "—"}</td>
                   <td className="px-3 py-2">{row.representative || "—"}</td>
                   <td className="px-3 py-2">{row.phone || "—"}</td>
+                  <td className="px-3 py-2">{row.email || "—"}</td>
                   <td className="px-3 py-2">{row.address || "—"}</td>
                   <td className="px-3 py-2 text-right">
                     <Button
@@ -161,6 +164,7 @@ export function WorkPartnersPanel() {
                           bizNo: row.bizNo,
                           representative: row.representative,
                           phone: row.phone,
+                          email: row.email,
                           address: row.address,
                           note: row.note,
                         });

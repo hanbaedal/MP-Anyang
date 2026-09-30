@@ -14,7 +14,7 @@ export default async function WorkStatementsPage() {
   const { locale, dump } = await loadWorkCopyPage("contracts");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28">
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 pb-28 min-[1600px]:max-w-[100rem]">
       <div>
         <h1 className="font-serif text-xl text-primary">{t(locale, "work.statements")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t(locale, "work.statementsLead")}</p>

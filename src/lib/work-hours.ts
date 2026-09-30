@@ -13,6 +13,24 @@ export function msUntilStaffWorkEnd(d = new Date()) {
   return (18 * 3600 - nowSec) * 1000;
 }
 
+/** 일과 시간 제한은 관리자만 받는다. 감독과 CEO는 24시간 쓴다. */
+export function isWorkHourLimitedRole(role: string | null | undefined) {
+  return role === "admin";
+}
+
+export function roleFromSessionToken(token: string | undefined | null) {
+  const payload = token?.split(".")[0];
+  if (!payload) return "";
+  try {
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 === 0 ? "" : "=".repeat(4 - (b64.length % 4));
+    const json = JSON.parse(atob(b64 + pad)) as { role?: string };
+    return json.role ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function kstClock(d: Date) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Seoul",

@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CatalogItemSelect } from "@/components/work-catalog-select";
 import { DateSpan, ViewToggle, inDateRange } from "@/components/work-ledger-controls";
 import { ledgerRequest } from "@/lib/ledger-client";
-import type { Partner, Purchase } from "@/lib/work-ledgers";
+import type { Material, Partner, Product, Purchase, StockKind } from "@/lib/work-ledgers";
 
 function today() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -19,6 +20,8 @@ function today() {
 const empty = {
   purchasedOn: "",
   partnerId: "",
+  stockKind: "상품" as StockKind,
+  itemId: "",
   item: "",
   spec: "",
   qty: "",
@@ -29,6 +32,8 @@ const empty = {
 export function WorkPurchasesPanel() {
   const [rows, setRows] = useState<Purchase[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [form, setForm] = useState({ ...empty, purchasedOn: today() });
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -40,12 +45,16 @@ export function WorkPurchasesPanel() {
   const [partnerFilter, setPartnerFilter] = useState("");
 
   async function reload() {
-    const [purchases, partnerList] = await Promise.all([
+    const [purchases, partnerList, productList, materialList] = await Promise.all([
       ledgerRequest<{ rows: Purchase[] }>("/api/work/purchases", "GET"),
       ledgerRequest<{ rows: Partner[] }>("/api/work/partners", "GET"),
+      ledgerRequest<{ rows: Product[] }>("/api/work/products", "GET"),
+      ledgerRequest<{ rows: Material[] }>("/api/work/materials", "GET"),
     ]);
     setRows(purchases.rows);
     setPartners(partnerList.rows.filter((row) => row.kind === "매입" || row.kind === "공통"));
+    setProducts(productList.rows);
+    setMaterials(materialList.rows);
   }
 
   useEffect(() => {
@@ -132,7 +141,22 @@ export function WorkPurchasesPanel() {
         </label>
         <label className="space-y-1 text-xs text-muted-foreground">
           품목
-          <Input value={form.item} onChange={(event) => setField("item", event.target.value)} />
+          <CatalogItemSelect
+            products={products}
+            materials={materials}
+            includeMaterials
+            priceOf="in"
+            stockKind={form.stockKind}
+            itemId={form.itemId}
+            onChange={(next) => setForm((prev) => ({
+              ...prev,
+              stockKind: next.stockKind,
+              itemId: next.itemId,
+              item: next.item,
+              spec: next.spec,
+              unitPrice: String(next.unitPrice || ""),
+            }))}
+          />
         </label>
         <label className="space-y-1 text-xs text-muted-foreground">
           규격
@@ -228,6 +252,8 @@ export function WorkPurchasesPanel() {
                         setForm({
                           purchasedOn: row.purchasedOn,
                           partnerId: row.partnerId,
+                          stockKind: row.stockKind === "부자재" ? "부자재" : "상품",
+                          itemId: row.itemId || "",
                           item: row.item,
                           spec: row.spec,
                           qty: String(row.qty),
