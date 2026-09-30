@@ -1,4 +1,5 @@
-import { BASE_TABS, SupervisorBaseBook, plotValues } from "@/components/supervisor-base-book";
+import { SupervisorBaseBook } from "@/components/supervisor-base-book";
+import { BASE_TABS, plotValues } from "@/lib/base-book";
 import { ledgerWindow } from "@/components/supervisor-ledger";
 import { requireSupervisor } from "@/lib/auth";
 import type { BaseKind } from "@/lib/cemetery-parse";
