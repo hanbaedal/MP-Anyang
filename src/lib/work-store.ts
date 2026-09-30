@@ -670,6 +670,33 @@ export async function searchSupervisorContracts(filters: ContractListFilters & {
   return { hits, total: rows.length, matched: matchedRows.length, page, pageSize };
 }
 
+export async function readStoredReceipts(): Promise<ReceiptCopy[]> {
+  if (mongoUriSet()) {
+    const db = await getDb();
+    if (db) {
+      const docs = await db.collection("receipts").find({}).toArray();
+      if (docs.length) return withoutMongoId<ReceiptCopy>(docs);
+    }
+  }
+  return readJsonFile<ReceiptCopy[]>(files.receipts, []);
+}
+
+export async function saveReceiptDetails(rows: ReceiptCopy[]) {
+  if (!mongoUriSet() || !rows.length) return 0;
+  const db = await requireDb();
+  const col = db.collection("receipts");
+  let saved = 0;
+  for (const row of rows) {
+    const encoded = toMongoDocs([row])[0] as { inputs?: Record<string, string> };
+    const result = await col.updateOne(
+      { serial: row.serial, date: row.date },
+      { $set: { year: row.year ?? "", receiptNo: row.receiptNo ?? "", inputs: encoded.inputs ?? {} } },
+    );
+    if (result.matchedCount) saved += 1;
+  }
+  return saved;
+}
+
 export async function readContractBundle(tombNo: string, contractNo: string) {
   const contract = mongoUriSet()
     ? await (async () => {

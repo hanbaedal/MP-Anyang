@@ -1,13 +1,16 @@
-import { SupervisorLedger, ledgerWindow } from "@/components/supervisor-ledger";
+import { SupervisorReceiptList } from "@/components/supervisor-receipt-list";
 import { requireSupervisor } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
-import { readWorkDumpBySlice } from "@/lib/work-store";
+import { readStoredReceipts } from "@/lib/work-store";
 
 export const dynamic = "force-dynamic";
 
-function money(n: number) {
-  return n ? n.toLocaleString("ko-KR") : "";
+const KINDS = new Set(["관리비", "계약비", "시설비", "공사비"]);
+
+function iso(raw: string | undefined) {
+  const value = raw?.trim() ?? "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
 }
 
 export async function generateMetadata() {
@@ -18,39 +21,22 @@ export async function generateMetadata() {
 export default async function SupervisorReceiptsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; pg?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; tomb?: string; kind?: string }>;
 }) {
   await requireSupervisor();
-  const locale = await readLocale();
   const params = await searchParams;
-  const query = params.q?.trim() ?? "";
-  const dump = await readWorkDumpBySlice("full");
-  const found = dump.receipts.filter((row) => {
-    if (!query) return true;
-    return [row.date, row.tombNo, row.deceased, row.serial, row.summary, row.kind, row.staff].join(" ").includes(query);
-  });
-  const window = ledgerWindow(found.length, params.pg);
-  const rows = found.slice(window.from, window.from + window.size).map((row) => [
-    row.date,
-    row.tombNo,
-    row.deceased,
-    row.serial,
-    money(row.amount),
-    row.summary,
-    row.kind,
-    row.staff,
-  ]);
-  return (
-    <SupervisorLedger
-      title={t(locale, "work.receipts")}
-      action="/supervisor/receipts"
-      query={query}
-      placeholder="묘지번호, 고인, 종류, 담당자"
-      total={found.length}
-      page={window.page}
-      pages={window.pages}
-      columns={["거래년월일", "묘지번호", "고인성명", "일련번호", "거래금액", "내역요약", "영수종류", "담당자"]}
-      rows={rows}
-    />
-  );
+  const from = iso(params.from);
+  const to = iso(params.to);
+  const tomb = params.tomb?.trim() ?? "";
+  const kind = KINDS.has(params.kind ?? "") ? (params.kind as string) : "전체";
+  const rows = (await readStoredReceipts())
+    .filter((row) => {
+      if (from && row.date < from) return false;
+      if (to && row.date > to) return false;
+      if (tomb && !row.tombNo.includes(tomb)) return false;
+      if (kind !== "전체" && row.kind.trim() !== kind) return false;
+      return true;
+    })
+    .sort((a, b) => b.date.localeCompare(a.date) || b.serial.localeCompare(a.serial, "ko"));
+  return <SupervisorReceiptList action="/supervisor/receipts" from={from} to={to} tomb={tomb} kind={kind} rows={rows} />;
 }

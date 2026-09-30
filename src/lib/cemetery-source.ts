@@ -361,6 +361,54 @@ async function pullFees(
   return fees;
 }
 
+function receiptForm(creds: SourceLogin, year = "", receiptNo = "") {
+  return {
+    pageNo: "receipt",
+    pg: "1",
+    ps: "23",
+    no_contract: "nodata",
+    reverseRowNumber: "1",
+    subRow: "1",
+    year,
+    no_receipt: receiptNo,
+    bill_type: "C",
+    srch_billing_from: "",
+    srch_billing_to: "",
+    cd_company: companyCode(),
+    id_user_s: creds.id,
+  };
+}
+
+export async function readReceiptCopies(
+  jar: Map<string, string>,
+  creds: SourceLogin,
+  onPage?: (done: number, total: number) => void,
+) {
+  const receiptsPull = await pagedHtml(jar, "/receipt.do", receiptForm(creds), "100", { onPage });
+  const receipts = receiptsPull.pages.flatMap(parseReceiptRows);
+  for (const row of receipts) {
+    if (!row.year || !row.receiptNo) continue;
+    try {
+      const item = await request(jar, "/receiptDetail.do", {
+        method: "POST",
+        form: receiptForm(creds, row.year, row.receiptNo),
+      });
+      if (item.status < 400 && !/name=["']passwd["']/.test(item.html)) row.inputs = parseNamedInputs(item.html);
+    } catch {
+      /* one receipt detail can fail without dropping the list row */
+    }
+  }
+  return receipts;
+}
+
+export async function pullReceiptCopies(creds: SourceLogin) {
+  const jar = new Map<string, string>();
+  const auth = await login(jar, creds);
+  if (!auth.ok) return { ok: false as const, error: auth.error, receipts: [] as ReceiptCopy[] };
+  const receipts = await readReceiptCopies(jar, creds);
+  return { ok: true as const, receipts };
+}
+
 export async function pullCemeterySource(
   creds: SourceLogin,
   opts: {
@@ -450,26 +498,7 @@ export async function pullCemeterySource(
     };
     const fees = await pullFees(jar, feeBase, (done, total) => opts.onPull?.("fees", done, total));
 
-    const receiptsPull = await pagedHtml(
-      jar,
-      "/receipt.do",
-      {
-        pageNo: "receipt",
-        no_contract: "nodata",
-        reverseRowNumber: "1",
-        subRow: "1",
-        year: "",
-        no_receipt: "",
-        bill_type: "C",
-        srch_billing_from: "",
-        srch_billing_to: "",
-        cd_company: company,
-        id_user_s: user,
-      },
-      "100",
-      { onPage: (done, total) => opts.onPull?.("receipts", done, total) },
-    );
-    const receipts = receiptsPull.pages.flatMap(parseReceiptRows);
+    const receipts = await readReceiptCopies(jar, creds, (done, total) => opts.onPull?.("receipts", done, total));
 
     const reportsPull = await pagedHtml(
       jar,

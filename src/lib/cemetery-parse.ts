@@ -132,6 +132,9 @@ export type ReceiptCopy = {
   summary: string;
   kind: string;
   staff: string;
+  year?: string;
+  receiptNo?: string;
+  inputs?: Record<string, string>;
 };
 
 export function parseReceiptRows(html: string): ReceiptCopy[] {
@@ -146,6 +149,8 @@ export function parseReceiptRows(html: string): ReceiptCopy[] {
       summary: c[5] ?? "",
       kind: c[6] ?? "",
       staff: c[7] ?? "",
+      year: row.arg1,
+      receiptNo: row.arg2,
     };
   });
 }
