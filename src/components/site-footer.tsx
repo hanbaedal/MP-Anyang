@@ -1,4 +1,3 @@
-import { FooterGroupLinks } from "@/components/footer-group-links";
 import { SocialActions } from "@/components/hero-actions";
 import { SITE } from "@/lib/site";
 
@@ -19,7 +18,6 @@ export function SiteFooter() {
             {SITE.postalCode}
           </p>
         </div>
-        <FooterGroupLinks />
         <div className="flex shrink-0 justify-center lg:justify-end">
           <SocialActions />
         </div>
