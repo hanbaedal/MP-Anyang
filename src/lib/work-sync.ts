@@ -6,7 +6,7 @@ import {
   mongoUriSet,
   mongoUserMessage,
 } from "./mongo";
-import { saveWorkDump, summarizeFees } from "./work-store";
+import { saveContractFiles, saveWorkDump, summarizeFees } from "./work-store";
 import {
   beginWorkSyncProgress,
   finishWorkSyncProgress,
@@ -78,8 +78,8 @@ export async function syncWorkFromSource(creds: SourceLogin): Promise<WorkSyncOk
     reportCount: pulled.reports.length,
     cemeteryCount: pulled.cemetery.length,
     message: useMongo
-      ? `계약 ${pulled.contracts.length}건, 관리비 ${pulled.fees.length}건, 영수증 ${pulled.receipts.length}건을 MongoDB(${dbLabel})에 넣었습니다.`
-      : `계약 ${pulled.contracts.length}건, 관리비 ${pulled.fees.length}건, 영수증 ${pulled.receipts.length}건을 이 서버 로컬 파일에 복사했습니다. MongoDB에 저장하려면 MONGODB_URI를 설정하세요.`,
+      ? `계약 ${pulled.contracts.length}건, 계약서 ${pulled.contractFiles.length}건, 관리비 ${pulled.fees.length}건, 영수증 ${pulled.receipts.length}건을 MongoDB(${dbLabel})에 넣었습니다.`
+      : `계약 ${pulled.contracts.length}건, 계약서 ${pulled.contractFiles.length}건, 관리비 ${pulled.fees.length}건, 영수증 ${pulled.receipts.length}건을 이 서버 로컬 파일에 복사했습니다. MongoDB에 저장하려면 MONGODB_URI를 설정하세요.`,
   };
   setWorkSyncPhase("write", useMongo ? `MongoDB(${dbLabel})에 넣는 중…` : "로컬 파일에 저장하는 중…");
   let saved;
@@ -100,6 +100,18 @@ export async function syncWorkFromSource(creds: SourceLogin): Promise<WorkSyncOk
   } catch (err) {
     if (mongoUriSet()) {
       logMongoFailure("work dump write", err);
+      const message = mongoUserMessage(err);
+      return { ok: false, error: message, message };
+    }
+    return { ok: false, error: FILE_SAVE_FAILED, message: FILE_SAVE_FAILED };
+  }
+  try {
+    const filesSaved = await saveContractFiles(pulled.contractFiles);
+    saved.counts.contract_files = filesSaved.count;
+    setCollectionProgress("contract_files", filesSaved.count, filesSaved.count || 1, 100);
+  } catch (err) {
+    if (mongoUriSet()) {
+      logMongoFailure("contract files write", err);
       const message = mongoUserMessage(err);
       return { ok: false, error: message, message };
     }

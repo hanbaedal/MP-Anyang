@@ -192,13 +192,100 @@ export function parseCemeteryInfoRows(html: string): CemeteryInfoCopy[] {
   return rows;
 }
 
+export type ContractFileCopy = {
+  tombNo: string;
+  contractNo: string;
+  fields: Record<string, string>;
+  pairs: { label: string; value: string }[];
+  checks: string[];
+  tables: { headers: string[]; rows: string[][] }[];
+  inputs: Record<string, string>;
+};
+
 export function parseNamedInputs(html: string) {
   const out: Record<string, string> = {};
   for (const m of html.matchAll(/<input\b[^>]*>/gi)) {
     const tag = m[0];
     const name = tag.match(/\bname=["']([^"']+)["']/i)?.[1];
     const value = tag.match(/\bvalue=["']([^"']*)["']/i)?.[1] ?? "";
-    if (name && !/pass|passwd|password/i.test(name)) out[name] = value;
+    if (!name || /pass|passwd|password/i.test(name)) continue;
+    if (/type=["'](?:checkbox|radio)["']/i.test(tag) && !/\bchecked\b/i.test(tag)) continue;
+    out[name] = value;
+  }
+  for (const m of html.matchAll(/<textarea\b[^>]*name=["']([^"']+)["'][^>]*>([\s\S]*?)<\/textarea>/gi)) {
+    if (!/pass|passwd|password/i.test(m[1])) out[m[1]] = stripTags(m[2]);
+  }
+  for (const m of html.matchAll(/<select\b[^>]*name=["']([^"']+)["'][^>]*>[\s\S]*?<\/select>/gi)) {
+    if (/pass|passwd|password/i.test(m[1])) continue;
+    const chosen = m[0].match(/<option\b[^>]*\bselected\b[^>]*>([\s\S]*?)<\/option>/i);
+    const text = chosen ? stripTags(chosen[1]) : "";
+    if (text && text !== "선택") out[m[1]] = text;
   }
   return out;
+}
+
+export type ParsedSheet = {
+  labels: Record<string, string>;
+  pairs: { label: string; value: string }[];
+  checks: string[];
+  tables: { headers: string[]; rows: string[][] }[];
+  paths: string[];
+};
+
+function controlText(fragment: string) {
+  const textarea = fragment.match(/<textarea\b[^>]*>([\s\S]*?)<\/textarea>/i);
+  if (textarea) return stripTags(textarea[1]);
+  const select = fragment.match(/<select\b[^>]*>[\s\S]*?<\/select>/i);
+  if (select) {
+    const block = select[0];
+    const chosen =
+      block.match(/<option\b[^>]*\bselected\b[^>]*>([\s\S]*?)<\/option>/i) ??
+      [...block.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)].find((item) => {
+        const text = stripTags(item[1]);
+        return text && text !== "선택";
+      });
+    return chosen ? stripTags(chosen[1]) : "";
+  }
+  const input = fragment.match(/<input\b[^>]*>/i)?.[0];
+  if (!input || /type=["'](?:checkbox|radio|button|submit|file|image)["']/i.test(input)) return "";
+  return input.match(/\bvalue=["']([^"']*)["']/i)?.[1] ?? "";
+}
+
+export function parseContractSheet(html: string): ParsedSheet {
+  const labels: Record<string, string> = {};
+  const pairs: ParsedSheet["pairs"] = [];
+  const checks: string[] = [];
+  const cells = [...html.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((m) => m[1]);
+  for (let i = 0; i < cells.length - 1; i++) {
+    const label = stripTags(cells[i]).replace(/[*:：]/g, "").trim();
+    if (!label || label.length > 16 || /\d{2,}/.test(label)) continue;
+    const value = controlText(cells[i + 1]) || "";
+    if (!value || value === "선택") continue;
+    pairs.push({ label, value });
+    if (!labels[label]) labels[label] = value;
+  }
+  for (const m of html.matchAll(/<input\b[^>]*type=["']checkbox["'][^>]*>/gi)) {
+    if (!/\bchecked\b/i.test(m[0])) continue;
+    const after = html.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 24);
+    const label = stripTags(after).split(/\s+/).find(Boolean) ?? "";
+    if (label && label.length <= 8) checks.push(label);
+  }
+  const tables: ParsedSheet["tables"] = [];
+  for (const table of html.matchAll(/<table\b[^>]*>[\s\S]*?<\/table>/gi)) {
+    const headers = [...table[0].matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)].map((m) => stripTags(m[1])).filter(Boolean);
+    const body = table[0].match(/<tbody\b[^>]*>([\s\S]*?)<\/tbody>/i)?.[1] ?? table[0];
+    const rows = [...body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+      .map((row) => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((cell) => stripTags(cell[1])))
+      .filter((row) => row.some(Boolean));
+    if (headers.length >= 2 && rows.length) tables.push({ headers, rows });
+  }
+  const paths = new Set<string>();
+  for (const m of html.matchAll(/["']([A-Za-z0-9_./-]+\.do)(?:\?[^"']*)?["']/g)) {
+    const name = m[1].split("/").pop() ?? "";
+    if (!name || /login|logout|main|contractList/i.test(name)) continue;
+    if (/contract|user|fam|expense|consult|stone|tomb|grave|position|location/i.test(name)) {
+      paths.add(name.startsWith("/") ? name : `/${name}`);
+    }
+  }
+  return { labels, pairs, checks, tables, paths: [...paths].slice(0, 8) };
 }

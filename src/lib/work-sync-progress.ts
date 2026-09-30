@@ -30,6 +30,7 @@ function emptyItems(): Record<WorkCollectionName, { percent: number; done: numbe
     receipts: { percent: 0, done: 0, total: 0 },
     work_reports: { percent: 0, done: 0, total: 0 },
     cemetery_info: { percent: 0, done: 0, total: 0 },
+    contract_files: { percent: 0, done: 0, total: 0 },
     work_meta: { percent: 0, done: 0, total: 0 },
   };
 }
@@ -146,9 +147,10 @@ export function finishWorkSyncProgress(opts: {
 }
 
 export function mapPullCollection(
-  list: "contracts" | "fees" | "receipts" | "reports" | "cemetery",
+  list: "contracts" | "fees" | "receipts" | "reports" | "cemetery" | "contract_files",
 ): WorkCollectionName {
   if (list === "reports") return "work_reports";
   if (list === "cemetery") return "cemetery_info";
+  if (list === "contract_files") return "contract_files";
   return list;
 }

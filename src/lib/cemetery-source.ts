@@ -4,11 +4,13 @@ import {
   parseCemeteryInfoRows,
   parseContractRows,
   parseFeeRows,
+  parseContractSheet,
   parseNamedInputs,
   parseReceiptRows,
   parseReportRows,
   type CemeteryInfoCopy,
   type ContractCopy,
+  type ContractFileCopy,
   type FeeCopy,
   type ReceiptCopy,
   type ReportCopy,
@@ -32,6 +34,7 @@ export type SourceSyncResult = {
   receipts: ReceiptCopy[];
   reports: ReportCopy[];
   cemetery: CemeteryInfoCopy[];
+  contractFiles: ContractFileCopy[];
   listedContractTotal: number;
 };
 
@@ -110,6 +113,141 @@ async function login(jar: Map<string, string>, creds: SourceLogin) {
     return { ok: false as const, error: "원본 로그인에 실패했습니다." };
   }
   return { ok: true as const };
+}
+
+function contractForm(creds: SourceLogin, tombNo: string, contractNo: string) {
+  return {
+    pageNo: "contract",
+    pg: "1",
+    ps: "23",
+    pg_sub: "1",
+    ps_sub: "8",
+    no_tomb: tombNo || "nodata",
+    no_contract: contractNo || "nodata",
+    callNumber: "",
+    reverseRowNumber: "1",
+    subRow: "1",
+    srch_tomb: "",
+    srch_user: "",
+    srch_fam: "",
+    srch_tel: "",
+    srch_flag: "2",
+    cd_company: companyCode(),
+    id_user_s: creds.id,
+  };
+}
+
+const sheetCache = new Map<string, { at: number; sheet: Awaited<ReturnType<typeof pullContractSheet>> }>();
+
+async function pullContractSheet(tombNo: string, contractNo: string) {
+  const creds = resolveSourceLogin();
+  if (!creds || !tombNo) return null;
+  const jar = new Map<string, string>();
+  const auth = await login(jar, creds);
+  if (!auth.ok) return null;
+  const form = contractForm(creds, tombNo, contractNo);
+  const first = await request(jar, "/contractDetailList.do", { method: "POST", form });
+  if (first.status >= 400 || /name=["']passwd["']/.test(first.html)) return null;
+  const sheet = parseContractSheet(first.html);
+  const seen = new Set<string>(["/contractDetailList.do"]);
+  for (const path of sheet.paths) {
+    if (seen.has(path)) continue;
+    seen.add(path);
+    const next = await request(jar, path, { method: "POST", form });
+    if (next.status >= 400 || /name=["']passwd["']/.test(next.html)) continue;
+    const extra = parseContractSheet(next.html);
+    for (const [key, value] of Object.entries(extra.labels)) {
+      if (!sheet.labels[key]) sheet.labels[key] = value;
+    }
+    sheet.pairs.push(...extra.pairs);
+    sheet.checks.push(...extra.checks.filter((item) => !sheet.checks.includes(item)));
+    sheet.tables.push(...extra.tables);
+  }
+  return sheet;
+}
+
+export async function loadContractSheet(tombNo: string, contractNo: string) {
+  const key = `${tombNo}\n${contractNo}`;
+  const hit = sheetCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.sheet;
+  const sheet = await pullContractSheet(tombNo, contractNo);
+  if (sheet) sheetCache.set(key, { at: Date.now(), sheet });
+  return sheet;
+}
+
+async function oneContractFile(
+  jar: Map<string, string>,
+  creds: SourceLogin,
+  row: { tombNo: string; contractNo: string },
+): Promise<ContractFileCopy | null> {
+  try {
+    const form = contractForm(creds, row.tombNo, row.contractNo);
+    const first = await request(jar, "/contractDetailList.do", { method: "POST", form });
+    if (first.status >= 400 || /name=["']passwd["']/.test(first.html)) return null;
+    const sheet = parseContractSheet(first.html);
+    const seen = new Set<string>(["contractDetailList.do"]);
+    for (const path of sheet.paths.slice(0, 6)) {
+      const name = path.split("/").pop() ?? path;
+      if (seen.has(name)) continue;
+      if (/List\.do|receipt\.do|workReport|baseInfo|logout|login/i.test(name)) continue;
+      if (!/contract|death|famil|seok|consult|locat|grave/i.test(name)) continue;
+      seen.add(name);
+      const next = await request(jar, path, { method: "POST", form });
+      if (next.status >= 400 || /name=["']passwd["']/.test(next.html)) continue;
+      const extra = parseContractSheet(next.html);
+      for (const [key, value] of Object.entries(extra.labels)) {
+        if (!sheet.labels[key]) sheet.labels[key] = value;
+      }
+      sheet.pairs.push(...extra.pairs);
+      sheet.checks.push(...extra.checks.filter((item) => !sheet.checks.includes(item)));
+      sheet.tables.push(...extra.tables);
+    }
+    return {
+      tombNo: row.tombNo,
+      contractNo: row.contractNo,
+      fields: sheet.labels,
+      pairs: sheet.pairs,
+      checks: sheet.checks,
+      tables: sheet.tables,
+      inputs: parseNamedInputs(first.html),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function pullContractFiles(
+  creds: SourceLogin,
+  onDone?: (done: number, total: number) => void,
+) {
+  const jar = new Map<string, string>();
+  const auth = await login(jar, creds);
+  if (!auth.ok) return { ok: false as const, error: auth.error, files: [] as ContractFileCopy[] };
+  const form = contractForm(creds, "nodata", "nodata");
+  const listed = await pagedHtml(jar, "/contractList.do", form, "200");
+  const contracts = listed.pages.flatMap(parseContractRows);
+  const files = await readContractFiles(jar, creds, contracts, onDone);
+  return { ok: true as const, files };
+}
+
+async function readContractFiles(
+  jar: Map<string, string>,
+  creds: SourceLogin,
+  contracts: { tombNo: string; contractNo: string }[],
+  onDone?: (done: number, total: number) => void,
+) {
+  const targets = contracts.filter((row) => row.tombNo && row.contractNo);
+  const files: ContractFileCopy[] = [];
+  const batch = 3;
+  for (let i = 0; i < targets.length; i += batch) {
+    const slice = targets.slice(i, i + batch);
+    const part = await Promise.all(slice.map((row) => oneContractFile(jar, creds, row)));
+    for (const item of part) {
+      if (item) files.push(item);
+    }
+    onDone?.(Math.min(targets.length, i + slice.length), targets.length);
+  }
+  return files;
 }
 
 const PAGE_BATCH = 5;
@@ -211,7 +349,10 @@ async function pullFees(
 
 export async function pullCemeterySource(
   creds: SourceLogin,
-  opts: { onPull?: (collection: "contracts" | "fees" | "receipts" | "reports" | "cemetery", done: number, total: number) => void } = {},
+  opts: {
+    onPull?: (collection: "contracts" | "fees" | "receipts" | "reports" | "cemetery" | "contract_files", done: number, total: number) => void;
+    skipContractFiles?: boolean;
+  } = {},
 ): Promise<SourceSyncResult> {
   const empty: SourceSyncResult = {
     ok: false,
@@ -220,6 +361,7 @@ export async function pullCemeterySource(
     receipts: [],
     reports: [],
     cemetery: [],
+    contractFiles: [],
     listedContractTotal: 0,
   };
   try {
@@ -272,6 +414,10 @@ export async function pullCemeterySource(
         if (item.status < 400) slice[index].extra = parseNamedInputs(item.html);
       });
     }
+
+    const contractFiles = opts.skipContractFiles
+      ? []
+      : await readContractFiles(jar, creds, contracts, (done, total) => opts.onPull?.("contract_files", done, total));
 
     const feeBase = {
       pageNo: "expense",
@@ -359,6 +505,7 @@ export async function pullCemeterySource(
       receipts,
       reports,
       cemetery,
+      contractFiles,
       listedContractTotal: contractsPull.listed || contracts.length,
     };
   } catch (err) {

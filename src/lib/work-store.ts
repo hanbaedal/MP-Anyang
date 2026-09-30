@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { cache } from "react";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo, mongoDbName, mongoUriSet, requireDb } from "./mongo";
-import type { CemeteryInfoCopy, ContractCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
+import type { CemeteryInfoCopy, ContractCopy, ContractFileCopy, FeeCopy, ReceiptCopy, ReportCopy } from "./cemetery-parse";
 
 export type WorkMeta = {
   syncedAt: string;
@@ -33,7 +33,7 @@ type WorkLists = {
 
 export type WorkDump = WorkLists & { storage: WorkStorage };
 
-export const WORK_COLLECTIONS = ["contracts", "fees", "receipts", "work_reports", "cemetery_info", "work_meta"] as const;
+export const WORK_COLLECTIONS = ["contracts", "fees", "receipts", "work_reports", "cemetery_info", "contract_files", "work_meta"] as const;
 
 export type WorkSaveResult = {
   mongo: boolean;
@@ -49,6 +49,7 @@ const files = {
   receipts: dataFile("work-receipts.local.json"),
   reports: dataFile("work-reports.local.json"),
   cemetery: dataFile("work-cemetery.local.json"),
+  contractFiles: dataFile("work-contract-files.local.json"),
 };
 
 const DOT = ".";
@@ -291,6 +292,7 @@ export async function saveWorkDump(
     receipts: dump.receipts.length,
     work_reports: dump.reports.length,
     cemetery_info: dump.cemetery.length,
+    contract_files: 0,
     work_meta: dump.meta ? 1 : 0,
   };
   let mongo = false;
@@ -328,6 +330,126 @@ export const readWorkDumpBySlice = cache(readWorkDumpSliceImpl);
 
 export async function readWorkDump(): Promise<WorkDump> {
   return readWorkDumpBySlice("full");
+}
+
+export async function saveContractFiles(rows: ContractFileCopy[]) {
+  let mongo = false;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    await replaceCollection(db, "contract_files", rows);
+    await db.collection("contract_files").createIndex({ tombNo: 1, contractNo: 1 }).catch(() => undefined);
+    mongo = true;
+  }
+  try {
+    await writeJsonFile(files.contractFiles, rows);
+  } catch {
+    if (!mongo) throw new Error("FILE_WRITE_FAILED");
+  }
+  return { mongo, count: rows.length };
+}
+
+export async function readContractFile(tombNo: string, contractNo: string) {
+  if (!tombNo) return null;
+  if (mongoUriSet()) {
+    try {
+      const db = await getDb();
+      const doc = db ? await db.collection("contract_files").findOne({ tombNo, contractNo }) : null;
+      if (doc) return withoutMongoId<ContractFileCopy>([doc])[0] ?? null;
+    } catch {
+      console.error("[work-store] contract_files read failed");
+    }
+  }
+  const rows = await readJsonFile<ContractFileCopy[]>(files.contractFiles, []);
+  return rows.find((row) => row.tombNo === tombNo && row.contractNo === contractNo) ?? null;
+}
+
+async function upsertLocal<T extends { tombNo: string; contractNo: string }>(
+  path: string,
+  previous: { tombNo: string; contractNo: string } | null,
+  next: T,
+) {
+  const rows = await readJsonFile<T[]>(path, []);
+  if (rows.length === 0) return false;
+  const same = (row: T, key: { tombNo: string; contractNo: string }) =>
+    row.tombNo === key.tombNo && row.contractNo === key.contractNo;
+  const kept = rows.filter((row) => (previous ? !same(row, previous) : true) && !same(row, next));
+  kept.push(next);
+  await writeJsonFile(path, kept);
+  return true;
+}
+
+async function removeLocal<T extends { tombNo: string; contractNo: string }>(
+  path: string,
+  key: { tombNo: string; contractNo: string },
+) {
+  const rows = await readJsonFile<T[]>(path, []);
+  if (rows.length === 0) return false;
+  await writeJsonFile(
+    path,
+    rows.filter((row) => row.tombNo !== key.tombNo || row.contractNo !== key.contractNo),
+  );
+  return true;
+}
+
+export async function upsertSupervisorContract(
+  previous: { tombNo: string; contractNo: string } | null,
+  contract: ContractCopy,
+  file: ContractFileCopy,
+) {
+  let mongo = false;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    const contracts = db.collection("contracts");
+    const filesCol = db.collection("contract_files");
+    if (previous && (previous.tombNo !== contract.tombNo || previous.contractNo !== contract.contractNo)) {
+      await contracts.deleteOne({ tombNo: previous.tombNo, contractNo: previous.contractNo });
+      await filesCol.deleteOne({ tombNo: previous.tombNo, contractNo: previous.contractNo });
+    }
+    const existing = await contracts.findOne({ tombNo: contract.tombNo, contractNo: contract.contractNo });
+    const merged = {
+      ...(existing ? (withoutMongoId<ContractCopy>([existing])[0] ?? {}) : {}),
+      ...contract,
+    };
+    await contracts.replaceOne(
+      { tombNo: contract.tombNo, contractNo: contract.contractNo },
+      toMongoDocs([merged])[0],
+      { upsert: true },
+    );
+    await filesCol.replaceOne(
+      { tombNo: file.tombNo, contractNo: file.contractNo },
+      toMongoDocs([file])[0],
+      { upsert: true },
+    );
+    mongo = true;
+  }
+  let fileSaved = false;
+  try {
+    await upsertLocal(files.contracts, previous, contract);
+    fileSaved = await upsertLocal(files.contractFiles, previous, file);
+  } catch {
+    if (!mongo) throw new Error("FILE_WRITE_FAILED");
+  }
+  if (!mongo && !fileSaved) throw new Error("FILE_WRITE_FAILED");
+  return { mongo, file: fileSaved };
+}
+
+export async function deleteSupervisorContract(key: { tombNo: string; contractNo: string }) {
+  let mongo = false;
+  if (mongoUriSet()) {
+    const db = await requireDb();
+    await db.collection("contracts").deleteOne({ tombNo: key.tombNo, contractNo: key.contractNo });
+    await db.collection("contract_files").deleteOne({ tombNo: key.tombNo, contractNo: key.contractNo });
+    mongo = true;
+  }
+  let fileSaved = false;
+  try {
+    await removeLocal(files.contracts, key);
+    fileSaved = await removeLocal(files.contractFiles, key);
+  } catch {
+    if (!mongo) throw new Error("FILE_WRITE_FAILED");
+  }
+  if (!mongo && !fileSaved) throw new Error("FILE_WRITE_FAILED");
+  return { mongo, file: fileSaved };
 }
 
 export async function countWorkCollections() {
