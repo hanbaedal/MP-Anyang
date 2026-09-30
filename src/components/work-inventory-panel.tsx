@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ledgerRequest } from "@/lib/ledger-client";
-import type { StockView } from "@/lib/work-ledgers";
+import type { StockKind, StockView } from "@/lib/work-ledgers";
 
 export function WorkInventoryPanel() {
   const [rows, setRows] = useState<StockView[]>([]);
   const [error, setError] = useState("");
+  const [kind, setKind] = useState<"전체" | StockKind>("전체");
 
   useEffect(() => {
     void ledgerRequest<{ rows: StockView[] }>("/api/work/inventory", "GET")
@@ -14,8 +16,17 @@ export function WorkInventoryPanel() {
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "재고를 읽지 못했습니다."));
   }, []);
 
+  const visible = kind === "전체" ? rows : rows.filter((row) => row.kind === kind);
+
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {(["전체", "상품", "부자재"] as const).map((label) => (
+          <Button key={label} type="button" size="sm" variant={kind === label ? "default" : "outline"} onClick={() => setKind(label)}>
+            {label}
+          </Button>
+        ))}
+      </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full min-w-[760px] text-left text-sm">
@@ -32,9 +43,9 @@ export function WorkInventoryPanel() {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {visible.length === 0 ? (
               <tr><td className="px-3 py-6 text-muted-foreground" colSpan={8}>재고가 없습니다.</td></tr>
-            ) : rows.map((row) => (
+            ) : visible.map((row) => (
               <tr key={`${row.kind}-${row.id}`} className="border-b last:border-b-0">
                 <td className="px-3 py-2">{row.kind}</td>
                 <td className="px-3 py-2">{row.name}</td>

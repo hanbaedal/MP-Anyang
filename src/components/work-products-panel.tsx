@@ -120,24 +120,26 @@ export function WorkProductsPanel() {
             </label>
           </div>
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">부자재 구성. 비우면 단독 상품입니다. 한 줄은 상품 1개에 들어가는 수량입니다.</p>
-            {parts.map((row, index) => (
-              <div key={index} className="grid grid-cols-[1fr_6rem] gap-2">
-                <select
-                  className="h-9 rounded-md border bg-transparent px-2 text-sm"
-                  value={row.materialId}
-                  onChange={(event) => setPart(index, "materialId", event.target.value)}
-                >
-                  <option value="">부자재 {index + 1}</option>
-                  {materials.map((material) => (
-                    <option key={material.id} value={material.id}>
-                      {material.spec ? `${material.name} / ${material.spec}` : material.name}
-                    </option>
-                  ))}
-                </select>
-                <Input inputMode="decimal" placeholder="수량" value={row.qty} onChange={(event) => setPart(index, "qty", event.target.value)} />
-              </div>
-            ))}
+            <p className="text-xs text-muted-foreground">부자재 구성. 비우면 단독 상품입니다. 칸의 수량은 상품 1개에 들어가는 양입니다.</p>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              {parts.map((row, index) => (
+                <div key={index} className="grid grid-cols-[minmax(0,1fr)_4.5rem] gap-1">
+                  <select
+                    className="h-9 min-w-0 rounded-md border bg-transparent px-2 text-sm"
+                    value={row.materialId}
+                    onChange={(event) => setPart(index, "materialId", event.target.value)}
+                  >
+                    <option value="">부자재 {index + 1}</option>
+                    {materials.map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.spec ? `${material.name} / ${material.spec}` : material.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Input inputMode="decimal" placeholder="수량" value={row.qty} onChange={(event) => setPart(index, "qty", event.target.value)} />
+                </div>
+              ))}
+            </div>
           </div>
           {canAssemble ? (
             <div className="flex flex-wrap items-end gap-2">
