@@ -47,6 +47,9 @@ data/work-fees.local.json
 data/work-receipts.local.json
 data/work-reports.local.json
 data/work-cemetery.local.json
+data/work-partners.local.json
+data/work-purchases.local.json
+data/work-inventory.local.json
 public/uploads/*
 !public/uploads/.gitkeep
 
