@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CircleUserRound, Menu, X } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,9 @@ import type { Role } from "@/lib/auth-types";
 
 export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role | null }) {
   const t = useT();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const showFlags = pathname === "/";
 
   return (
     <header className="z-40 h-12 shrink-0 border-b border-border/80 bg-[color:var(--card)]/95 backdrop-blur">
@@ -49,7 +52,7 @@ export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role 
         </Link>
 
         <div className="ml-auto flex shrink-0 items-center gap-0">
-          <FlagSwitcher />
+          {showFlags ? <FlagSwitcher /> : null}
           {signedIn ? (
             <Link
               href="/account"

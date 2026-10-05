@@ -1,5 +1,12 @@
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
+import type { Locale } from "./i18n";
+import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
+
+export type NoticeLocaleFields = {
+  title: string;
+  body: string;
+};
 
 export type Notice = {
   slug: string;
@@ -7,6 +14,7 @@ export type Notice = {
   body: string;
   publishedAt: string;
   pinned?: boolean;
+  i18n?: Partial<Record<"en" | "zh", NoticeLocaleFields>>;
 };
 
 const seedFile = dataFile("notices.json");
@@ -20,6 +28,7 @@ function fromDoc(doc: Record<string, unknown>): Notice {
     body: String(doc.body ?? ""),
     publishedAt: published,
     pinned: Boolean(doc.pinned),
+    i18n: doc.i18n && typeof doc.i18n === "object" ? (doc.i18n as Notice["i18n"]) : undefined,
   };
 }
 
@@ -52,6 +61,49 @@ export async function listNotices(): Promise<Notice[]> {
 export async function getNotice(slug: string): Promise<Notice | null> {
   const all = await listNotices();
   return all.find((item) => item.slug === slug) ?? null;
+}
+
+export function localizeNotice(notice: Notice, locale: Locale): Notice {
+  if (locale === "ko") return notice;
+  const loc = notice.i18n?.[locale];
+  if (!loc) return notice;
+  return {
+    ...notice,
+    title: loc.title || notice.title,
+    body: loc.body || notice.body,
+  };
+}
+
+export async function listNoticesLocalized(locale: Locale): Promise<Notice[]> {
+  return (await listNotices()).map((item) => localizeNotice(item, locale));
+}
+
+export async function getNoticeLocalized(slug: string, locale: Locale): Promise<Notice | null> {
+  const notice = await getNotice(slug);
+  return notice ? localizeNotice(notice, locale) : null;
+}
+
+async function buildNoticeLocale(title: string, body: string, to: ContentLocale): Promise<NoticeLocaleFields> {
+  return {
+    title: await translateText(title, to),
+    body: await translateText(body, to),
+  };
+}
+
+export async function fillNoticeI18n(
+  notice: Pick<Notice, "title" | "body" | "i18n">,
+  force = false,
+): Promise<Notice["i18n"]> {
+  const i18n: NonNullable<Notice["i18n"]> = { ...(notice.i18n ?? {}) };
+  for (const to of CONTENT_LOCALES) {
+    if (!force && i18n[to]?.title) continue;
+    try {
+      i18n[to] = await buildNoticeLocale(notice.title, notice.body, to);
+    } catch (error) {
+      console.error(`[notices] translate ${to} failed`, error);
+    }
+  }
+  return i18n;
 }
 
 function slugify(title: string) {
@@ -100,6 +152,7 @@ export async function createNotice(input: { title: string; body: string; slug?: 
     publishedAt: new Date().toISOString(),
     pinned: Boolean(input.pinned),
   };
+  notice.i18n = await fillNoticeI18n(notice, true);
   items.unshift(notice);
   await persist(items);
   return notice;
@@ -116,13 +169,21 @@ export async function updateNotice(
   if (nextSlug !== slug && items.some((item) => item.slug === nextSlug)) {
     return { ok: false as const, error: "이미 있는 주소입니다." };
   }
-  items[idx] = {
-    ...items[idx],
+  const prev = items[idx];
+  const title = input.title !== undefined ? input.title.trim() : prev.title;
+  const body = input.body !== undefined ? input.body.trim() : prev.body;
+  const contentChanged = title !== prev.title || body !== prev.body;
+  const next: Notice = {
+    ...prev,
     slug: nextSlug,
-    title: input.title !== undefined ? input.title.trim() : items[idx].title,
-    body: input.body !== undefined ? input.body.trim() : items[idx].body,
-    pinned: input.pinned !== undefined ? input.pinned : items[idx].pinned,
+    title,
+    body,
+    pinned: input.pinned !== undefined ? input.pinned : prev.pinned,
   };
+  if (contentChanged) {
+    next.i18n = await fillNoticeI18n(next, true);
+  }
+  items[idx] = next;
   await persist(items);
   return { ok: true as const, notice: items[idx] };
 }
@@ -133,4 +194,12 @@ export async function deleteNotice(slug: string) {
   if (next.length === items.length) return { ok: false as const, error: "공지를 찾지 못했습니다." };
   await persist(next);
   return { ok: true as const };
+}
+
+export async function persistNotice(notice: Notice) {
+  const items = await listNotices();
+  const idx = items.findIndex((item) => item.slug === notice.slug);
+  if (idx >= 0) items[idx] = notice;
+  else items.unshift(notice);
+  await persist(items);
 }

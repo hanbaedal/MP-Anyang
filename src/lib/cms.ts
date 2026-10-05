@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { BURIAL, COLUMBARIUM, LAWN, REMODEL_TYPES } from "./content";
-import { MESSAGES } from "./i18n";
+import { MESSAGES, type Locale } from "./i18n";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
 import { FEATURES } from "./site";
 import { PRICES, REMAINING } from "./facts";
-import { type CmsItem, type CmsPage, type CmsSlug } from "./cms-types";
+import { type CmsItem, type CmsLocaleFields, type CmsPage, type CmsSlug } from "./cms-types";
+import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
 
 export { CMS_SLUGS, isCmsSlug, type CmsItem, type CmsPage, type CmsSlug } from "./cms-types";
 
@@ -105,6 +106,7 @@ function fromDoc(doc: Record<string, unknown>): CmsPage {
     body: String(doc.body ?? ""),
     items: Array.isArray(doc.items) ? (doc.items as CmsItem[]) : [],
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : String(doc.updatedAt ?? ""),
+    i18n: doc.i18n && typeof doc.i18n === "object" ? (doc.i18n as CmsPage["i18n"]) : undefined,
   };
 }
 
@@ -132,6 +134,52 @@ export async function getCmsPageOrDefault(slug: CmsSlug): Promise<CmsPage> {
   return (await getCmsPage(slug)) ?? defaultCmsPage(slug);
 }
 
+/** 손님 화면용: 로케일에 맞는 제목·본문·항목 */
+export async function getCmsPageLocalized(slug: CmsSlug, locale: Locale): Promise<CmsPage> {
+  const page = await getCmsPageOrDefault(slug);
+  if (locale === "ko") return page;
+  const loc = page.i18n?.[locale];
+  if (!loc) return page;
+  return {
+    ...page,
+    title: loc.title || page.title,
+    lead: loc.lead || page.lead,
+    body: loc.body || page.body,
+    items: loc.items?.length ? loc.items : page.items,
+  };
+}
+
+async function buildLocaleFields(page: Omit<CmsPage, "updatedAt" | "i18n">, to: ContentLocale): Promise<CmsLocaleFields> {
+  const items: CmsItem[] = [];
+  for (const item of page.items ?? []) {
+    items.push({
+      ...item,
+      title: item.title ? await translateText(item.title, to) : "",
+      text: item.text ? await translateText(item.text, to) : item.text,
+    });
+  }
+  return {
+    title: await translateText(page.title, to),
+    lead: await translateText(page.lead, to),
+    body: await translateText(page.body, to),
+    items,
+  };
+}
+
+export async function fillCmsI18n(page: CmsPage, force = false): Promise<CmsPage["i18n"]> {
+  const i18n: NonNullable<CmsPage["i18n"]> = { ...(page.i18n ?? {}) };
+  const base = { slug: page.slug, title: page.title, lead: page.lead, body: page.body, items: page.items };
+  for (const to of CONTENT_LOCALES) {
+    if (!force && i18n[to]?.title) continue;
+    try {
+      i18n[to] = await buildLocaleFields(base, to);
+    } catch (error) {
+      console.error(`[cms] translate ${page.slug} ${to} failed`, error);
+    }
+  }
+  return i18n;
+}
+
 export async function saveCmsPage(input: Omit<CmsPage, "updatedAt"> & { updatedAt?: string }): Promise<CmsPage> {
   const page: CmsPage = {
     slug: input.slug,
@@ -148,6 +196,7 @@ export async function saveCmsPage(input: Omit<CmsPage, "updatedAt"> & { updatedA
     })),
     updatedAt: new Date().toISOString(),
   };
+  page.i18n = await fillCmsI18n(page, true);
 
   if (hasMongo()) {
     const db = await getDb();
@@ -162,4 +211,33 @@ export async function saveCmsPage(input: Omit<CmsPage, "updatedAt"> & { updatedA
   else all.push(page);
   await writeJsonFile(localFile, all);
   return page;
+}
+
+export async function listCmsPages(): Promise<CmsPage[]> {
+  if (hasMongo()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const rows = await db.collection("cms").find({}).toArray();
+        if (rows.length) return rows.map((row) => fromDoc(row as Record<string, unknown>));
+      }
+    } catch (error) {
+      console.error("[cms] mongo list failed", error);
+    }
+  }
+  return readLocal();
+}
+
+export async function persistCmsPage(page: CmsPage) {
+  if (hasMongo()) {
+    const db = await getDb();
+    if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
+    await db.collection("cms").updateOne({ slug: page.slug }, { $set: { ...page, updatedAt: new Date(page.updatedAt) } }, { upsert: true });
+    return;
+  }
+  const all = await readLocal();
+  const idx = all.findIndex((item) => item.slug === page.slug);
+  if (idx >= 0) all[idx] = page;
+  else all.push(page);
+  await writeJsonFile(localFile, all);
 }

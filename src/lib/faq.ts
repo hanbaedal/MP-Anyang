@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
+import type { Locale } from "./i18n";
+import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
+
+export type FaqLocaleFields = {
+  question: string;
+  answer: string;
+};
 
 export type FaqItem = {
   id: string;
@@ -9,6 +16,7 @@ export type FaqItem = {
   answer: string;
   createdAt: string;
   public: boolean;
+  i18n?: Partial<Record<"en" | "zh", FaqLocaleFields>>;
 };
 
 const seedFile = dataFile("faq.json");
@@ -23,6 +31,7 @@ function fromDoc(doc: Record<string, unknown>): FaqItem {
     answer: String(doc.answer ?? ""),
     createdAt: created,
     public: doc.public !== false,
+    i18n: doc.i18n && typeof doc.i18n === "object" ? (doc.i18n as FaqItem["i18n"]) : undefined,
   };
 }
 
@@ -51,6 +60,41 @@ export async function listFaq(): Promise<FaqItem[]> {
 
 export async function listPublicFaq(): Promise<FaqItem[]> {
   return (await listFaq()).filter((item) => item.public);
+}
+
+export function localizeFaq(item: FaqItem, locale: Locale): FaqItem {
+  if (locale === "ko") return item;
+  const loc = item.i18n?.[locale];
+  if (!loc) return item;
+  return {
+    ...item,
+    question: loc.question || item.question,
+    answer: loc.answer || item.answer,
+  };
+}
+
+export async function listPublicFaqLocalized(locale: Locale): Promise<FaqItem[]> {
+  return (await listPublicFaq()).map((item) => localizeFaq(item, locale));
+}
+
+async function buildFaqLocale(question: string, answer: string, to: ContentLocale): Promise<FaqLocaleFields> {
+  return {
+    question: await translateText(question, to),
+    answer: answer.trim() ? await translateText(answer, to) : "",
+  };
+}
+
+export async function fillFaqI18n(item: Pick<FaqItem, "question" | "answer" | "i18n">, force = false): Promise<FaqItem["i18n"]> {
+  const i18n: NonNullable<FaqItem["i18n"]> = { ...(item.i18n ?? {}) };
+  for (const to of CONTENT_LOCALES) {
+    if (!force && i18n[to]?.question) continue;
+    try {
+      i18n[to] = await buildFaqLocale(item.question, item.answer, to);
+    } catch (error) {
+      console.error(`[faq] translate ${to} failed`, error);
+    }
+  }
+  return i18n;
 }
 
 export function validateFaq(input: { name?: string; question?: string; answer?: string }) {
@@ -84,6 +128,7 @@ export async function saveFaq(input: { name: string; question: string; answer?: 
     createdAt: new Date().toISOString(),
     public: input.public !== false,
   };
+  item.i18n = await fillFaqI18n(item, true);
 
   if (hasMongo()) {
     const db = await getDb();
@@ -105,13 +150,21 @@ export async function updateFaq(
   const items = await listFaq();
   const idx = items.findIndex((item) => item.id === id);
   if (idx < 0) return { ok: false as const, error: "항목을 찾지 못했습니다." };
-  items[idx] = {
-    ...items[idx],
-    name: input.name !== undefined ? input.name.trim() : items[idx].name,
-    question: input.question !== undefined ? input.question.trim() : items[idx].question,
-    answer: input.answer !== undefined ? input.answer.trim() : items[idx].answer,
-    public: input.public !== undefined ? input.public : items[idx].public,
+  const prev = items[idx];
+  const question = input.question !== undefined ? input.question.trim() : prev.question;
+  const answer = input.answer !== undefined ? input.answer.trim() : prev.answer;
+  const contentChanged = question !== prev.question || answer !== prev.answer;
+  const next: FaqItem = {
+    ...prev,
+    name: input.name !== undefined ? input.name.trim() : prev.name,
+    question,
+    answer,
+    public: input.public !== undefined ? input.public : prev.public,
   };
+  if (contentChanged) {
+    next.i18n = await fillFaqI18n(next, true);
+  }
+  items[idx] = next;
   await persistAll(items);
   return { ok: true as const, item: items[idx] };
 }
@@ -122,4 +175,12 @@ export async function deleteFaq(id: string) {
   if (next.length === items.length) return { ok: false as const, error: "항목을 찾지 못했습니다." };
   await persistAll(next);
   return { ok: true as const };
+}
+
+export async function persistFaqItem(item: FaqItem) {
+  const items = await listFaq();
+  const idx = items.findIndex((row) => row.id === item.id);
+  if (idx >= 0) items[idx] = item;
+  else items.unshift(item);
+  await persistAll(items);
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
-import { listPublicFaq } from "@/lib/faq";
+import { listPublicFaqLocalized } from "@/lib/faq";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 
 export default async function FaqPage() {
   const locale = await readLocale();
-  const items = await listPublicFaq();
+  const items = await listPublicFaqLocalized(locale);
   return (
     <>
       <PageHero kicker={t(locale, "faq.kicker")} title={t(locale, "faq.title")} lead={t(locale, "faq.lead")} />

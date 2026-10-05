@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { FLAGS, type Locale, LOCALE_LABEL } from "@/lib/i18n";
 import { useLocale, useT } from "@/components/locale-provider";
 
-function FlagSvg({ code }: { code: "KR" | "US" | "JP" | "CN" }) {
+function FlagSvg({ code }: { code: "KR" | "US" | "CN" }) {
   if (code === "KR") {
     return (
       <svg viewBox="0 0 24 16" className="h-3 w-[1.125rem] rounded-[2px] ring-1 ring-black/10 lg:h-4 lg:w-6" aria-hidden>
@@ -26,14 +26,6 @@ function FlagSvg({ code }: { code: "KR" | "US" | "JP" | "CN" }) {
         <rect y="10.8" width="24" height="1.2" fill="#fff" />
         <rect y="13.2" width="24" height="1.2" fill="#fff" />
         <rect width="10" height="8.6" fill="#002868" />
-      </svg>
-    );
-  }
-  if (code === "JP") {
-    return (
-      <svg viewBox="0 0 24 16" className="h-3 w-[1.125rem] rounded-[2px] ring-1 ring-black/10 lg:h-4 lg:w-6" aria-hidden>
-        <rect width="24" height="16" fill="#fff" />
-        <circle cx="12" cy="8" r="4.4" fill="#BC002D" />
       </svg>
     );
   }

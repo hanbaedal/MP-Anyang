@@ -19,6 +19,13 @@ export type CmsItem = {
   remaining?: string;
 };
 
+export type CmsLocaleFields = {
+  title: string;
+  lead: string;
+  body: string;
+  items: CmsItem[];
+};
+
 export type CmsPage = {
   slug: CmsSlug;
   title: string;
@@ -26,6 +33,8 @@ export type CmsPage = {
   body: string;
   items: CmsItem[];
   updatedAt: string;
+  /** 손님용 영어·중국어 본문. 한글은 위 필드. */
+  i18n?: Partial<Record<"en" | "zh", CmsLocaleFields>>;
 };
 
 export function isCmsSlug(value: string): value is CmsSlug {

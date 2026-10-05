@@ -2,7 +2,7 @@ import { ExpandablePhoto } from "@/components/expandable-photo";
 import { PageHero, Prose } from "@/components/page-hero";
 import { Paragraphs } from "@/components/paragraphs";
 import { LAWN } from "@/lib/content";
-import { getCmsPage } from "@/lib/cms";
+import { getCmsPageLocalized } from "@/lib/cms";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -13,18 +13,18 @@ export async function generateMetadata() {
 
 export default async function LawnPage() {
   const locale = await readLocale();
-  const cms = await getCmsPage("lawn");
-  const items = cms?.items?.length ? cms.items : LAWN.map((item) => ({ id: item.title, title: item.title, image: item.image }));
+  const cms = await getCmsPageLocalized("lawn", locale);
+  const items = cms.items?.length ? cms.items : LAWN.map((item) => ({ id: item.title, title: item.title, image: item.image }));
   return (
     <>
       <PageHero
         kicker={t(locale, "lawn.kicker")}
-        title={cms?.title || t(locale, "lawn.title")}
-        lead={cms?.lead || t(locale, "lawn.lead")}
+        title={cms.title || t(locale, "lawn.title")}
+        lead={cms.lead || t(locale, "lawn.lead")}
         image={{ src: "/images/lawn.jpg", alt: t(locale, "lawn.title") }}
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <Prose>{cms?.body ? <Paragraphs text={cms.body} /> : <p>{t(locale, "lawn.body")}</p>}</Prose>
+        <Prose>{cms.body ? <Paragraphs text={cms.body} /> : <p>{t(locale, "lawn.body")}</p>}</Prose>
         <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item, index) => (
             <li key={item.id || item.title} className="overflow-hidden rounded-xl border bg-card shadow-sm">
