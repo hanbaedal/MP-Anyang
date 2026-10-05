@@ -1,4 +1,4 @@
-import type { Locale } from "./i18n";
+import { MESSAGES, type Locale } from "./i18n";
 
 export type ContentLocale = "en" | "zh";
 
@@ -8,6 +8,28 @@ const pair: Record<ContentLocale, string> = {
   en: "ko|en",
   zh: "ko|zh-CN",
 };
+
+let koIndex: Map<string, string> | null = null;
+
+function getKoIndex() {
+  if (!koIndex) {
+    koIndex = new Map();
+    for (const [key, value] of Object.entries(MESSAGES.ko)) {
+      const trimmed = value.trim();
+      if (trimmed && !koIndex.has(trimmed)) koIndex.set(trimmed, key);
+    }
+  }
+  return koIndex;
+}
+
+/** 한글 UI 문구와 같으면 미리 번역된 메시지를 씁니다. */
+export function lookupTranslated(text: string, to: Locale | ContentLocale): string | null {
+  if (to === "ko") return text;
+  const key = getKoIndex().get(text.trim());
+  if (!key) return null;
+  const out = MESSAGES[to as Locale][key];
+  return out?.trim() ? out : null;
+}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,6 +56,8 @@ function chunksOf(text: string, size: number) {
 async function translateChunk(text: string, to: ContentLocale): Promise<string> {
   const q = text.trim();
   if (!q) return text;
+  const fromMsg = lookupTranslated(q, to);
+  if (fromMsg !== null) return fromMsg;
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(q.slice(0, 450))}&langpair=${pair[to]}`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) return text;
@@ -48,11 +72,22 @@ async function translateChunk(text: string, to: ContentLocale): Promise<string> 
 export async function translateText(text: string, to: ContentLocale): Promise<string> {
   const raw = text ?? "";
   if (!raw.trim()) return raw;
-  const parts = chunksOf(raw, 420);
+
+  const exact = lookupTranslated(raw, to);
+  if (exact !== null) return exact;
+
+  if (raw.includes("\n\n")) {
+    const parts = raw.split("\n\n");
+    const out: string[] = [];
+    for (const part of parts) out.push(await translateText(part, to));
+    return out.join("\n\n");
+  }
+
+  const chunks = chunksOf(raw, 420);
   const out: string[] = [];
-  for (let i = 0; i < parts.length; i++) {
-    out.push(await translateChunk(parts[i], to));
-    if (i < parts.length - 1) await sleep(250);
+  for (let i = 0; i < chunks.length; i++) {
+    out.push(await translateChunk(chunks[i], to));
+    if (i < chunks.length - 1) await sleep(200);
   }
   return out.join(raw.includes("\n") ? "\n" : " ");
 }
@@ -66,7 +101,7 @@ export async function translateFields<T extends Record<string, string>>(
     const value = fields[key];
     if (typeof value === "string" && value.trim()) {
       next[key] = (await translateText(value, to)) as T[keyof T];
-      await sleep(150);
+      await sleep(100);
     }
   }
   return next;
@@ -75,4 +110,10 @@ export async function translateFields<T extends Record<string, string>>(
 export function pickContentLocale(locale: Locale): "ko" | ContentLocale {
   if (locale === "en" || locale === "zh") return locale;
   return "ko";
+}
+
+/** 손님 화면용: 저장된 번역이 없으면 사전·API로 바로 맞춥니다. */
+export function localizeStoredText(text: string, locale: Locale): string {
+  if (locale === "ko" || !text.trim()) return text;
+  return lookupTranslated(text, locale) ?? text;
 }

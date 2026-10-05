@@ -119,7 +119,22 @@ export async function listActiveAnnouncements(at = new Date()): Promise<SiteAnno
 }
 
 export async function listActiveAnnouncementsLocalized(locale: Locale, at = new Date()): Promise<SiteAnnouncement[]> {
-  return (await listActiveAnnouncements(at)).map((item) => localizeAnnouncement(item, locale));
+  const active = await listActiveAnnouncements(at);
+  if (locale === "ko") return active;
+  const out: SiteAnnouncement[] = [];
+  for (const item of active) {
+    let row = item;
+    if (!row.i18n?.[locale]?.title) {
+      try {
+        row = { ...row, i18n: await fillAnnouncementI18n(row, false), updatedAt: new Date().toISOString() };
+        await persistAnnouncement(row);
+      } catch (error) {
+        console.error(`[announcements] auto-localize ${row.id} failed`, error);
+      }
+    }
+    out.push(localizeAnnouncement(row, locale));
+  }
+  return out;
 }
 
 async function buildAnnouncementLocale(

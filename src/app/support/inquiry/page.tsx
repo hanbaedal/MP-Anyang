@@ -24,7 +24,7 @@ export default async function InquiryPage() {
               {SITE.phone}
             </a>
           </p>
-          <p>{SITE.address}</p>
+          <p>{t(locale, "site.address")}</p>
         </Prose>
         <InquiryForm />
       </div>

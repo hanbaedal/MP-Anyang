@@ -4,6 +4,8 @@ import type { GalleryTag } from "./content";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
 import { GALLERY_TAGS, type GalleryPhoto } from "./gallery-types";
+import type { Locale } from "./i18n";
+import { localizeStoredText } from "./translate-content";
 
 export type { GalleryPhoto } from "./gallery-types";
 export { GALLERY_TAGS } from "./gallery-types";
@@ -50,6 +52,13 @@ async function readStored(): Promise<GalleryPhoto[] | null> {
 
 export async function listGallery(): Promise<GalleryPhoto[]> {
   return (await readStored()) ?? defaultGallery();
+}
+
+export async function listGalleryLocalized(locale: Locale): Promise<GalleryPhoto[]> {
+  return (await listGallery()).map((item) => ({
+    ...item,
+    alt: localizeStoredText(item.alt, locale),
+  }));
 }
 
 async function persist(items: GalleryPhoto[]) {

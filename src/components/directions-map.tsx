@@ -26,13 +26,13 @@ export function DirectionsMap({ compact = false }: { compact?: boolean }) {
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        {SITE.address} · {t("phone")}{" "}
+        {t("site.address")} · {t("phone")}{" "}
         <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
           {SITE.phone}
         </a>
       </p>
       <iframe
-        title={`${SITE.legalName} ${t("directions")}`}
+        title={`${t("site.legalName")} ${t("directions")}`}
         src={MAP.osmEmbed}
         className={compact ? "h-56 w-full rounded-xl border" : "h-80 w-full rounded-xl border md:h-96"}
         loading="lazy"

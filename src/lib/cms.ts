@@ -134,10 +134,19 @@ export async function getCmsPageOrDefault(slug: CmsSlug): Promise<CmsPage> {
   return (await getCmsPage(slug)) ?? defaultCmsPage(slug);
 }
 
-/** 손님 화면용: 로케일에 맞는 제목·본문·항목 */
+/** 손님 화면용: 로케일에 맞는 제목·본문·항목. 번역이 없으면 채운 뒤 저장합니다. */
 export async function getCmsPageLocalized(slug: CmsSlug, locale: Locale): Promise<CmsPage> {
-  const page = await getCmsPageOrDefault(slug);
+  let page = await getCmsPageOrDefault(slug);
   if (locale === "ko") return page;
+  if (!page.i18n?.[locale]?.title) {
+    try {
+      const i18n = await fillCmsI18n(page, false);
+      page = { ...page, i18n, updatedAt: new Date().toISOString() };
+      await persistCmsPage(page);
+    } catch (error) {
+      console.error(`[cms] auto-localize ${slug} failed`, error);
+    }
+  }
   const loc = page.i18n?.[locale];
   if (!loc) return page;
   return {

@@ -74,7 +74,22 @@ export function localizeFaq(item: FaqItem, locale: Locale): FaqItem {
 }
 
 export async function listPublicFaqLocalized(locale: Locale): Promise<FaqItem[]> {
-  return (await listPublicFaq()).map((item) => localizeFaq(item, locale));
+  const items = await listPublicFaq();
+  if (locale === "ko") return items;
+  const out: FaqItem[] = [];
+  for (const item of items) {
+    let row = item;
+    if (!row.i18n?.[locale]?.question) {
+      try {
+        row = { ...row, i18n: await fillFaqI18n(row, false) };
+        await persistFaqItem(row);
+      } catch (error) {
+        console.error(`[faq] auto-localize ${row.id} failed`, error);
+      }
+    }
+    out.push(localizeFaq(row, locale));
+  }
+  return out;
 }
 
 async function buildFaqLocale(question: string, answer: string, to: ContentLocale): Promise<FaqLocaleFields> {

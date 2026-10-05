@@ -1,6 +1,6 @@
 import { GalleryGrid } from "@/components/gallery-grid";
 import { PageHero } from "@/components/page-hero";
-import { listGallery } from "@/lib/gallery";
+import { listGalleryLocalized } from "@/lib/gallery";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 
 export default async function GalleryPage() {
   const locale = await readLocale();
-  const items = await listGallery();
+  const items = await listGalleryLocalized(locale);
   return (
     <>
       <PageHero

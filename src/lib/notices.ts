@@ -75,12 +75,38 @@ export function localizeNotice(notice: Notice, locale: Locale): Notice {
 }
 
 export async function listNoticesLocalized(locale: Locale): Promise<Notice[]> {
-  return (await listNotices()).map((item) => localizeNotice(item, locale));
+  const all = await listNotices();
+  if (locale === "ko") return all;
+  const out: Notice[] = [];
+  for (const notice of all) {
+    let row = notice;
+    if (!row.i18n?.[locale]?.title) {
+      try {
+        row = { ...row, i18n: await fillNoticeI18n(row, false) };
+        await persistNotice(row);
+      } catch (error) {
+        console.error(`[notices] auto-localize ${row.slug} failed`, error);
+      }
+    }
+    out.push(localizeNotice(row, locale));
+  }
+  return out;
 }
 
 export async function getNoticeLocalized(slug: string, locale: Locale): Promise<Notice | null> {
   const notice = await getNotice(slug);
-  return notice ? localizeNotice(notice, locale) : null;
+  if (!notice) return null;
+  if (locale === "ko") return notice;
+  let row = notice;
+  if (!row.i18n?.[locale]?.title) {
+    try {
+      row = { ...row, i18n: await fillNoticeI18n(row, false) };
+      await persistNotice(row);
+    } catch (error) {
+      console.error(`[notices] auto-localize ${row.slug} failed`, error);
+    }
+  }
+  return localizeNotice(row, locale);
 }
 
 async function buildNoticeLocale(title: string, body: string, to: ContentLocale): Promise<NoticeLocaleFields> {
