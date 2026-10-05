@@ -1,16 +1,22 @@
 import { SocialActions } from "@/components/hero-actions";
 import { SITE } from "@/lib/site";
+import { isGuestLocalePath, t } from "@/lib/i18n";
+import { readLocale } from "@/lib/i18n-server";
+import { headers } from "next/headers";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const locale = await readLocale();
+  const pathname = (await headers()).get("x-pathname") ?? "/";
+  const uiLocale = isGuestLocalePath(pathname) ? locale : "ko";
   return (
     <footer className="shrink-0 border-t border-primary-foreground/20 bg-primary text-sm leading-6 text-primary-foreground">
       <div className="flex flex-col items-center gap-3 px-4 py-3 text-center sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:pl-36 lg:pr-6 lg:text-left">
         <div className="min-w-0">
-          <p className="font-serif text-base">{SITE.legalName}</p>
+          <p className="font-serif text-base">{t(uiLocale, "site.legalName")}</p>
           <p className="mt-1 text-primary-foreground/85">
-            {SITE.address}
+            {t(uiLocale, "site.address")}
             <br />
-            전화{" "}
+            {t(uiLocale, "phone")}{" "}
             <a className="underline-offset-4 hover:underline" href={SITE.phoneTel}>
               {SITE.phone}
             </a>

@@ -1,11 +1,11 @@
 export const CMS_SLUGS = [
-  { slug: "greeting", label: "인사말" },
-  { slug: "features", label: "공원 특징" },
-  { slug: "burial", label: "매장묘" },
-  { slug: "lawn", label: "평장묘" },
-  { slug: "columbarium", label: "봉안묘" },
-  { slug: "remodeling", label: "리모델링" },
-  { slug: "prices", label: "분양가·잔여" },
+  { slug: "greeting", label: "인사말", i18n: "nav.greeting" },
+  { slug: "features", label: "공원 특징", i18n: "nav.features" },
+  { slug: "burial", label: "매장묘", i18n: "nav.burial" },
+  { slug: "lawn", label: "평장묘", i18n: "nav.lawn" },
+  { slug: "columbarium", label: "봉안묘", i18n: "nav.columbarium" },
+  { slug: "remodeling", label: "리모델링", i18n: "nav.remodel" },
+  { slug: "prices", label: "분양가·잔여", i18n: "nav.prices" },
 ] as const;
 
 export type CmsSlug = (typeof CMS_SLUGS)[number]["slug"];

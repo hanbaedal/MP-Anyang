@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
+import { useT } from "@/components/locale-provider";
 import { isAnnouncementActive, type SiteAnnouncement } from "@/lib/announcement-types";
 import { thumbUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ function filterVisible(items: SiteAnnouncement[], dismissedIds: ReadonlySet<stri
 }
 
 function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismiss: () => void }) {
+  const t = useT();
   const href = item.linkHref.trim();
   const media = (
     <div className="relative h-[148px] w-full shrink-0 bg-muted sm:h-[168px] md:h-[196px]">
@@ -57,7 +59,7 @@ function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismi
         type="button"
         onClick={onDismiss}
         className="absolute right-1.5 top-1.5 z-10 inline-flex size-7 items-center justify-center rounded-full bg-black/55 text-white shadow-sm hover:bg-black/75"
-        aria-label={`${item.title} 닫기`}
+        aria-label={`${item.title} ${t("close")}`}
       >
         <X className="size-3.5" aria-hidden />
       </button>
@@ -67,7 +69,7 @@ function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismi
           target="_blank"
           rel="noopener noreferrer"
           className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={item.linkLabel || `${item.title} 새 페이지로 열기`}
+          aria-label={item.linkLabel || item.title}
         >
           {media}
           {copy}
@@ -83,6 +85,7 @@ function AnnouncementCard({ item, onDismiss }: { item: SiteAnnouncement; onDismi
 }
 
 export function SiteAnnouncements() {
+  const t = useT();
   const [allActive, setAllActive] = useState<SiteAnnouncement[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 
@@ -116,7 +119,7 @@ export function SiteAnnouncements() {
   return (
     <div
       className="pointer-events-none fixed inset-x-0 top-12 z-30 max-h-[min(78vh,640px)] overflow-y-auto px-2 py-2.5 sm:px-3 lg:left-36 lg:px-4"
-      aria-label="이벤트·소식"
+      aria-label={t("home.events")}
     >
       <div
         className={cn(

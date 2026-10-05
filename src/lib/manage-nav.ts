@@ -16,7 +16,7 @@ export function manageNavItems(): ManageNavItem[] {
     { href: "/manage/faq", i18n: "manage.faq" },
     ...CMS_SLUGS.map((item) => ({
       href: `/manage/pages/${item.slug}`,
-      i18n: item.label,
+      i18n: item.i18n,
     })),
   ];
 }

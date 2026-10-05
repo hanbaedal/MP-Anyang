@@ -11,6 +11,7 @@ import { manageNavItems } from "@/lib/manage-nav";
 import { SUPERVISOR_NAV } from "@/lib/supervisor-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
+import { tKo } from "@/lib/i18n";
 import { isCmsStaff, isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
 
 export function isNavActive(pathname: string, href: string) {
@@ -163,7 +164,7 @@ export function NavTree({
               ) : (
                 <Briefcase className="size-3 shrink-0 text-primary/80" aria-hidden />
               )}
-              <span className={cn("font-medium", !fit && "truncate")}>{t("work.program")}</span>
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("work.program")}</span>
             </button>
             {workExpanded ? (
               <ul className="border-t border-border">
@@ -178,7 +179,7 @@ export function NavTree({
                         className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                       >
                         <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
                       </Link>
                     </li>
                   );
@@ -204,7 +205,7 @@ export function NavTree({
               ) : (
                 <Folder className="size-3 shrink-0 text-primary/80" aria-hidden />
               )}
-              <span className={cn("font-medium", !fit && "truncate")}>{t("work.overview")}</span>
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("work.overview")}</span>
             </button>
             {execExpanded ? (
               <ul className="border-t border-border">
@@ -219,7 +220,7 @@ export function NavTree({
                         className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                       >
                         <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
                       </Link>
                     </li>
                   );
@@ -245,7 +246,7 @@ export function NavTree({
               ) : (
                 <LayoutTemplate className="size-3 shrink-0 text-primary/80" aria-hidden />
               )}
-              <span className={cn("font-medium", !fit && "truncate")}>{t("manage.homepage")}</span>
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("manage.homepage")}</span>
             </button>
             {manageExpanded ? (
               <ul className="border-t border-border">
@@ -260,7 +261,7 @@ export function NavTree({
                         className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                       >
                         <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
                       </Link>
                     </li>
                   );
@@ -286,7 +287,7 @@ export function NavTree({
               ) : (
                 <Shield className="size-3 shrink-0 text-primary/80" aria-hidden />
               )}
-              <span className={cn("font-medium", !fit && "truncate")}>{t("nav.supervisor")}</span>
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("nav.supervisor")}</span>
             </button>
             {supervisorExpanded ? (
               <ul className="border-t border-border">
@@ -301,7 +302,7 @@ export function NavTree({
                         className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
                       >
                         <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                        <span className={cn(!fit && "truncate")}>{t(child.i18n)}</span>
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
                       </Link>
                     </li>
                   );

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { listActiveAnnouncements } from "@/lib/announcements";
+import { listActiveAnnouncementsLocalized } from "@/lib/announcements";
+import { readLocale } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const items = await listActiveAnnouncements(new Date());
+  const locale = await readLocale();
+  const items = await listActiveAnnouncementsLocalized(locale, new Date());
   return NextResponse.json(
     { ok: true, items, serverNow: new Date().toISOString() },
     {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Photo } from "@/components/page-hero";
+import { useT } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
 const BGM_SESSION_KEY = "anyang-home-hero-bgm";
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -88,7 +90,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
     return (
       <Photo
         src={posterSrc}
-        alt="(재)안양공원묘원 언덕 묘역 전경"
+        alt={t("site.legalName")}
         className="absolute inset-0 h-full w-full rounded-none"
         sizes="100vw"
         priority
@@ -129,10 +131,10 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
             type="button"
             onClick={() => void startBgm()}
             className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm text-white ring-1 ring-white/30 backdrop-blur-sm hover:bg-black/60"
-            aria-label="배경음악 재생"
+            aria-label={t("home.bgmPlay")}
           >
             <Volume2 className="size-4" aria-hidden />
-            배경음악 재생
+            {t("home.bgmPlay")}
           </button>
         </div>
       ) : null}
@@ -141,8 +143,8 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           type="button"
           onClick={() => setMusicOn((on) => !on)}
           className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
-          aria-label="음악 끄기"
-          title="음악 끄기"
+          aria-label={t("home.bgmOff")}
+          title={t("home.bgmOff")}
         >
           <Volume2 className="size-5" aria-hidden />
         </button>
@@ -152,8 +154,8 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           type="button"
           onClick={() => void startBgm()}
           className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
-          aria-label="배경음악 켜기"
-          title="배경음악 켜기"
+          aria-label={t("home.bgmOn")}
+          title={t("home.bgmOn")}
         >
           <VolumeX className="size-5" aria-hidden />
         </button>

@@ -1,6 +1,12 @@
 /** 방문자가 「오늘 하루 안 보기」 등으로 닫을 때 저장 범위 */
 export type AnnouncementDismissScope = "session" | "day" | "until_end";
 
+export type AnnouncementLocaleFields = {
+  title: string;
+  body: string;
+  linkLabel: string;
+};
+
 export type SiteAnnouncement = {
   id: string;
   title: string;
@@ -20,6 +26,8 @@ export type SiteAnnouncement = {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  /** 손님용 영어·중국어. 한글은 위 필드. */
+  i18n?: Partial<Record<"en" | "zh", AnnouncementLocaleFields>>;
 };
 
 function parseScheduleInstant(iso: string) {

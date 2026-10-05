@@ -1,8 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
-import { isAnnouncementActive, type AnnouncementDismissScope, type SiteAnnouncement } from "./announcement-types";
+import {
+  isAnnouncementActive,
+  type AnnouncementDismissScope,
+  type AnnouncementLocaleFields,
+  type SiteAnnouncement,
+} from "./announcement-types";
 import { isSafeHomeMediaPath } from "./home-hero";
+import type { Locale } from "./i18n";
 import { getDb, hasMongo } from "./mongo";
+import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
 
 export type { AnnouncementDismissScope, SiteAnnouncement } from "./announcement-types";
 
@@ -29,6 +36,7 @@ function fromDoc(doc: Record<string, unknown>): SiteAnnouncement {
     sortOrder: Number(doc.sortOrder ?? 0) || 0,
     createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : String(doc.createdAt ?? nowIso()),
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : String(doc.updatedAt ?? nowIso()),
+    i18n: doc.i18n && typeof doc.i18n === "object" ? (doc.i18n as SiteAnnouncement["i18n"]) : undefined,
   };
 }
 
@@ -48,6 +56,7 @@ function normalize(input: Partial<SiteAnnouncement> & { id?: string }): SiteAnno
     sortOrder: Number(input.sortOrder ?? 0) || 0,
     createdAt: input.createdAt ?? nowIso(),
     updatedAt: nowIso(),
+    i18n: input.i18n,
   };
 }
 
@@ -92,9 +101,54 @@ export async function listAnnouncements(): Promise<SiteAnnouncement[]> {
   return readLocal();
 }
 
+export function localizeAnnouncement(item: SiteAnnouncement, locale: Locale): SiteAnnouncement {
+  if (locale === "ko") return item;
+  const loc = item.i18n?.[locale];
+  if (!loc) return item;
+  return {
+    ...item,
+    title: loc.title || item.title,
+    body: loc.body || item.body,
+    linkLabel: loc.linkLabel || item.linkLabel,
+  };
+}
+
 export async function listActiveAnnouncements(at = new Date()): Promise<SiteAnnouncement[]> {
   const all = await listAnnouncements();
   return all.filter((item) => isAnnouncementActive(item, at)).sort((a, b) => a.sortOrder - b.sortOrder || b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listActiveAnnouncementsLocalized(locale: Locale, at = new Date()): Promise<SiteAnnouncement[]> {
+  return (await listActiveAnnouncements(at)).map((item) => localizeAnnouncement(item, locale));
+}
+
+async function buildAnnouncementLocale(
+  title: string,
+  body: string,
+  linkLabel: string,
+  to: ContentLocale,
+): Promise<AnnouncementLocaleFields> {
+  return {
+    title: await translateText(title, to),
+    body: body.trim() ? await translateText(body, to) : "",
+    linkLabel: linkLabel.trim() ? await translateText(linkLabel, to) : "",
+  };
+}
+
+export async function fillAnnouncementI18n(
+  item: Pick<SiteAnnouncement, "title" | "body" | "linkLabel" | "i18n">,
+  force = false,
+): Promise<SiteAnnouncement["i18n"]> {
+  const i18n: NonNullable<SiteAnnouncement["i18n"]> = { ...(item.i18n ?? {}) };
+  for (const to of CONTENT_LOCALES) {
+    if (!force && i18n[to]?.title) continue;
+    try {
+      i18n[to] = await buildAnnouncementLocale(item.title, item.body, item.linkLabel, to);
+    } catch (error) {
+      console.error(`[announcements] translate ${to} failed`, error);
+    }
+  }
+  return i18n;
 }
 
 function validateSchedule(startsAt: string, endsAt: string) {
@@ -113,6 +167,16 @@ export async function saveAnnouncement(input: Partial<SiteAnnouncement> & { id?:
   const item = normalize({ ...existing, ...input, id: input.id ?? existing?.id });
   if (!item.title) throw new Error("제목을 입력해 주세요.");
   validateSchedule(item.startsAt, item.endsAt);
+  const contentChanged =
+    !existing ||
+    existing.title !== item.title ||
+    existing.body !== item.body ||
+    existing.linkLabel !== item.linkLabel;
+  if (contentChanged || !existing?.i18n?.en?.title) {
+    item.i18n = await fillAnnouncementI18n(item, true);
+  } else {
+    item.i18n = existing.i18n;
+  }
   const idx = all.findIndex((a) => a.id === item.id);
   if (idx >= 0) {
     item.createdAt = all[idx].createdAt;
@@ -127,4 +191,12 @@ export async function saveAnnouncement(input: Partial<SiteAnnouncement> & { id?:
 export async function deleteAnnouncement(id: string): Promise<void> {
   const all = await listAnnouncements();
   await writeAll(all.filter((a) => a.id !== id));
+}
+
+export async function persistAnnouncement(item: SiteAnnouncement) {
+  const all = await listAnnouncements();
+  const idx = all.findIndex((row) => row.id === item.id);
+  if (idx >= 0) all[idx] = item;
+  else all.unshift(item);
+  await writeAll(all);
 }

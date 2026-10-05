@@ -86,6 +86,13 @@ const ko: Record<string, string> = {
   "home.mapLead": "주소는 경기 안산시 상록구 오리골길 41 (양상동 산50)입니다.",
   "home.features": "공원의 네 가지",
   "home.call": "전화 상담",
+  "home.bgmPlay": "배경음악 재생",
+  "home.bgmOn": "배경음악 켜기",
+  "home.bgmOff": "음악 끄기",
+  "home.events": "이벤트·소식",
+  "site.legalName": "(재)안양공원묘원",
+  "site.address": "경기 안산시 상록구 오리골길 41 (양상동 산50)",
+  "more.detail": "자세히 보기",
   "footer.links": "바로 가기",
   "footer.info": "안내",
   "footer.privacy": "개인정보처리방침",
@@ -551,6 +558,13 @@ const en: Record<string, string> = {
   "home.mapLead": "Address: 경기 안산시 상록구 오리골길 41 (양상동 산50).",
   "home.features": "Four things about the park",
   "home.call": "Call us",
+  "home.bgmPlay": "Play background music",
+  "home.bgmOn": "Turn on music",
+  "home.bgmOff": "Mute music",
+  "home.events": "News & events",
+  "site.legalName": "Anyang Memorial Park",
+  "site.address": "41 Origol-gil, Sangnok-gu, Ansan-si, Gyeonggi-do (Yangsang-dong San 50)",
+  "more.detail": "Learn more",
   "footer.links": "Links",
   "footer.info": "Info",
   "footer.privacy": "Privacy",
@@ -1012,6 +1026,13 @@ const zh: Record<string, string> = {
   "home.mapLead": "地址：경기 안산시 상록구 오리골길 41 (양상동 산50)。",
   "home.features": "公园四点",
   "home.call": "电话咨询",
+  "home.bgmPlay": "播放背景音乐",
+  "home.bgmOn": "打开背景音乐",
+  "home.bgmOff": "关闭音乐",
+  "home.events": "活动与消息",
+  "site.legalName": "安养公园墓园",
+  "site.address": "京畿道安山市常绿区梧里骨路41（阳上洞山50）",
+  "more.detail": "了解更多",
   "footer.links": "快捷入口",
   "footer.info": "说明",
   "footer.privacy": "隐私政策",
@@ -1418,6 +1439,18 @@ export function normalizeLocale(value: string | undefined | null): Locale {
   return "ko";
 }
 
+/** 손님 공개 경로 — 국기·선택 언어 표시. 업무/관리/감독/계정은 제외. */
+const STAFF_PATH_PREFIXES = ["/work", "/manage", "/supervisor", "/account", "/dev"] as const;
+
+export function isGuestLocalePath(pathname: string | null | undefined): boolean {
+  if (!pathname) return true;
+  if (pathname === "/") return true;
+  if (STAFF_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return false;
+  }
+  return true;
+}
+
 export function t(locale: Locale, key: string, vars?: Record<string, string | number>) {
   let value = MESSAGES[locale][key] ?? MESSAGES.ko[key] ?? key;
   if (vars) {
@@ -1426,5 +1459,10 @@ export function t(locale: Locale, key: string, vars?: Record<string, string | nu
     }
   }
   return value;
+}
+
+/** 업무·관리·감독 메뉴 등 직원 UI는 항상 한글. */
+export function tKo(key: string, vars?: Record<string, string | number>) {
+  return t("ko", key, vars);
 }
 

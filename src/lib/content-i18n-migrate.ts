@@ -1,3 +1,4 @@
+import { fillAnnouncementI18n, listAnnouncements, persistAnnouncement } from "./announcements";
 import { CMS_SLUGS, fillCmsI18n, getCmsPageOrDefault, persistCmsPage } from "./cms";
 import { fillFaqI18n, listFaq, persistFaqItem } from "./faq";
 import { fillNoticeI18n, listNotices, persistNotice } from "./notices";
@@ -6,13 +7,15 @@ export type ContentI18nMigrateResult = {
   cms: number;
   notices: number;
   faq: number;
+  announcements: number;
 };
 
-/** 기존 CMS·공지·FAQ 한글을 영어·중국어로 채워 넣습니다. force면 이미 있는 번역도 다시 만듭니다. */
+/** 기존 CMS·공지·FAQ·팝업 한글을 영어·중국어로 채워 넣습니다. force면 이미 있는 번역도 다시 만듭니다. */
 export async function migrateContentI18n(force = false): Promise<ContentI18nMigrateResult> {
   let cms = 0;
   let notices = 0;
   let faq = 0;
+  let announcements = 0;
 
   for (const { slug } of CMS_SLUGS) {
     const page = await getCmsPageOrDefault(slug);
@@ -37,5 +40,13 @@ export async function migrateContentI18n(force = false): Promise<ContentI18nMigr
     faq += 1;
   }
 
-  return { cms, notices, faq };
+  for (const item of await listAnnouncements()) {
+    if (!force && item.i18n?.en?.title && item.i18n?.zh?.title) continue;
+    item.i18n = await fillAnnouncementI18n(item, force);
+    item.updatedAt = new Date().toISOString();
+    await persistAnnouncement(item);
+    announcements += 1;
+  }
+
+  return { cms, notices, faq, announcements };
 }
