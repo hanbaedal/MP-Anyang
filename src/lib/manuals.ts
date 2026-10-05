@@ -151,7 +151,7 @@ export async function buildManualPdf(item: ManualItem) {
   return new Promise<Buffer>((resolve, reject) => {
     const doc = new PDFDocument({ margin: 48, size: "A4", info: { Title: `${item.serial} ${item.title}` } });
     const chunks: Buffer[] = [];
-    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
     doc.registerFont("kr", font);
