@@ -36,13 +36,16 @@ export const SOCIAL_URLS = {
   FACEBOOK: "https://www.facebook.com/profile.php?id=61595231941222",
   INSTAGRAM: "https://www.instagram.com/anyangmp/",
   YOUTUBE: "https://www.youtube.com/channel/UCnMpOKXKjlrDnVtWHZUH_wA",
-  CAFE: "https://cafe.naver.com/dahyangsanbang",
+  BLOG: "https://blog.naver.com/ahnyangmp",
 } as const;
 
 export type SocialKey = keyof typeof SOCIAL_URLS;
 
 export function socialHref(key: SocialKey, fallback: string) {
-  const fromEnv = process.env[`NEXT_PUBLIC_${key}_URL`]?.trim() || process.env[`${key}_URL`]?.trim();
+  const fromEnv =
+    process.env[`NEXT_PUBLIC_${key}_URL`]?.trim() ||
+    process.env[`${key}_URL`]?.trim() ||
+    process.env[key]?.trim();
   const fromConfig = SOCIAL_URLS[key].trim();
   return fromEnv || fromConfig || fallback;
 }

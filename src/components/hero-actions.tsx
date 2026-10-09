@@ -45,22 +45,15 @@ function YoutubeMark() {
   );
 }
 
-function NaverCafeMark() {
+function NaverBlogMark() {
   return (
     <svg viewBox="0 0 24 24" className="size-6" aria-hidden>
       <rect width="24" height="24" rx="6" fill="#03C75A" />
       <path
         fill="#fff"
-        d="M6.6 9h8.6c.5 0 .9.4.9.9v4.5c0 2.1-1.8 3.7-4 3.7H9.7c-2.2 0-4-1.6-4-3.7V9.9c0-.5.4-.9.9-.9z"
+        d="M7.2 6.2h9.6c.7 0 1.2.5 1.2 1.2v9.2c0 .7-.5 1.2-1.2 1.2H7.2c-.7 0-1.2-.5-1.2-1.2V7.4c0-.7.5-1.2 1.2-1.2z"
       />
-      <path
-        fill="none"
-        stroke="#fff"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        d="M16.1 10.3h1.6c1.2 0 2.1.9 2.1 2s-.9 2-2.1 2h-1.6"
-      />
-      <path fill="#fff" d="M7 18.6h10c.3 0 .5.3.4.6-.3.6-1.4 1.1-3.4 1.1H10c-2 0-3.1-.5-3.4-1.1-.1-.3.1-.6.4-.6z" />
+      <path fill="#03C75A" d="M8.4 9.1h7.2v1.3H8.4zm0 2.5h7.2v1.3H8.4zm0 2.5h4.8v1.3H8.4z" />
     </svg>
   );
 }
@@ -100,7 +93,7 @@ export function SocialActions() {
     { href: socialHref("FACEBOOK", SITE.phoneTel), label: "페이스북", icon: <FacebookMark /> },
     { href: socialHref("INSTAGRAM", "/intro/directions"), label: "인스타그램", icon: <InstagramMark /> },
     { href: socialHref("YOUTUBE", "/lots/prices"), label: "유튜브", icon: <YoutubeMark /> },
-    { href: socialHref("CAFE", "/guide/fees"), label: "네이버 카페", icon: <NaverCafeMark /> },
+    { href: socialHref("BLOG", "/support/notices"), label: "네이버 블로그", icon: <NaverBlogMark /> },
   ];
 
   return (
