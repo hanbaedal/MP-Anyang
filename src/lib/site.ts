@@ -33,9 +33,9 @@ export const DEFAULT_SITE_URL = "https://mp-anyang.onrender.com";
 
 /** 소셜 URL. 값이 생기면 여기 또는 환경변수에 넣고, 비어 있으면 홈 버튼은 기존 안내 경로를 씁니다. 지어낸 주소는 넣지 않습니다. */
 export const SOCIAL_URLS = {
-  FACEBOOK: "https://www.facebook.com/share/1AgidWsma4/",
-  INSTAGRAM: "https://www.instagram.com/hanbaedal",
-  YOUTUBE: "https://www.youtube.com/@%EC%B5%9C%EC%B0%BD%EA%B8%B8-p2g",
+  FACEBOOK: "https://www.facebook.com/profile.php?id=61595231941222",
+  INSTAGRAM: "https://www.instagram.com/anyangmp/",
+  YOUTUBE: "https://www.youtube.com/channel/UCnMpOKXKjlrDnVtWHZUH_wA",
   CAFE: "https://cafe.naver.com/dahyangsanbang",
 } as const;
 
