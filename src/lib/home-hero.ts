@@ -110,14 +110,26 @@ async function readLocal(): Promise<HomeHeroSettings | null> {
   return readJsonFile<HomeHeroSettings | null>(localFile, null);
 }
 
+const HOME_HERO_READ_MS = 2_500;
+
+async function readHomeHeroFromMongo(): Promise<HomeHeroSettings | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const row = await db.collection("site_settings").findOne({ key: SETTINGS_KEY });
+  return row ? fromDoc(row as Record<string, unknown>) : null;
+}
+
+/** 홈 히어로 설정. Mongo가 느리면 기본값으로 빨리 내려 502·장시간 대기를 막는다. */
 export async function getHomeHeroSettings(): Promise<HomeHeroSettings> {
   if (hasMongo()) {
     try {
-      const db = await getDb();
-      if (db) {
-        const row = await db.collection("site_settings").findOne({ key: SETTINGS_KEY });
-        if (row) return fromDoc(row as Record<string, unknown>);
-      }
+      const fromMongo = await Promise.race([
+        readHomeHeroFromMongo(),
+        new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), HOME_HERO_READ_MS);
+        }),
+      ]);
+      if (fromMongo) return fromMongo;
     } catch (error) {
       console.error("[home-hero] mongo read failed", error);
     }

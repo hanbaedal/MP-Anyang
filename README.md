@@ -60,7 +60,9 @@ URI가 없어도, `.env.local`에 감독/관리자/CEO 시드가 있으면 첫 �
 - **Runtime:** Node 20
 - **Build:** `npm ci && npm run build`
 - **Start:** `npm start`
+- **Health Check Path:** `/api/health` (홈 `/` 말고 이 경로. Mongo 대기 없이 바로 200)
 - 위 환경 변수를 대시보드에 넣습니다. `PORT`는 Render가 넣습니다.
+- Bad Gateway가 잠깐 보이면 인스턴스 재시작·배포 중일 수 있습니다. Health를 `/`로 두면 콜드스타트에 홈이 Mongo를 기다리다 실패하기 쉽습니다.
 
 공개 URL(커스텀 도메인 전): https://mp-anyang.onrender.com  
 커스텀 도메인은 호스트명을 받은 뒤에 붙입니다.

@@ -11,7 +11,8 @@ services:
     plan: starter
     buildCommand: npm ci && npm run build
     startCommand: npm start
-    healthCheckPath: /
+    # `/` 은 Mongo·force-dynamic 홈이라 콜드스타트 때 health 실패(502)가 난다.
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: "20"
