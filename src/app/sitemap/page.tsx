@@ -1,9 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { PageHero } from "@/components/page-hero";
+import { readSession } from "@/lib/auth";
 import { NAV_TONE_CLASS, sitemapMenus } from "@/lib/site";
-import { thumbUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -15,54 +13,65 @@ export async function generateMetadata() {
 
 export default async function SitemapPage() {
   const locale = await readLocale();
-  const menus = sitemapMenus();
+  const session = await readSession();
+  const menus = sitemapMenus(session?.role);
 
   return (
-    <>
-      <PageHero kicker={t(locale, "sitemap.kicker")} title={t(locale, "sitemap.title")} lead={t(locale, "sitemap.lead")} />
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {menus.map((menu) => (
+    <div className="flex h-full min-h-0 flex-col px-3 py-3 sm:px-4 sm:py-4">
+      <h1 className="sr-only">{t(locale, "nav.sitemap")}</h1>
+      <ul
+        className={cn(
+          "mx-auto grid w-full max-w-[1600px] min-h-0 flex-1 auto-rows-min content-start gap-2 overflow-y-auto overscroll-y-contain sm:gap-2.5",
+          /* 폭만 줄임: PC에서 한 줄에 더 많은 카드, 글자 크기는 유지 */
+          "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+        )}
+      >
+        {menus.map((menu) => {
+          const manyChildren = menu.children.length >= 10;
+          return (
             <li
               key={menu.i18n}
-              className={cn("flex flex-col overflow-hidden rounded-xl border shadow-sm", NAV_TONE_CLASS[menu.tone])}
+              className={cn(
+                "flex min-w-0 flex-col overflow-hidden rounded-lg border",
+                NAV_TONE_CLASS[menu.tone],
+              )}
             >
-              <Link href={menu.href} className="block">
-                <span className="relative block h-28 overflow-hidden bg-muted">
-                  <Image
-                    src={thumbUrl(menu.image)}
-                    alt={t(locale, menu.i18n)}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                    className="object-cover"
-                  />
+              <Link
+                href={menu.href}
+                className="flex items-center gap-1 border-b border-black/10 px-2.5 py-2 hover:bg-white/40 sm:px-3"
+              >
+                <span className="min-w-0 flex-1 truncate font-serif text-sm leading-tight text-primary">
+                  {t(locale, menu.i18n)}
                 </span>
-                <span className="flex items-center justify-between gap-2 px-3 pt-3">
-                  <span className="font-serif text-lg leading-tight text-primary">{t(locale, menu.i18n)}</span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                </span>
+                <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
               {menu.children.length ? (
-                <ul className="mt-2 border-t border-black/10 px-1 pb-1">
+                <ul
+                  className={cn(
+                    "py-0.5",
+                    manyChildren && "md:grid md:grid-cols-2 md:gap-px md:py-1",
+                    !manyChildren && "divide-y divide-black/5",
+                  )}
+                >
                   {menu.children.map((child) => (
-                    <li key={child.href}>
+                    <li key={child.href} className={manyChildren ? "min-w-0" : undefined}>
                       <Link
                         href={child.href}
-                        className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-white/50"
+                        className={cn(
+                          "flex h-7 items-center px-2.5 text-xs leading-none text-primary hover:bg-white/45 sm:px-3 sm:text-[13px]",
+                          manyChildren && "rounded-sm md:h-6",
+                        )}
                       >
                         <span className="truncate">{t(locale, child.i18n)}</span>
-                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                       </Link>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="px-3 pb-3 pt-1 text-xs text-muted-foreground">{t(locale, "sitemap.open")}</p>
-              )}
+              ) : null}
             </li>
-          ))}
-        </ul>
-      </div>
-    </>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
