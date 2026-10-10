@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleUserRound, Menu, X } from "lucide-react";
@@ -48,8 +49,19 @@ export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role 
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="shrink-0">
-          <p className="whitespace-nowrap font-serif text-[11px] leading-none text-primary lg:text-lg">{chrome("site.legalName")}</p>
+        <Link href="/" className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <Image
+            src="/images/logo-256.png"
+            alt=""
+            width={256}
+            height={256}
+            priority
+            className="size-7 object-contain lg:size-8"
+            aria-hidden
+          />
+          <p className="whitespace-nowrap font-serif text-[11px] leading-none text-primary lg:text-lg">
+            {chrome("site.legalName")}
+          </p>
         </Link>
 
         <div className="ml-auto flex shrink-0 items-center gap-0">
