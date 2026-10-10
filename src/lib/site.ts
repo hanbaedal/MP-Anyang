@@ -80,6 +80,7 @@ export type NavItem = {
   children?: NavChild[];
 };
 
+/** 사이트맵 카드용 (호버로 살짝 진해짐) */
 export const NAV_TONE_CLASS: Record<NavTone, string> = {
   home: "bg-[#eef3e8] hover:bg-[#e3eadc] border-[#d5e0c8]",
   intro: "bg-[#e7f3ee] hover:bg-[#d9ebe3] border-[#c5ddd3]",
@@ -88,6 +89,17 @@ export const NAV_TONE_CLASS: Record<NavTone, string> = {
   gallery: "bg-[#eee8f7] hover:bg-[#e3daf0] border-[#d4c8e6]",
   support: "bg-[#f8e8e6] hover:bg-[#f0d9d5] border-[#e6c9c4]",
   more: "bg-[#e8f3f1] hover:bg-[#d7eae6] border-[#c3ddd8]",
+};
+
+/** 탐색기 그룹용 (행 호버만 쓰고 그룹 전체는 고정) */
+export const NAV_TONE_SURFACE: Record<NavTone, string> = {
+  home: "bg-[#eef3e8] border-[#d5e0c8]",
+  intro: "bg-[#e7f3ee] border-[#c5ddd3]",
+  lots: "bg-[#f8eedd] border-[#ead7b4]",
+  guide: "bg-[#e7eef8] border-[#c4d4ea]",
+  gallery: "bg-[#eee8f7] border-[#d4c8e6]",
+  support: "bg-[#f8e8e6] border-[#e6c9c4]",
+  more: "bg-[#e8f3f1] border-[#c3ddd8]",
 };
 
 /** 안내·소개 섹션 카드용 파스텔 (내비 톤과 동일 계열, hover 없음) */
