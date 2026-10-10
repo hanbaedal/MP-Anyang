@@ -55,7 +55,7 @@ export const BURIAL = [
 ];
 
 export const LAWN = [
-  { title: "부부 2인 (PPT)", image: "/images/lawn-2.jpg" },
+  { title: "부부 2인 (PPT)", image: "/images/lawn.jpg" },
   { title: "가족 4인~24위 (PPT)", image: "/images/lawn-3.jpg" },
   { title: "24위 이상도 가능 (PPT)", image: "/images/plots.jpg" },
   { title: "평장묘 2위 (라이브 라벨)", image: "/images/lawn.jpg" },
@@ -66,9 +66,9 @@ export const LAWN = [
 ];
 
 export const COLUMBARIUM = [
-  { title: "부부 2인 (PPT)", image: "/images/columbarium-2.jpg" },
+  { title: "부부 2인 (PPT)", image: "/images/columbarium-3.jpg" },
   { title: "가족 4인~12위 (PPT)", image: "/images/columbarium.jpg" },
-  { title: "봉안묘 2~8위 (라이브 라벨)", image: "/images/columbarium-2.jpg" },
+  { title: "봉안묘 2~8위 (라이브 라벨)", image: "/images/columbarium-3.jpg" },
   { title: "봉안묘 12~24위 (라이브)", image: "/images/columbarium.jpg" },
   { title: "봉안묘 전경", image: "/images/columbarium-4.jpg" },
 ];
@@ -87,7 +87,7 @@ export const REMODEL_TYPES = [
   {
     title: "표준형 리모델링",
     text: "표준 규격으로 단장해 청결과 안전을 도모합니다.",
-    image: "/images/remodel.jpg",
+    image: "/images/remodel-3.jpg",
   },
 ];
 
@@ -106,16 +106,16 @@ export const GALLERY: GalleryItem[] = [
   { src: "/images/burial.jpg", alt: "단장 매장묘", tags: ["매장묘"] },
   { src: "/images/burial-2.jpg", alt: "합장 매장묘", tags: ["매장묘"] },
   { src: "/images/lawn.jpg", alt: "가족 평장묘", tags: ["평장묘"] },
-  { src: "/images/lawn-2.jpg", alt: "평장묘 2위", tags: ["평장묘"] },
+  { src: "/images/lawn-4.jpg", alt: "평장묘 2위", tags: ["평장묘"] },
   { src: "/images/lawn-3.jpg", alt: "여러 위 평장묘", tags: ["평장묘"] },
   { src: "/images/plots.jpg", alt: "평장·봉안 구역", tags: ["평장묘", "봉안묘"] },
   { src: "/images/columbarium.jpg", alt: "봉안묘", tags: ["봉안묘"] },
   { src: "/images/columbarium-2.jpg", alt: "봉안묘 열", tags: ["봉안묘"] },
   { src: "/images/columbarium-4.jpg", alt: "봉안묘 전경", tags: ["봉안묘", "전경"] },
-  { src: "/images/remodel.jpg", alt: "리모델링한 가족묘", tags: ["리모델링"] },
+  { src: "/images/remodel-3.jpg", alt: "리모델링한 가족묘", tags: ["리모델링"] },
   { src: "/images/remodel-before.jpg", alt: "손질 전 봉분", tags: ["리모델링"] },
   { src: "/images/remodel-2.jpg", alt: "가로형 가족묘", tags: ["리모델링", "평장묘"] },
-  { src: "/images/gallery-4.jpg", alt: "공원 묘역 풍경", tags: ["전경"] },
+  { src: "/images/plots.jpg", alt: "공원 묘역 풍경", tags: ["전경"] },
 ];
 
 export const SERVICES = [
