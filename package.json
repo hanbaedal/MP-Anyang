@@ -12,7 +12,8 @@
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
     "thumbs": "node scripts/generate-thumbs.mjs",
-    "qr": "node scripts/generate-qr.mjs"
+    "qr": "node scripts/generate-qr.mjs",
+    "qr:unkyung": "QR_PRESET=unkyung node scripts/generate-qr.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4",
