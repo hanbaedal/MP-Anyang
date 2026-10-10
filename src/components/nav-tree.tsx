@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, FileText, Folder, FolderOpen, Home, Map } from "lucide-react";
+import { Briefcase, ChevronRight, FileText, Folder, FolderOpen, Home, LayoutTemplate, Map, Shield } from "lucide-react";
 import { NAV } from "@/lib/site";
+import { WORK_NAV } from "@/lib/work-nav";
+import { EXEC_NAV } from "@/lib/exec-nav";
+import { manageNavItems } from "@/lib/manage-nav";
+import { SUPERVISOR_NAV } from "@/lib/supervisor-nav";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/locale-provider";
+import { tKo } from "@/lib/i18n";
+import { isCmsStaff, isStatusStaff, isStaffRole, type Role } from "@/lib/auth-types";
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -19,7 +25,17 @@ function groupOpen(pathname: string, href: string, children?: { href: string }[]
   return isNavActive(pathname, href);
 }
 
-export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: boolean }) {
+const topLevelLi = "mb-5 border-b border-border select-none";
+
+export function NavTree({
+  onNavigate,
+  fit,
+  role,
+}: {
+  onNavigate?: () => void;
+  fit?: boolean;
+  role?: Role | null;
+}) {
   const row = cn(
     "flex h-6 items-center gap-0.5 px-1 text-left hover:bg-accent",
     fit ? "w-max max-w-full whitespace-nowrap" : "w-full",
@@ -27,6 +43,13 @@ export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: bo
   const pathname = usePathname();
   const t = useT();
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const staff = isStaffRole(role);
+  const cms = isCmsStaff(role);
+  const workOpenDefault = staff;
+  const execOpenDefault = isStatusStaff(role);
+  const supervisor = role === "supervisor";
+  const manageOpenDefault = cms;
+  const supervisorOpenDefault = supervisor;
 
   useEffect(() => {
     setOpen((prev) => {
@@ -36,9 +59,23 @@ export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: bo
           next[item.i18n] = true;
         }
       }
+      if (workOpenDefault) next.work = true;
+      if (execOpenDefault) next.exec = true;
+      if (manageOpenDefault) next.manage = true;
+      if (supervisorOpenDefault) next.supervisor = true;
+      if (supervisor && SUPERVISOR_NAV.some((item) => isNavActive(pathname, item.href))) {
+        next.supervisor = true;
+      }
       return next;
     });
-  }, [pathname]);
+  }, [pathname, workOpenDefault, execOpenDefault, manageOpenDefault, supervisorOpenDefault, supervisor]);
+
+  const workExpanded = open.work ?? workOpenDefault;
+  const execExpanded = open.exec ?? execOpenDefault;
+  const manageExpanded = open.manage ?? manageOpenDefault;
+  const supervisorExpanded = open.supervisor ?? supervisorOpenDefault;
+  const manageLinks = cms ? manageNavItems() : [];
+  const supervisorActive = supervisor && SUPERVISOR_NAV.some((item) => isNavActive(pathname, item.href));
 
   return (
     <nav aria-label={t("explorer")} className={cn("text-[12px] leading-none", fit && "w-max")}>
@@ -57,7 +94,7 @@ export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: bo
           const currentLeaf = !hasChildren && isNavActive(pathname, item.href);
 
           return (
-            <li key={item.i18n} className="border-b border-border select-none">
+            <li key={item.i18n} className={topLevelLi}>
               {hasChildren ? (
                 <button
                   type="button"
@@ -110,6 +147,170 @@ export function NavTree({ onNavigate, fit }: { onNavigate?: () => void; fit?: bo
             </li>
           );
         })}
+        {staff ? (
+          <li className={topLevelLi}>
+            <button
+              type="button"
+              aria-expanded={workExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, work: !workExpanded }))}
+              className={cn(row, workOpenDefault && "text-primary")}
+            >
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", workExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {workExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Briefcase className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("work.program")}</span>
+            </button>
+            {workExpanded ? (
+              <ul className="border-t border-border">
+                {WORK_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        ) : null}
+        {isStatusStaff(role) ? (
+          <li className={topLevelLi}>
+            <button
+              type="button"
+              aria-expanded={execExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, exec: !execExpanded }))}
+              className={cn(row, execOpenDefault && "text-primary")}
+            >
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", execExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {execExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Folder className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("work.overview")}</span>
+            </button>
+            {execExpanded ? (
+              <ul className="border-t border-border">
+                {EXEC_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        ) : null}
+        {cms ? (
+          <li className={topLevelLi}>
+            <button
+              type="button"
+              aria-expanded={manageExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, manage: !manageExpanded }))}
+              className={cn(row, manageOpenDefault && "text-primary")}
+            >
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", manageExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {manageExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <LayoutTemplate className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("manage.homepage")}</span>
+            </button>
+            {manageExpanded ? (
+              <ul className="border-t border-border">
+                {manageLinks.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        ) : null}
+        {supervisor ? (
+          <li className={topLevelLi}>
+            <button
+              type="button"
+              aria-expanded={supervisorExpanded}
+              onClick={() => setOpen((prev) => ({ ...prev, supervisor: !supervisorExpanded }))}
+              className={cn(row, supervisorActive && "text-primary")}
+            >
+              <ChevronRight
+                className={cn("size-3 shrink-0 text-muted-foreground transition-transform", supervisorExpanded && "rotate-90")}
+                aria-hidden
+              />
+              {supervisorExpanded ? (
+                <FolderOpen className="size-3 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <Shield className="size-3 shrink-0 text-primary/80" aria-hidden />
+              )}
+              <span className={cn("font-medium", !fit && "truncate")}>{tKo("nav.supervisor")}</span>
+            </button>
+            {supervisorExpanded ? (
+              <ul className="border-t border-border">
+                {SUPERVISOR_NAV.map((child) => {
+                  const current = isNavActive(pathname, child.href);
+                  return (
+                    <li key={child.href} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        aria-current={current ? "page" : undefined}
+                        className={cn(row, "pl-5", current && "bg-accent font-medium text-primary")}
+                      >
+                        <FileText className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className={cn(!fit && "truncate")}>{tKo(child.i18n)}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        ) : null}
       </ul>
     </nav>
   );
