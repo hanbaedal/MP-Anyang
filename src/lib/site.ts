@@ -1,12 +1,24 @@
+import type { Role } from "./auth-types";
+import { isCmsStaff, isStaffRole, isStatusStaff } from "./auth-types";
+import { EXEC_NAV } from "./exec-nav";
+import { manageNavItems, MANAGE_HOME } from "./manage-nav";
+import { SUPERVISOR_HOME, SUPERVISOR_NAV } from "./supervisor-nav";
+import { WORK_NAV } from "./work-nav";
+
 export const SITE = {
   legalName: "(재)안양공원묘원",
   shortName: "안양공원",
-  phone: "031-482-2949",
+  /** U+2011(줄바꿈 없는 하이픈) — 본문·푸터 표시용 */
+  phone: "031\u2011482\u20112949",
   phoneTel: "tel:031-482-2949",
   visitName: "공동묘지관리소",
-  address: "경기 안산시 상록구 버대길 195",
-  addressLine: "경기 안산시 상록구 버대길 195",
+  /** 공개·푸터·오시는 길에 쓰는 도로명+지번 */
+  address: "경기 안산시 상록구 오리골길 41 (양상동 산50)",
+  addressLine: "경기 안산시 상록구 오리골길 41",
+  /** @deprecated 공개 주소와 동일. 기존 호출부 호환용 */
   addressAlt: "경기 안산시 상록구 오리골길 41 (양상동 산50)",
+  /** 지도·내비에 남을 수 있는 옛 도로명(공개 문구에는 쓰지 않음) */
+  addressLegacy: "경기 안산시 상록구 버대길 195",
   addressDetail: "양상동",
   region: "안산 상록구 양상동",
   postalCode: "15208",
@@ -14,10 +26,29 @@ export const SITE = {
   lng: 126.8419504,
   heroLine: "수도권 최상·최선·최고·최대, 접근성이 뛰어난 명당자리 (재)안양공원묘원",
   description:
-    "경기 안산시 상록구 양상동 공동묘지관리소·(재)안양공원묘원. 매장·평장·봉안, 분양가 10% 계약, 관리비·회원·묻고답하기·벌초 신청.",
+    "경기 안산시 상록구 양상동 공동묘지관리소·(재)안양공원묘원. 매장·평장·봉안, 분양 안내, 관리비·묻고답하기.",
 } as const;
 
 export const DEFAULT_SITE_URL = "https://mp-anyang.onrender.com";
+
+/** 소셜 URL. 값이 생기면 여기 또는 환경변수에 넣고, 비어 있으면 홈 버튼은 기존 안내 경로를 씁니다. 지어낸 주소는 넣지 않습니다. */
+export const SOCIAL_URLS = {
+  FACEBOOK: "https://www.facebook.com/profile.php?id=61595231941222",
+  INSTAGRAM: "https://www.instagram.com/anyangmp/",
+  YOUTUBE: "https://www.youtube.com/channel/UCnMpOKXKjlrDnVtWHZUH_wA",
+  BLOG: "https://blog.naver.com/ahnyangmp",
+} as const;
+
+export type SocialKey = keyof typeof SOCIAL_URLS;
+
+export function socialHref(key: SocialKey, fallback: string) {
+  const fromEnv =
+    process.env[`NEXT_PUBLIC_${key}_URL`]?.trim() ||
+    process.env[`${key}_URL`]?.trim() ||
+    process.env[key]?.trim();
+  const fromConfig = SOCIAL_URLS[key].trim();
+  return fromEnv || fromConfig || fallback;
+}
 
 export function siteUrl() {
   const raw = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
@@ -33,7 +64,7 @@ export const MAP = {
   placeName: SITE.visitName,
   naverSearch: `https://map.naver.com/p/search/${encodeURIComponent(SITE.visitName + " " + SITE.addressLine)}`,
   naverDirections: `https://map.naver.com/p/directions/-/-/${SITE.lng},${SITE.lat},${encodeURIComponent(SITE.visitName)}/car`,
-  kakaoSearch: `https://map.kakao.com/?q=${encodeURIComponent(SITE.addressLine)}`,
+  kakaoSearch: `https://map.kakao.com/?q=${encodeURIComponent(SITE.address)}`,
   kakaoDirections: `https://map.kakao.com/link/to/${encodeURIComponent(SITE.visitName)},${SITE.lat},${SITE.lng}`,
   osmEmbed: `https://www.openstreetmap.org/export/embed.html?bbox=${SITE.lng - 0.012}%2C${SITE.lat - 0.008}%2C${SITE.lng + 0.012}%2C${SITE.lat + 0.008}&layer=mapnik&marker=${SITE.lat}%2C${SITE.lng}`,
 };
@@ -59,26 +90,75 @@ export const NAV_TONE_CLASS: Record<NavTone, string> = {
   more: "bg-[#e8f3f1] hover:bg-[#d7eae6] border-[#c3ddd8]",
 };
 
+/** 안내·소개 섹션 카드용 파스텔 (내비 톤과 동일 계열, hover 없음) */
+export const PASTEL_CARD_TONES = [
+  "border-[#c5ddd3] bg-[#e7f3ee]", // intro mint
+  "border-[#c4d4ea] bg-[#e7eef8]", // guide blue
+  "border-[#d5e0c8] bg-[#eef3e8]", // home sage
+  "border-[#c3ddd8] bg-[#e8f3f1]", // more aqua
+  "border-[#ead7b4] bg-[#f8eedd]", // lots sand
+] as const;
+
+export function pastelCardClass(index: number): string {
+  return PASTEL_CARD_TONES[index % PASTEL_CARD_TONES.length]!;
+}
+
 export type SitemapMenu = {
   href: string;
   i18n: string;
   tone: NavTone;
-  image: string;
   children: NavChild[];
 };
 
-export function sitemapMenus(): SitemapMenu[] {
-  const menus: SitemapMenu[] = [
-    { href: "/", i18n: "home", tone: "home", image: "/images/hero.jpg", children: [] },
-  ];
+export function sitemapMenus(role?: Role | null): SitemapMenu[] {
+  const menus: SitemapMenu[] = [];
   for (const item of NAV) {
     if (!item.children?.length) continue;
     menus.push({
       href: item.href,
       i18n: item.i18n,
       tone: item.tone,
-      image: item.image || "/images/park-overview.jpg",
       children: item.children,
+    });
+  }
+  if (isStaffRole(role)) {
+    menus.push({
+      href: WORK_NAV[0].href,
+      i18n: "work.program",
+      tone: "guide",
+      children: WORK_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
+    });
+  }
+  if (isStatusStaff(role)) {
+    menus.push({
+      href: EXEC_NAV[0].href,
+      i18n: "work.overview",
+      tone: "lots",
+      children: EXEC_NAV.map((item) => ({ href: item.href, label: item.i18n, i18n: item.i18n })),
+    });
+  }
+  if (role === "supervisor") {
+    menus.push({
+      href: SUPERVISOR_HOME,
+      i18n: "nav.supervisor",
+      tone: "more",
+      children: SUPERVISOR_NAV.map((item) => ({
+        href: item.href,
+        label: item.i18n,
+        i18n: item.i18n,
+      })),
+    });
+  }
+  if (isCmsStaff(role)) {
+    menus.push({
+      href: MANAGE_HOME,
+      i18n: "manage.homepage",
+      tone: "support",
+      children: manageNavItems().map((item) => ({
+        href: item.href,
+        label: item.i18n,
+        i18n: item.i18n,
+      })),
     });
   }
   return menus;
@@ -122,8 +202,6 @@ export const NAV: NavItem[] = [
       { href: "/guide/fees", label: "관리비", i18n: "nav.fees" },
       { href: "/guide/services", label: "서비스", i18n: "nav.services" },
       { href: "/guide/funeral", label: "장례·안치", i18n: "nav.funeral" },
-      { href: "/guide/weeding", label: "벌초 신청", i18n: "nav.weeding" },
-      { href: "/pay", label: "결제", i18n: "nav.pay" },
     ],
   },
   {
@@ -144,8 +222,6 @@ export const NAV: NavItem[] = [
       { href: "/support/notices", label: "공지사항", i18n: "nav.notices" },
       { href: "/support/inquiry", label: "문의·상담", i18n: "nav.inquiry" },
       { href: "/support/faq", label: "묻고답하기", i18n: "nav.faq" },
-      { href: "/support/kakao", label: "카카오채널", i18n: "nav.kakao" },
-      { href: "/account/login", label: "회원", i18n: "nav.account" },
     ],
   },
   {
