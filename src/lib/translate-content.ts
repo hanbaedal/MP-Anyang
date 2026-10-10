@@ -117,3 +117,8 @@ export function localizeStoredText(text: string, locale: Locale): string {
   if (locale === "ko" || !text.trim()) return text;
   return lookupTranslated(text, locale) ?? text;
 }
+
+/** 한글이 남아 있으면 번역이 덜 된 것으로 봅니다. */
+export function stillHasHangul(text: string | undefined | null) {
+  return Boolean(text && /[\uAC00-\uD7A3]/.test(text));
+}

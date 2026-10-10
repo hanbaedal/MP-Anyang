@@ -6,7 +6,7 @@ import { getDb, hasMongo } from "./mongo";
 import { FEATURES } from "./site";
 import { PRICES, REMAINING } from "./facts";
 import { type CmsItem, type CmsLocaleFields, type CmsPage, type CmsSlug } from "./cms-types";
-import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
+import { CONTENT_LOCALES, stillHasHangul, translateText, type ContentLocale } from "./translate-content";
 
 export { CMS_SLUGS, isCmsSlug, type CmsItem, type CmsPage, type CmsSlug } from "./cms-types";
 
@@ -20,13 +20,12 @@ function nid() {
 export function defaultCmsPage(slug: CmsSlug): CmsPage {
   const now = new Date().toISOString();
   if (slug === "greeting") {
+    const sign = ko["greeting.signDated"] || ko["greeting.sign"];
     return {
       slug,
       title: ko["greeting.title"],
       lead: ko["greeting.lead"],
-      body: [ko["greeting.p1"], ko["greeting.p2"], ko["greeting.p3"], ko["greeting.thanks"], ko["greeting.sign"]].join(
-        "\n\n",
-      ),
+      body: [ko["greeting.p1"], ko["greeting.p2"], ko["greeting.p3"], ko["greeting.thanks"], sign].join("\n\n"),
       items: [],
       updatedAt: now,
     };
@@ -134,20 +133,30 @@ export async function getCmsPageOrDefault(slug: CmsSlug): Promise<CmsPage> {
   return (await getCmsPage(slug)) ?? defaultCmsPage(slug);
 }
 
-/** 손님 화면용: 로케일에 맞는 제목·본문·항목. 번역이 없으면 채운 뒤 저장합니다. */
+function cmsLocaleIncomplete(page: CmsPage, locale: ContentLocale) {
+  const loc = page.i18n?.[locale];
+  if (!loc?.title) return true;
+  if (stillHasHangul([loc.title, loc.lead, loc.body].join("\n"))) return true;
+  return (loc.items ?? []).some((item) => stillHasHangul(`${item.title}\n${item.text ?? ""}`));
+}
+
+/** 손님 화면용: 로케일에 맞는 제목·본문·항목. 번역이 없거나 한글이 남으면 채운 뒤 저장합니다. */
 export async function getCmsPageLocalized(slug: CmsSlug, locale: Locale): Promise<CmsPage> {
   let page = await getCmsPageOrDefault(slug);
   if (locale === "ko") return page;
-  if (!page.i18n?.[locale]?.title) {
-    try {
-      const i18n = await fillCmsI18n(page, false);
-      page = { ...page, i18n, updatedAt: new Date().toISOString() };
-      await persistCmsPage(page);
-    } catch (error) {
-      console.error(`[cms] auto-localize ${slug} failed`, error);
+  if (locale === "en" || locale === "zh") {
+    if (cmsLocaleIncomplete(page, locale)) {
+      try {
+        const base = { slug: page.slug, title: page.title, lead: page.lead, body: page.body, items: page.items };
+        const i18n = { ...(page.i18n ?? {}), [locale]: await buildLocaleFields(base, locale) };
+        page = { ...page, i18n, updatedAt: new Date().toISOString() };
+        await persistCmsPage(page);
+      } catch (error) {
+        console.error(`[cms] auto-localize ${slug} failed`, error);
+      }
     }
   }
-  const loc = page.i18n?.[locale];
+  const loc = page.i18n?.[locale as ContentLocale];
   if (!loc) return page;
   return {
     ...page,

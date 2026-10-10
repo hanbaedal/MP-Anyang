@@ -1,7 +1,7 @@
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
 import type { Locale } from "./i18n";
-import { CONTENT_LOCALES, translateText, type ContentLocale } from "./translate-content";
+import { CONTENT_LOCALES, stillHasHangul, translateText, type ContentLocale } from "./translate-content";
 
 export type NoticeLocaleFields = {
   title: string;
@@ -74,18 +74,26 @@ export function localizeNotice(notice: Notice, locale: Locale): Notice {
   };
 }
 
+function noticeLocaleIncomplete(notice: Notice, locale: ContentLocale) {
+  const loc = notice.i18n?.[locale];
+  if (!loc?.title) return true;
+  return stillHasHangul(`${loc.title}\n${loc.body}`);
+}
+
 export async function listNoticesLocalized(locale: Locale): Promise<Notice[]> {
   const all = await listNotices();
   if (locale === "ko") return all;
   const out: Notice[] = [];
   for (const notice of all) {
     let row = notice;
-    if (!row.i18n?.[locale]?.title) {
-      try {
-        row = { ...row, i18n: await fillNoticeI18n(row, false) };
-        await persistNotice(row);
-      } catch (error) {
-        console.error(`[notices] auto-localize ${row.slug} failed`, error);
+    if (locale === "en" || locale === "zh") {
+      if (noticeLocaleIncomplete(row, locale)) {
+        try {
+          row = { ...row, i18n: await fillNoticeI18n(row, true) };
+          await persistNotice(row);
+        } catch (error) {
+          console.error(`[notices] auto-localize ${row.slug} failed`, error);
+        }
       }
     }
     out.push(localizeNotice(row, locale));
@@ -98,12 +106,14 @@ export async function getNoticeLocalized(slug: string, locale: Locale): Promise<
   if (!notice) return null;
   if (locale === "ko") return notice;
   let row = notice;
-  if (!row.i18n?.[locale]?.title) {
-    try {
-      row = { ...row, i18n: await fillNoticeI18n(row, false) };
-      await persistNotice(row);
-    } catch (error) {
-      console.error(`[notices] auto-localize ${row.slug} failed`, error);
+  if (locale === "en" || locale === "zh") {
+    if (noticeLocaleIncomplete(row, locale)) {
+      try {
+        row = { ...row, i18n: await fillNoticeI18n(row, true) };
+        await persistNotice(row);
+      } catch (error) {
+        console.error(`[notices] auto-localize ${row.slug} failed`, error);
+      }
     }
   }
   return localizeNotice(row, locale);
@@ -116,13 +126,27 @@ async function buildNoticeLocale(title: string, body: string, to: ContentLocale)
   };
 }
 
+async function seedI18nForSlug(slug: string | undefined): Promise<Notice["i18n"] | undefined> {
+  if (!slug) return undefined;
+  const seeded = await readJsonFile<Notice[]>(seedFile, []);
+  return seeded.find((item) => item.slug === slug)?.i18n;
+}
+
 export async function fillNoticeI18n(
-  notice: Pick<Notice, "title" | "body" | "i18n">,
+  notice: Pick<Notice, "title" | "body" | "i18n"> & { slug?: string },
   force = false,
 ): Promise<Notice["i18n"]> {
   const i18n: NonNullable<Notice["i18n"]> = { ...(notice.i18n ?? {}) };
+  const fromSeed = await seedI18nForSlug(notice.slug);
   for (const to of CONTENT_LOCALES) {
-    if (!force && i18n[to]?.title) continue;
+    const seededLoc = fromSeed?.[to];
+    if (seededLoc?.title && !stillHasHangul(`${seededLoc.title}\n${seededLoc.body}`)) {
+      if (force || !i18n[to]?.title || stillHasHangul(`${i18n[to]?.title}\n${i18n[to]?.body}`)) {
+        i18n[to] = seededLoc;
+        continue;
+      }
+    }
+    if (!force && i18n[to]?.title && !stillHasHangul(`${i18n[to]?.title}\n${i18n[to]?.body}`)) continue;
     try {
       i18n[to] = await buildNoticeLocale(notice.title, notice.body, to);
     } catch (error) {

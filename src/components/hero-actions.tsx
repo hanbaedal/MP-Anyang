@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPin, Phone } from "lucide-react";
+import { useT } from "@/components/locale-provider";
 import { SITE, socialHref } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -108,8 +109,9 @@ export function SocialActions() {
 }
 
 export function HeroCallActions() {
+  const t = useT();
   return (
-    <nav aria-label="바로 가기" className="flex flex-wrap justify-center gap-2 sm:gap-3 md:justify-end">
+    <nav aria-label={t("home.call")} className="flex flex-wrap justify-center gap-2 sm:gap-3 md:justify-end">
       <a
         href={SITE.phoneTel}
         className="inline-flex items-center gap-2 rounded-2xl bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground shadow-sm hover:bg-[#dce8e0] sm:px-5"
@@ -122,7 +124,7 @@ export function HeroCallActions() {
         className="inline-flex items-center gap-2 rounded-2xl border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-white hover:text-primary sm:px-5"
       >
         <MapPin className="size-4" aria-hidden />
-        오시는 길
+        {t("directions")}
       </Link>
     </nav>
   );
