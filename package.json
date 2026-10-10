@@ -3,35 +3,42 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "next dev --port 43123",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "thumbs": "node scripts/generate-thumbs.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cn": "^0.3.0",
+    "docx": "^9.8.1",
     "lucide-react": "^1.46.0",
     "mongodb": "^7.6.0",
     "next": "16.3.5",
+    "pdfkit": "^0.20.2",
+    "@types/pdfkit": "^0.17.6",
     "postcss": "^8",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "sharp": "^0.34.4",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "eslint": "^9",
     "eslint-config-next": "16.3.5"
   }

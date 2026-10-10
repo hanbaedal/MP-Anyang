@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
-import { getNotice } from "@/lib/notices";
+import { getNoticeLocalized } from "@/lib/notices";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -9,16 +9,16 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const notice = await getNotice(slug);
   const locale = await readLocale();
+  const notice = await getNoticeLocalized(slug, locale);
   return { title: notice?.title ?? t(locale, "notices.title") };
 }
 
 export default async function NoticeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const notice = await getNotice(slug);
-  if (!notice) notFound();
   const locale = await readLocale();
+  const notice = await getNoticeLocalized(slug, locale);
+  if (!notice) notFound();
 
   return (
     <>
