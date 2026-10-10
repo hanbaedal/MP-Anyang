@@ -90,6 +90,19 @@ export const NAV_TONE_CLASS: Record<NavTone, string> = {
   more: "bg-[#e8f3f1] hover:bg-[#d7eae6] border-[#c3ddd8]",
 };
 
+/** 안내·소개 섹션 카드용 파스텔 (내비 톤과 동일 계열, hover 없음) */
+export const PASTEL_CARD_TONES = [
+  "border-[#c5ddd3] bg-[#e7f3ee]", // intro mint
+  "border-[#c4d4ea] bg-[#e7eef8]", // guide blue
+  "border-[#d5e0c8] bg-[#eef3e8]", // home sage
+  "border-[#c3ddd8] bg-[#e8f3f1]", // more aqua
+  "border-[#ead7b4] bg-[#f8eedd]", // lots sand
+] as const;
+
+export function pastelCardClass(index: number): string {
+  return PASTEL_CARD_TONES[index % PASTEL_CARD_TONES.length]!;
+}
+
 export type SitemapMenu = {
   href: string;
   i18n: string;

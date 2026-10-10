@@ -1,9 +1,10 @@
 import { FuneralDocList } from "@/components/funeral-doc-list";
 import { PageHero, Prose } from "@/components/page-hero";
 import { funeralDocsById } from "@/lib/funeral-docs";
-import { SITE } from "@/lib/site";
+import { SITE, pastelCardClass } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   const locale = await readLocale();
@@ -24,8 +25,8 @@ export default async function FuneralPage() {
       <PageHero kicker={t(locale, "fun.kicker")} title={t(locale, "fun.title")} lead={t(locale, "fun.lead")} />
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-12">
         <ol className="grid gap-4 md:grid-cols-4">
-          {steps.map((step) => (
-            <li key={step.n} className="rounded-xl border bg-card p-4">
+          {steps.map((step, index) => (
+            <li key={step.n} className={cn("rounded-xl border p-4 shadow-sm", pastelCardClass(index))}>
               <p className="text-sm text-primary">{step.n}</p>
               <h2 className="mt-1 text-lg">{step.t}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{step.d}</p>

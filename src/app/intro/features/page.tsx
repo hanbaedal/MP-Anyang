@@ -1,8 +1,9 @@
 import { PageHero } from "@/components/page-hero";
-import { FEATURES } from "@/lib/site";
+import { FEATURES, pastelCardClass } from "@/lib/site";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   const locale = await readLocale();
@@ -24,8 +25,11 @@ export default async function FeaturesPage() {
         image={{ src: "/images/park-overview.jpg", alt: t(locale, "features.title") }}
       />
       <div className="mx-auto grid max-w-6xl gap-5 px-4 py-12 md:grid-cols-2">
-        {items.map((item) => (
-          <article key={item.id || item.title} className="rounded-xl border bg-card p-6 shadow-sm">
+        {items.map((item, index) => (
+          <article
+            key={item.id || item.title}
+            className={cn("rounded-xl border p-6 shadow-sm", pastelCardClass(index))}
+          >
             <h2 className="text-xl">{item.title}</h2>
             <p className="mt-3 text-[15px] leading-7 text-muted-foreground">{item.text}</p>
           </article>
