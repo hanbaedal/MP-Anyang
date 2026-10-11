@@ -18,6 +18,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasAudio = Boolean(audioSrc);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
@@ -40,7 +41,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   const startBgm = useCallback(async () => {
     const audio = audioRef.current;
     const video = videoRef.current;
-    if (!audio || !video) return;
+    if (!hasAudio || !audio || !video) return;
     try {
       if (video.paused) await startVideo();
       await audio.play();
@@ -50,7 +51,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
     } catch {
       setShowBgmPrompt(true);
     }
-  }, [startVideo]);
+  }, [hasAudio, startVideo]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -67,17 +68,22 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   }, [reduceMotion, videoSrc, startVideo]);
 
   useEffect(() => {
-    if (reduceMotion || sessionStorage.getItem(BGM_SESSION_KEY) !== "1") return;
+    if (!hasAudio || reduceMotion || sessionStorage.getItem(BGM_SESSION_KEY) !== "1") return;
     setShowBgmPrompt(false);
     void startBgm();
-  }, [reduceMotion, audioSrc, startBgm]);
+  }, [hasAudio, reduceMotion, audioSrc, startBgm]);
 
   useEffect(() => {
+    if (!hasAudio) {
+      setMusicOn(false);
+      setShowBgmPrompt(false);
+      return;
+    }
     const audio = audioRef.current;
     if (!audio) return;
     if (musicOn) void audio.play().catch(() => setMusicOn(false));
     else audio.pause();
-  }, [musicOn, audioSrc]);
+  }, [hasAudio, musicOn, audioSrc]);
 
   useEffect(() => {
     return () => {
@@ -124,8 +130,8 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
         onLoadedData={() => setVideoReady(true)}
         onError={() => setVideoError(true)}
       />
-      <audio key={audioSrc} ref={audioRef} src={audioSrc} loop preload="metadata" />
-      {showBgmPrompt && videoReady && !videoError ? (
+      {hasAudio ? <audio key={audioSrc} ref={audioRef} src={audioSrc} loop preload="metadata" /> : null}
+      {hasAudio && showBgmPrompt && videoReady && !videoError ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-28 z-[20] flex justify-center px-4 md:bottom-32">
           <button
             type="button"
@@ -138,7 +144,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           </button>
         </div>
       ) : null}
-      {musicOn ? (
+      {hasAudio && musicOn ? (
         <button
           type="button"
           onClick={() => setMusicOn((on) => !on)}
@@ -149,7 +155,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           <Volume2 className="size-5" aria-hidden />
         </button>
       ) : null}
-      {!musicOn && !showBgmPrompt && videoReady ? (
+      {hasAudio && !musicOn && !showBgmPrompt && videoReady ? (
         <button
           type="button"
           onClick={() => void startBgm()}

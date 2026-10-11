@@ -11,10 +11,10 @@ export async function GET() {
 }
 
 /**
- * 영상·음악 슬롯 저장.
- * - video / audio 파일 중 하나 이상 필요
- * - 올린 종류만 교체, 이전 업로드 파일 삭제
- * - DB에는 각각 1개만 유지
+ * MongoDB 저장
+ * - 영상 필수, 음악 선택
+ * - 기존 영상·음악 업로드 삭제 후 새로 저장
+ * - 음악 미등록이면 음악 슬롯 공란
  */
 export async function POST(request: Request) {
   const guard = await requireStaffApi();
@@ -26,37 +26,31 @@ export async function POST(request: Request) {
   const hasVideo = videoFile instanceof File && videoFile.size > 0;
   const hasAudio = audioFile instanceof File && audioFile.size > 0;
 
-  if (!hasVideo && !hasAudio) {
+  if (!hasVideo) {
     return NextResponse.json(
-      { ok: false, error: "영상 또는 음악 파일을 선택한 뒤 저장해 주세요." },
+      { ok: false, error: "영상을 등록한 뒤 저장해 주세요." },
       { status: 400 },
     );
   }
 
-  let videoSrc: string | undefined;
-  let audioSrc: string | undefined;
-  let videoLabel: string | undefined;
-  let audioLabel: string | undefined;
+  const savedVideo = await saveHomeHeroUpload(videoFile, "video");
+  if (!savedVideo.ok) return NextResponse.json(savedVideo, { status: 400 });
 
-  if (hasVideo) {
-    const saved = await saveHomeHeroUpload(videoFile, "video");
-    if (!saved.ok) return NextResponse.json(saved, { status: 400 });
-    videoSrc = saved.src;
-    videoLabel = videoFile.name;
-  }
+  let audioSrc = "";
+  let audioLabel: string | undefined;
   if (hasAudio) {
-    const saved = await saveHomeHeroUpload(audioFile, "audio");
-    if (!saved.ok) return NextResponse.json(saved, { status: 400 });
-    audioSrc = saved.src;
+    const savedAudio = await saveHomeHeroUpload(audioFile, "audio");
+    if (!savedAudio.ok) return NextResponse.json(savedAudio, { status: 400 });
+    audioSrc = savedAudio.src;
     audioLabel = audioFile.name;
   }
 
   try {
     const current = await getHomeHeroSettings();
     const settings = await commitHomeHeroSlots(current, {
-      videoSrc,
+      videoSrc: savedVideo.src,
       audioSrc,
-      videoLabel,
+      videoLabel: videoFile.name,
       audioLabel,
     });
     return NextResponse.json({ ok: true, settings });

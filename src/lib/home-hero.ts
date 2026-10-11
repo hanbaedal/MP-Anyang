@@ -88,26 +88,32 @@ function slotAsset(
   };
 }
 
-/** 영상·음악 각각 공개 슬롯 1개만 유지 */
+/** 영상 슬롯 1개. 음악은 경로가 있을 때만 1개(없으면 공란). */
 function toSingleSlots(settings: HomeHeroSettings): HomeHeroSettings {
   const base = defaultHomeHeroSettings();
   const videoSrc = isSafeHomeMediaPath(settings.videoSrc) ? settings.videoSrc : base.videoSrc;
-  const audioSrc = isSafeHomeMediaPath(settings.audioSrc) ? settings.audioSrc : base.audioSrc;
+  const audioBlank = !settings.audioSrc;
+  const audioSrc = audioBlank
+    ? ""
+    : isSafeHomeMediaPath(settings.audioSrc)
+      ? settings.audioSrc
+      : "";
   const video =
     settings.videos.find((v) => v.src === videoSrc) ||
     settings.videos[0] ||
     base.videos[0]!;
-  const audio =
-    settings.audios.find((a) => a.src === audioSrc) ||
-    settings.audios[0] ||
-    base.audios[0]!;
+  const audio = audioSrc
+    ? settings.audios.find((a) => a.src === audioSrc) ||
+      settings.audios[0] ||
+      null
+    : null;
   return {
     ...settings,
     videoSrc,
     audioSrc,
     posterSrc: isSafeHomeMediaPath(settings.posterSrc) ? settings.posterSrc : base.posterSrc,
     videos: [slotAsset("video", videoSrc, video.label, video)],
-    audios: [slotAsset("audio", audioSrc, audio.label, audio)],
+    audios: audioSrc ? [slotAsset("audio", audioSrc, audio?.label || "음악", audio)] : [],
   };
 }
 
@@ -120,16 +126,20 @@ function fromDoc(doc: Record<string, unknown>): HomeHeroSettings {
     ? (doc.audios.map((item) => normalizeAsset(item, "audio")).filter(Boolean) as HomeHeroAsset[])
     : base.audios;
   const videoSrc = String(doc.videoSrc ?? base.videoSrc);
-  const audioSrc = String(doc.audioSrc ?? base.audioSrc);
+  const rawAudio = doc.audioSrc;
+  const audioSrc =
+    rawAudio === "" || rawAudio === null || rawAudio === undefined
+      ? ""
+      : String(rawAudio);
   const posterSrc = String(doc.posterSrc ?? base.posterSrc);
   const safeVideo = isSafeHomeMediaPath(videoSrc) ? videoSrc : base.videoSrc;
-  const safeAudio = isSafeHomeMediaPath(audioSrc) ? audioSrc : base.audioSrc;
+  const safeAudio = audioSrc === "" ? "" : isSafeHomeMediaPath(audioSrc) ? audioSrc : "";
   return toSingleSlots({
     videoSrc: safeVideo,
     audioSrc: safeAudio,
     posterSrc: isSafeHomeMediaPath(posterSrc) ? posterSrc : base.posterSrc,
     videos: videos.length ? videos : base.videos,
-    audios: audios.length ? audios : base.audios,
+    audios: audios.length ? audios : [],
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : String(doc.updatedAt ?? base.updatedAt),
   });
 }
@@ -176,7 +186,7 @@ export async function saveHomeHeroSettings(input: HomeHeroSettings): Promise<Hom
   const settings = toSingleSlots({
     ...input,
     videoSrc: isSafeHomeMediaPath(input.videoSrc) ? input.videoSrc : defaultHomeHeroSettings().videoSrc,
-    audioSrc: isSafeHomeMediaPath(input.audioSrc) ? input.audioSrc : defaultHomeHeroSettings().audioSrc,
+    audioSrc: input.audioSrc === "" ? "" : isSafeHomeMediaPath(input.audioSrc) ? input.audioSrc : "",
     posterSrc: isSafeHomeMediaPath(input.posterSrc) ? input.posterSrc : "/images/hero.jpg",
     videos: input.videos.filter((a) => a.kind === "video" && isSafeHomeMediaPath(a.src)),
     audios: input.audios.filter((a) => a.kind === "audio" && isSafeHomeMediaPath(a.src)),
@@ -198,37 +208,37 @@ export async function saveHomeHeroSettings(input: HomeHeroSettings): Promise<Hom
   return settings;
 }
 
-/** 영상·음악 슬롯을 새 경로로 교체하고, 이전 업로드 파일을 삭제한다. */
+/**
+ * 저장 시 기존 영상·음악 업로드를 지우고 새로 등록한 값으로 덮어쓴다.
+ * 음악 미등록이면 audioSrc 공란(영상에 사운드가 있는 경우).
+ */
 export async function commitHomeHeroSlots(
   settings: HomeHeroSettings,
-  next: { videoSrc?: string; audioSrc?: string; videoLabel?: string; audioLabel?: string },
+  next: { videoSrc: string; audioSrc: string; videoLabel?: string; audioLabel?: string },
 ): Promise<HomeHeroSettings> {
-  if (!next.videoSrc && !next.audioSrc) {
-    throw new Error("영상 또는 음악 파일이 필요합니다.");
+  if (!next.videoSrc || !isSafeHomeMediaPath(next.videoSrc)) {
+    throw new Error("영상을 등록한 뒤 저장해 주세요.");
+  }
+  if (next.audioSrc && !isSafeHomeMediaPath(next.audioSrc)) {
+    throw new Error("음악 파일 경로가 올바르지 않습니다.");
   }
 
-  const keepVideoSrc = next.videoSrc || settings.videoSrc;
-  const keepAudioSrc = next.audioSrc || settings.audioSrc;
   const oldVideos = settings.videos;
   const oldAudios = settings.audios;
 
-  for (const asset of oldVideos) {
-    if (asset.src !== keepVideoSrc) await removeHomeHeroUploadFile(asset.src);
-  }
-  for (const asset of oldAudios) {
-    if (asset.src !== keepAudioSrc) await removeHomeHeroUploadFile(asset.src);
-  }
+  // 이전 슬롯 파일은 전부 삭제(새 경로와 같아도 업로드가 덮어씀)
+  for (const asset of oldVideos) await removeHomeHeroUploadFile(asset.src);
+  for (const asset of oldAudios) await removeHomeHeroUploadFile(asset.src);
 
-  const videoLabel = next.videoLabel || oldVideos.find((v) => v.src === keepVideoSrc)?.label || "영상";
-  const audioLabel = next.audioLabel || oldAudios.find((a) => a.src === keepAudioSrc)?.label || "음악";
-  const videoExisting = oldVideos.find((v) => v.src === keepVideoSrc) ?? null;
-  const audioExisting = oldAudios.find((a) => a.src === keepAudioSrc) ?? null;
+  const videoLabel = next.videoLabel?.trim() || "영상";
+  const audioLabel = next.audioLabel?.trim() || "음악";
+  const hasAudio = Boolean(next.audioSrc);
 
   return saveHomeHeroSettings({
     ...settings,
-    videoSrc: keepVideoSrc,
-    audioSrc: keepAudioSrc,
-    videos: [slotAsset("video", keepVideoSrc, videoLabel, videoExisting)],
-    audios: [slotAsset("audio", keepAudioSrc, audioLabel, audioExisting)],
+    videoSrc: next.videoSrc,
+    audioSrc: hasAudio ? next.audioSrc : "",
+    videos: [slotAsset("video", next.videoSrc, videoLabel, null)],
+    audios: hasAudio ? [slotAsset("audio", next.audioSrc, audioLabel, null)] : [],
   });
 }

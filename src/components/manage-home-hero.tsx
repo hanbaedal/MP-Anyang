@@ -63,14 +63,15 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   }, [pendingAudioUrl]);
 
   const busy = status === "busy";
-  const canSave = Boolean(pendingVideo || pendingAudio);
+  /** 저장은 영상 등록이 필수. 음악은 선택(없으면 공란). */
+  const canSave = Boolean(pendingVideo);
 
   async function saveToDb() {
-    if (!canSave) return;
+    if (!canSave || !pendingVideo) return;
     setStatus("busy");
     setMessage("");
     const form = new FormData();
-    if (pendingVideo) form.set("video", pendingVideo);
+    form.set("video", pendingVideo);
     if (pendingAudio) form.set("audio", pendingAudio);
     try {
       const res = await fetch("/api/manage/home-hero", { method: "POST", body: form });
@@ -80,11 +81,16 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
         setMessage(json.error || "저장에 실패했습니다.");
         return;
       }
+      const clearedAudio = !pendingAudio;
       setSettings(json.settings);
       setPendingVideo(null);
       setPendingAudio(null);
       setStatus("ok");
-      setMessage("MongoDB에 저장했습니다. 이전 업로드 파일은 교체·삭제되었습니다.");
+      setMessage(
+        clearedAudio
+          ? "MongoDB에 저장했습니다. 이전 영상·음악을 지우고, 음악은 공란으로 두었습니다."
+          : "MongoDB에 저장했습니다. 이전 영상·음악을 지우고 새 파일로 바꿨습니다.",
+      );
     } catch {
       setStatus("error");
       setMessage("네트워크 오류입니다.");
@@ -93,14 +99,15 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
     }
   }
 
+  const hasPublicAudio = Boolean(settings.audioSrc);
   const videoLabel = settings.videos[0]?.label || "영상";
-  const audioLabel = settings.audios[0]?.label || "음악";
+  const audioLabel = hasPublicAudio ? settings.audios[0]?.label || "음악" : "없음(공란)";
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-3 py-6 sm:px-4">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        영상·음악은 각각 1개만 보관됩니다. 새로 등록해 저장하면 이전 파일이 바뀌며 삭제됩니다. 영상만, 또는 영상+음악을
-        함께 저장할 수 있습니다.
+        「MongoDB 저장」을 누르면 기존 영상·음악을 지운 뒤, 이번에 등록한 파일만 남깁니다. 음악 등록이 없으면 음악은
+        공란입니다(영상에 사운드가 들어 있는 경우).
       </p>
 
       <section className="space-y-3 rounded-lg border-2 border-primary/25 bg-card p-3 sm:p-4">
@@ -121,8 +128,16 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
           </div>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">음악 · {audioLabel}</p>
-            <p className="truncate text-[11px] text-muted-foreground">{settings.audioSrc}</p>
-            <audio key={settings.audioSrc} src={settings.audioSrc} className="w-full" controls preload="metadata" />
+            {hasPublicAudio ? (
+              <>
+                <p className="truncate text-[11px] text-muted-foreground">{settings.audioSrc}</p>
+                <audio key={settings.audioSrc} src={settings.audioSrc} className="w-full" controls preload="metadata" />
+              </>
+            ) : (
+              <p className="rounded-md border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
+                음악 없음(공란) · 홈에서 별도 BGM 버튼을 숨깁니다
+              </p>
+            )}
           </div>
         </div>
         {savedAtLabel ? (
@@ -174,7 +189,7 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          영상 25MB · 음악 12MB 이하 · 저장 전에는 아래에만 미리 보이며, 홈에는 반영되지 않습니다.
+          영상 필수(25MB 이하) · 음악 선택(12MB 이하) · 저장 전 미리보기만, 홈 반영은 저장 후
         </p>
 
         {pendingVideo || pendingAudio ? (
@@ -199,7 +214,7 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
                   </Button>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">영상: 변경 없음 (현재 공개 유지)</p>
+                <p className="text-xs text-muted-foreground">영상: 미등록(저장하려면 영상 필요)</p>
               )}
               {pendingAudio && pendingAudioUrl ? (
                 <div className="space-y-2">
@@ -212,7 +227,7 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
                   </Button>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">음악: 변경 없음 (현재 공개 유지)</p>
+                <p className="text-xs text-muted-foreground">음악: 미등록 → 저장 시 공란</p>
               )}
             </div>
           </div>
