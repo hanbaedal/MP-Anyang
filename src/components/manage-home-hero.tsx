@@ -125,8 +125,10 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
             <audio key={settings.audioSrc} src={settings.audioSrc} className="w-full" controls preload="metadata" />
           </div>
         </div>
-        {settings.updatedAt ? (
-          <p className="text-[11px] text-muted-foreground">마지막 저장: {new Date(settings.updatedAt).toLocaleString("ko-KR")}</p>
+        {savedAtLabel ? (
+          <p className="text-[11px] text-muted-foreground">마지막 저장: {savedAtLabel}</p>
+        ) : settings.updatedAt ? (
+          <p className="text-[11px] text-muted-foreground">마지막 저장: …</p>
         ) : null}
       </section>
 
