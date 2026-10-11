@@ -73,15 +73,27 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
     const form = new FormData();
     form.set("video", pendingVideo);
     if (pendingAudio) form.set("audio", pendingAudio);
+    const clearedAudio = !pendingAudio;
     try {
       const res = await fetch("/api/manage/home-hero", { method: "POST", body: form });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
+      const text = await res.text();
+      let json: { ok?: boolean; error?: string; settings?: HomeHeroSettings } = {};
+      try {
+        json = text ? (JSON.parse(text) as typeof json) : {};
+      } catch {
         setStatus("error");
-        setMessage(json.error || "저장에 실패했습니다.");
+        setMessage(
+          res.status === 413 || res.status === 502 || res.status === 504
+            ? `업로드가 끊겼습니다 (HTTP ${res.status}). 영상 25MB 이하·안정된 네트워크에서 다시 시도해 주세요.`
+            : `저장 응답을 읽지 못했습니다 (HTTP ${res.status}). 잠시 후 다시 시도해 주세요.`,
+        );
         return;
       }
-      const clearedAudio = !pendingAudio;
+      if (!res.ok || !json.ok || !json.settings) {
+        setStatus("error");
+        setMessage(json.error || `저장에 실패했습니다 (HTTP ${res.status}).`);
+        return;
+      }
       setSettings(json.settings);
       setPendingVideo(null);
       setPendingAudio(null);
@@ -93,7 +105,9 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
       );
     } catch {
       setStatus("error");
-      setMessage("네트워크 오류입니다.");
+      setMessage(
+        "연결이 끊겼습니다. 파일 용량(영상 25MB 이하)과 네트워크를 확인한 뒤 다시 시도해 주세요.",
+      );
     } finally {
       setStatus("idle");
     }

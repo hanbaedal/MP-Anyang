@@ -31,5 +31,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg|apple-icon.png|robots.txt|sitemap.xml|api/health).*)"],
+  // 대용량 업로드 API는 미들웨어를 건너뜀(본문 버퍼링·끊김으로 "네트워크 오류"가 나는 경우 방지)
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg|apple-icon.png|robots.txt|sitemap.xml|api/health|api/manage/home-hero|api/manage/upload-image|api/manage/gallery|api/manage/funeral-docs|api/uploads).*)",
+  ],
 };

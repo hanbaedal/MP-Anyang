@@ -20,6 +20,11 @@ function cdnPatterns() {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
+  experimental: {
+    // 홈 히어로 영상(25MB) 등 관리 업로드
+    serverActions: { bodySizeLimit: "30mb" },
+    middlewareClientMaxBodySize: "30mb",
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: cdnPatterns(),

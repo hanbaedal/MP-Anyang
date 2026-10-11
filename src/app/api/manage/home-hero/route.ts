@@ -3,6 +3,11 @@ import { commitHomeHeroSlots, getHomeHeroSettings, saveHomeHeroSettings } from "
 import { saveHomeHeroUpload } from "@/lib/manage-media-upload";
 import { requireStaffApi } from "@/lib/manage-guard";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+/** GridFS 업로드·교체 여유 */
+export const maxDuration = 120;
+
 export async function GET() {
   const guard = await requireStaffApi();
   if (guard.error) return guard.error;
@@ -20,7 +25,20 @@ export async function POST(request: Request) {
   const guard = await requireStaffApi();
   if (guard.error) return guard.error;
 
-  const form = await request.formData();
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch (error) {
+    console.error("[home-hero] formData failed", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "업로드가 끊겼거나 파일이 너무 큽니다. 영상 25MB·음악 12MB 이하로 다시 시도해 주세요.",
+      },
+      { status: 413 },
+    );
+  }
+
   const videoFile = form.get("video");
   const audioFile = form.get("audio");
   const hasVideo = videoFile instanceof File && videoFile.size > 0;
