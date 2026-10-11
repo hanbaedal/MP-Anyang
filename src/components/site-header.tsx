@@ -51,10 +51,10 @@ export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role 
 
         <Link href="/" className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Image
-            src="/images/logo-256.png"
+            src="/images/logo-512.png"
             alt=""
-            width={256}
-            height={256}
+            width={512}
+            height={512}
             priority
             className="size-7 object-contain lg:size-8"
             aria-hidden
