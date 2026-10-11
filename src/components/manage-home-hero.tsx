@@ -2,435 +2,194 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ManageImagePicker } from "@/components/manage-image-picker";
-import { thumbUrl } from "@/lib/media";
-import {
-  HOME_HERO_SEASON_LABELS,
-  type HomeHeroAsset,
-  type HomeHeroAssetKind,
-  type HomeHeroSeasonTag,
-  type HomeHeroSettings,
-} from "@/lib/home-hero-types";
+import type { HomeHeroSettings } from "@/lib/home-hero-types";
 
-const field =
-  "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
-
-function seasonLabel(season: HomeHeroSeasonTag) {
-  if (!season) return "";
-  return HOME_HERO_SEASON_LABELS[season as keyof typeof HOME_HERO_SEASON_LABELS] ?? "";
-}
-
-function AssetRow({
-  item,
-  kind,
-  activeSrc,
-  busy,
-  onApply,
-  onSaveMeta,
-  onReplace,
-  onDelete,
-}: {
-  item: HomeHeroAsset;
-  kind: HomeHeroAssetKind;
-  activeSrc: string;
-  busy: boolean;
-  onApply: () => void;
-  onSaveMeta: (patch: { label: string; season: HomeHeroSeasonTag; memo: string }) => void;
-  onReplace: (file: File) => void;
-  onDelete: () => void;
-}) {
-  const [label, setLabel] = useState(item.label);
-  const [season, setSeason] = useState<HomeHeroSeasonTag>(item.season);
-  const [memo, setMemo] = useState(item.memo);
-  const isActive = activeSrc === item.src;
-  const builtin = item.id === "builtin-video" || item.id === "builtin-audio";
-
-  return (
-    <li className="space-y-3 rounded-lg border px-3 py-3 text-sm">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 flex-1 space-y-2">
-          <input className={field} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="이름 (예: 2026 봄 전경)" />
-          <div className="grid gap-2 sm:grid-cols-2">
-            <select
-              className={field}
-              value={season}
-              onChange={(e) => setSeason(e.target.value as HomeHeroSeasonTag)}
-            >
-              <option value="">계절 태그 없음</option>
-              {(Object.keys(HOME_HERO_SEASON_LABELS) as Array<keyof typeof HOME_HERO_SEASON_LABELS>).map((key) => (
-                <option key={key} value={key}>
-                  {HOME_HERO_SEASON_LABELS[key]}
-                </option>
-              ))}
-            </select>
-            <input className={field} value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="메모 (선택)" />
-          </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {item.src}
-            {seasonLabel(season) ? ` · ${seasonLabel(season)}` : null}
-            {isActive ? <span className="ml-2 font-medium text-primary">공개 중</span> : null}
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:items-end">
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => onSaveMeta({ label, season, memo })}>
-            저장
-          </Button>
-          <Button type="button" size="sm" variant={isActive ? "secondary" : "default"} disabled={busy || isActive} onClick={onApply}>
-            공개에 사용
-          </Button>
-          {!builtin ? (
-            <label className="cursor-pointer text-center text-xs text-primary underline-offset-2 hover:underline">
-              파일 교체
-              <input
-                type="file"
-                className="sr-only"
-                accept={kind === "video" ? "video/mp4,video/webm,.mp4,.webm" : "audio/mpeg,.mp3,.wav,.m4a"}
-                disabled={busy}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onReplace(file);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          ) : null}
-          {!builtin ? (
-            <Button type="button" size="sm" variant="destructive" disabled={busy} onClick={onDelete}>
-              삭제
-            </Button>
-          ) : null}
-        </div>
-      </div>
-      {kind === "video" ? (
-        <video src={item.src} className="aspect-video max-h-48 w-full rounded-md bg-muted object-cover" controls muted playsInline preload="metadata" />
-      ) : (
-        <audio src={item.src} className="w-full" controls preload="metadata" />
-      )}
-    </li>
-  );
+function formatBytes(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   const [settings, setSettings] = useState(initial);
+  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const [pendingAudio, setPendingAudio] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "busy" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
-  const [applyOnUpload, setApplyOnUpload] = useState(true);
-  const [uploadSeason, setUploadSeason] = useState<HomeHeroSeasonTag>("");
-  const [uploadLabel, setUploadLabel] = useState("");
-  const [pickVideoSrc, setPickVideoSrc] = useState(initial.videoSrc);
-  const [pickAudioSrc, setPickAudioSrc] = useState(initial.audioSrc);
 
-  const sortedVideos = useMemo(() => sortAssets(settings.videos), [settings.videos]);
-  const sortedAudios = useMemo(() => sortAssets(settings.audios), [settings.audios]);
+  const pendingVideoUrl = useMemo(
+    () => (pendingVideo ? URL.createObjectURL(pendingVideo) : null),
+    [pendingVideo],
+  );
+  const pendingAudioUrl = useMemo(
+    () => (pendingAudio ? URL.createObjectURL(pendingAudio) : null),
+    [pendingAudio],
+  );
 
   useEffect(() => {
-    setPickVideoSrc(settings.videoSrc);
-    setPickAudioSrc(settings.audioSrc);
-  }, [settings.videoSrc, settings.audioSrc]);
-
-  async function refresh() {
-    const res = await fetch("/api/manage/home-hero");
-    const json = (await res.json()) as { ok?: boolean; settings?: HomeHeroSettings };
-    if (json.settings) setSettings(json.settings);
-  }
-
-  async function upload(kind: "video" | "audio" | "poster", file: File) {
-    setStatus("busy");
-    setMessage("");
-    const form = new FormData();
-    form.set("action", "create");
-    form.set("kind", kind);
-    form.set("file", file);
-    form.set("applyPublic", applyOnUpload ? "1" : "0");
-    if (uploadLabel.trim()) form.set("label", uploadLabel.trim());
-    if (uploadSeason) form.set("season", uploadSeason);
-    try {
-      const res = await fetch("/api/manage/home-hero", { method: "POST", body: form });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
-        setStatus("error");
-        setMessage(json.error || "업로드에 실패했습니다.");
-        return;
-      }
-      setSettings(json.settings);
-      setUploadLabel("");
-      setStatus("ok");
-      setMessage(
-        kind === "poster"
-          ? "포스터를 바꿨습니다."
-          : applyOnUpload
-            ? "라이브러리에 추가하고 공개 메인에 적용했습니다."
-            : "라이브러리에만 추가했습니다. 「공개에 사용」으로 골라 주세요.",
-      );
-    } catch {
-      setStatus("error");
-      setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function replaceFile(kind: HomeHeroAssetKind, assetId: string, file: File) {
-    setStatus("busy");
-    setMessage("");
-    const form = new FormData();
-    form.set("action", "replace");
-    form.set("kind", kind);
-    form.set("assetId", assetId);
-    form.set("file", file);
-    try {
-      const res = await fetch("/api/manage/home-hero", { method: "POST", body: form });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
-        setStatus("error");
-        setMessage(json.error || "교체에 실패했습니다.");
-        return;
-      }
-      setSettings(json.settings);
-      setStatus("ok");
-      setMessage("파일을 교체했습니다.");
-    } catch {
-      setStatus("error");
-      setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function saveMeta(kind: HomeHeroAssetKind, id: string, patch: { label: string; season: HomeHeroSeasonTag; memo: string }) {
-    setStatus("busy");
-    setMessage("");
-    try {
-      const res = await fetch("/api/manage/home-hero", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, kind, ...patch }),
-      });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
-        setStatus("error");
-        setMessage(json.error || "저장에 실패했습니다.");
-        return;
-      }
-      setSettings(json.settings);
-      setStatus("ok");
-      setMessage("항목 정보를 저장했습니다.");
-    } catch {
-      setStatus("error");
-      setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function applySelection(patch: { videoSrc?: string; audioSrc?: string }) {
-    setStatus("busy");
-    setMessage("");
-    try {
-      const res = await fetch("/api/manage/home-hero", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...patch, posterSrc: settings.posterSrc }),
-      });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
-        setStatus("error");
-        setMessage(json.error || "저장에 실패했습니다.");
-        return;
-      }
-      setSettings(json.settings);
-      setStatus("ok");
-      setMessage("공개 메인에 반영했습니다.");
-    } catch {
-      setStatus("error");
-      setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function removeAsset(kind: HomeHeroAssetKind, id: string) {
-    if (!confirm("이 항목을 목록에서 삭제할까요? 업로드 파일도 지웁니다.")) return;
-    setStatus("busy");
-    setMessage("");
-    try {
-      const res = await fetch(`/api/manage/home-hero?id=${encodeURIComponent(id)}&kind=${kind}`, { method: "DELETE" });
-      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
-      if (!res.ok || !json.ok || !json.settings) {
-        setStatus("error");
-        setMessage(json.error || "삭제에 실패했습니다.");
-        return;
-      }
-      setSettings(json.settings);
-      setStatus("ok");
-      setMessage("삭제했습니다.");
-    } catch {
-      setStatus("error");
-      setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
-    }
-  }
+    return () => {
+      if (pendingVideoUrl) URL.revokeObjectURL(pendingVideoUrl);
+    };
+  }, [pendingVideoUrl]);
+  useEffect(() => {
+    return () => {
+      if (pendingAudioUrl) URL.revokeObjectURL(pendingAudioUrl);
+    };
+  }, [pendingAudioUrl]);
 
   const busy = status === "busy";
-  const pickChanged = pickVideoSrc !== settings.videoSrc || pickAudioSrc !== settings.audioSrc;
+  const canSave = Boolean(pendingVideo || pendingAudio);
+
+  async function saveToDb() {
+    if (!canSave) return;
+    setStatus("busy");
+    setMessage("");
+    const form = new FormData();
+    if (pendingVideo) form.set("video", pendingVideo);
+    if (pendingAudio) form.set("audio", pendingAudio);
+    try {
+      const res = await fetch("/api/manage/home-hero", { method: "POST", body: form });
+      const json = (await res.json()) as { ok?: boolean; error?: string; settings?: HomeHeroSettings };
+      if (!res.ok || !json.ok || !json.settings) {
+        setStatus("error");
+        setMessage(json.error || "저장에 실패했습니다.");
+        return;
+      }
+      setSettings(json.settings);
+      setPendingVideo(null);
+      setPendingAudio(null);
+      setStatus("ok");
+      setMessage("MongoDB에 저장했습니다. 이전 업로드 파일은 교체·삭제되었습니다.");
+    } catch {
+      setStatus("error");
+      setMessage("네트워크 오류입니다.");
+    } finally {
+      setStatus("idle");
+    }
+  }
+
+  const videoLabel = settings.videos[0]?.label || "영상";
+  const audioLabel = settings.audios[0]?.label || "음악";
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-3 py-6 sm:px-4">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        계절별 영상·음악 라이브러리 → 공개 조합 적용 · 메인 무음 자동 재생 · BGM은 방문자가 켬
+        영상·음악은 각각 1개만 보관됩니다. 새로 등록해 저장하면 이전 파일이 바뀌며 삭제됩니다. 영상만, 또는 영상+음악을
+        함께 저장할 수 있습니다.
       </p>
 
       <section className="space-y-3 rounded-lg border-2 border-primary/25 bg-card p-3 sm:p-4">
-        <h2 className="text-sm font-medium">공개 조합</h2>
-        <div className="grid gap-2 md:grid-cols-2">
-          <label className="block space-y-0.5 text-xs">
-            <span className="text-muted-foreground">영상</span>
-            <select className={field} value={pickVideoSrc} disabled={busy} onChange={(e) => setPickVideoSrc(e.target.value)}>
-              {sortedVideos.map((item) => (
-                <option key={item.id} value={item.src}>
-                  {item.label}
-                  {seasonLabel(item.season) ? ` (${seasonLabel(item.season)})` : ""}
-                  {settings.videoSrc === item.src ? " · 현재 공개" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-0.5 text-xs">
-            <span className="text-muted-foreground">음악</span>
-            <select className={field} value={pickAudioSrc} disabled={busy} onChange={(e) => setPickAudioSrc(e.target.value)}>
-              {sortedAudios.map((item) => (
-                <option key={item.id} value={item.src}>
-                  {item.label}
-                  {seasonLabel(item.season) ? ` (${seasonLabel(item.season)})` : ""}
-                  {settings.audioSrc === item.src ? " · 현재 공개" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <Button type="button" size="sm" disabled={busy || !pickChanged} onClick={() => void applySelection({ videoSrc: pickVideoSrc, audioSrc: pickAudioSrc })}>
-          메인에 적용
-        </Button>
-      </section>
-
-      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
-        <h2 className="text-sm font-medium">공개 중 미리보기</h2>
+        <h2 className="text-sm font-medium">현재 등록·공개 중</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">영상</p>
-            <video src={settings.videoSrc} className="aspect-video w-full rounded-lg bg-muted object-cover" controls muted playsInline preload="metadata" />
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">영상 · {videoLabel}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{settings.videoSrc}</p>
+            <video
+              key={settings.videoSrc}
+              src={settings.videoSrc}
+              className="aspect-video w-full rounded-lg bg-muted object-cover"
+              controls
+              muted
+              playsInline
+              preload="metadata"
+            />
           </div>
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">음악</p>
-            <audio src={settings.audioSrc} className="w-full" controls preload="metadata" />
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">음악 · {audioLabel}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{settings.audioSrc}</p>
+            <audio key={settings.audioSrc} src={settings.audioSrc} className="w-full" controls preload="metadata" />
           </div>
         </div>
-        <div>
-          <p className="mb-1 text-[10px] text-muted-foreground">재생 전 포스터</p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={thumbUrl(settings.posterSrc)} alt="" className="max-h-28 rounded-md object-cover" />
-        </div>
+        {settings.updatedAt ? (
+          <p className="text-[11px] text-muted-foreground">마지막 저장: {new Date(settings.updatedAt).toLocaleString("ko-KR")}</p>
+        ) : null}
       </section>
 
       <section className="space-y-3 rounded-lg border bg-card p-3 sm:p-4">
         <h2 className="text-sm font-medium">새 파일 등록</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">표시 이름 (선택)</span>
-            <input className={field} value={uploadLabel} onChange={(e) => setUploadLabel(e.target.value)} placeholder="예: 2026 가을 드론" />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">계절 태그</span>
-            <select className={field} value={uploadSeason} onChange={(e) => setUploadSeason(e.target.value as HomeHeroSeasonTag)}>
-              <option value="">없음</option>
-              {(Object.keys(HOME_HERO_SEASON_LABELS) as Array<keyof typeof HOME_HERO_SEASON_LABELS>).map((key) => (
-                <option key={key} value={key}>
-                  {HOME_HERO_SEASON_LABELS[key]}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={applyOnUpload} onChange={(e) => setApplyOnUpload(e.target.checked)} />
-          올린 직후 공개 메인에 바로 적용
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">동영상 (25MB 이하)</span>
+        <div className="flex flex-wrap gap-2">
+          <label>
+            <Button type="button" size="sm" variant="outline" disabled={busy} asChild>
+              <span>1. 영상 등록</span>
+            </Button>
             <input
               type="file"
               accept="video/mp4,video/webm,.mp4,.webm"
+              className="sr-only"
               disabled={busy}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void upload("video", file);
+                const file = e.target.files?.[0] ?? null;
+                setPendingVideo(file);
+                setMessage("");
                 e.target.value = "";
               }}
             />
           </label>
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">음악 (12MB 이하)</span>
+          <label>
+            <Button type="button" size="sm" variant="outline" disabled={busy} asChild>
+              <span>2. 음악 등록</span>
+            </Button>
             <input
               type="file"
               accept="audio/mpeg,.mp3,.wav,.m4a"
+              className="sr-only"
               disabled={busy}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void upload("audio", file);
+                const file = e.target.files?.[0] ?? null;
+                setPendingAudio(file);
+                setMessage("");
                 e.target.value = "";
               }}
             />
           </label>
-        </div>
-        <div>
-          <p className="mb-1 text-xs text-muted-foreground">포스터</p>
-          <ManageImagePicker src={settings.posterSrc} disabled={busy} label="포스터 선택" onFile={(file) => upload("poster", file)} />
-        </div>
-      </section>
-
-      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-medium">영상 라이브러리</h2>
-          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void refresh()}>
-            새로고침
+          <Button type="button" size="sm" disabled={busy || !canSave} onClick={() => void saveToDb()}>
+            {busy ? "저장 중…" : "3. MongoDB 저장"}
           </Button>
         </div>
-        <ul className="space-y-3">
-          {sortedVideos.map((item) => (
-            <AssetRow
-              key={item.id}
-              item={item}
-              kind="video"
-              activeSrc={settings.videoSrc}
-              busy={busy}
-              onApply={() => void applySelection({ videoSrc: item.src })}
-              onSaveMeta={(patch) => void saveMeta("video", item.id, patch)}
-              onReplace={(file) => void replaceFile("video", item.id, file)}
-              onDelete={() => void removeAsset("video", item.id)}
-            />
-          ))}
-        </ul>
-      </section>
+        <p className="text-[11px] text-muted-foreground">
+          영상 25MB · 음악 12MB 이하 · 저장 전에는 아래에만 미리 보이며, 홈에는 반영되지 않습니다.
+        </p>
 
-      <section className="space-y-2 rounded-lg border bg-card p-3 sm:p-4">
-        <h2 className="text-sm font-medium">음악 라이브러리</h2>
-        <ul className="space-y-3">
-          {sortedAudios.map((item) => (
-            <AssetRow
-              key={item.id}
-              item={item}
-              kind="audio"
-              activeSrc={settings.audioSrc}
-              busy={busy}
-              onApply={() => void applySelection({ audioSrc: item.src })}
-              onSaveMeta={(patch) => void saveMeta("audio", item.id, patch)}
-              onReplace={(file) => void replaceFile("audio", item.id, file)}
-              onDelete={() => void removeAsset("audio", item.id)}
-            />
-          ))}
-        </ul>
+        {pendingVideo || pendingAudio ? (
+          <div className="space-y-3 rounded-md border border-dashed border-primary/30 bg-muted/40 p-3">
+            <p className="text-xs font-medium text-primary">저장 대기</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {pendingVideo && pendingVideoUrl ? (
+                <div className="space-y-2">
+                  <p className="truncate text-xs">
+                    영상: {pendingVideo.name} ({formatBytes(pendingVideo.size)})
+                  </p>
+                  <video
+                    src={pendingVideoUrl}
+                    className="aspect-video w-full rounded-md bg-muted object-cover"
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setPendingVideo(null)}>
+                    영상 선택 취소
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">영상: 변경 없음 (현재 공개 유지)</p>
+              )}
+              {pendingAudio && pendingAudioUrl ? (
+                <div className="space-y-2">
+                  <p className="truncate text-xs">
+                    음악: {pendingAudio.name} ({formatBytes(pendingAudio.size)})
+                  </p>
+                  <audio src={pendingAudioUrl} className="w-full" controls preload="metadata" />
+                  <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setPendingAudio(null)}>
+                    음악 선택 취소
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">음악: 변경 없음 (현재 공개 유지)</p>
+              )}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {message ? (
@@ -438,15 +197,4 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
       ) : null}
     </div>
   );
-}
-
-const SEASON_ORDER: HomeHeroSeasonTag[] = ["spring", "summer", "autumn", "winter", "year_round", ""];
-
-function sortAssets(list: HomeHeroAsset[]) {
-  return [...list].sort((a, b) => {
-    const sa = SEASON_ORDER.indexOf(a.season);
-    const sb = SEASON_ORDER.indexOf(b.season);
-    if (sa !== sb) return sa - sb;
-    return b.createdAt.localeCompare(a.createdAt);
-  });
 }

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { GridFSBucket } from "mongodb";
 import { getDb, hasMongo } from "./mongo";
@@ -44,6 +44,27 @@ export async function putUploadObject(key: string, buffer: Buffer, contentType?:
     stream.on("error", reject);
     stream.end(buffer);
   });
+}
+
+/** GridFS·디스크에서 업로드 파일 제거 (없으면 무시) */
+export async function deleteUploadObject(key: string) {
+  const filename = uploadStorageKey(key);
+  if (hasMongo()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const bucket = new GridFSBucket(db, { bucketName: BUCKET });
+        const existing = await bucket.find({ filename }).toArray();
+        for (const file of existing) {
+          await bucket.delete(file._id);
+        }
+      }
+    } catch (error) {
+      console.error("[upload-store] gridfs delete failed", error);
+    }
+  }
+  const disk = path.join(process.cwd(), "public", filename.replace(/\//g, path.sep));
+  await unlink(disk).catch(() => {});
 }
 
 export async function getUploadObject(key: string): Promise<{ buffer: Buffer; contentType: string } | null> {

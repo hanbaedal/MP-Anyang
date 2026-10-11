@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import type { HomeHeroAsset, HomeHeroSeasonTag, HomeHeroSettings } from "./home-hero-types";
 import { HOME_HERO_SEASON_LABELS } from "./home-hero-types";
 import { getDb, hasMongo } from "./mongo";
+import { deleteUploadObject } from "./upload-store";
 
 export type { HomeHeroAsset, HomeHeroSettings } from "./home-hero-types";
 
@@ -72,38 +71,73 @@ function parseSeason(raw: unknown): HomeHeroSeasonTag {
   return "";
 }
 
-export function isBuiltinHomeHeroAsset(id: string) {
-  return id === "builtin-video" || id === "builtin-audio";
+function slotAsset(
+  kind: HomeHeroAsset["kind"],
+  src: string,
+  label: string,
+  existing?: HomeHeroAsset | null,
+): HomeHeroAsset {
+  return {
+    id: kind === "video" ? "slot-video" : "slot-audio",
+    kind,
+    src,
+    label: label.trim() || existing?.label || (kind === "video" ? "영상" : "음악"),
+    season: existing?.season ?? "year_round",
+    memo: existing?.memo ?? "",
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
+  };
 }
 
-function pickFallbackSrc(list: HomeHeroAsset[], kind: HomeHeroAsset["kind"]) {
+/** 영상·음악 각각 공개 슬롯 1개만 유지 */
+function toSingleSlots(settings: HomeHeroSettings): HomeHeroSettings {
   const base = defaultHomeHeroSettings();
-  return list[0]?.src ?? (kind === "video" ? base.videoSrc : base.audioSrc);
+  const videoSrc = isSafeHomeMediaPath(settings.videoSrc) ? settings.videoSrc : base.videoSrc;
+  const audioSrc = isSafeHomeMediaPath(settings.audioSrc) ? settings.audioSrc : base.audioSrc;
+  const video =
+    settings.videos.find((v) => v.src === videoSrc) ||
+    settings.videos[0] ||
+    base.videos[0]!;
+  const audio =
+    settings.audios.find((a) => a.src === audioSrc) ||
+    settings.audios[0] ||
+    base.audios[0]!;
+  return {
+    ...settings,
+    videoSrc,
+    audioSrc,
+    posterSrc: isSafeHomeMediaPath(settings.posterSrc) ? settings.posterSrc : base.posterSrc,
+    videos: [slotAsset("video", videoSrc, video.label, video)],
+    audios: [slotAsset("audio", audioSrc, audio.label, audio)],
+  };
 }
 
 function fromDoc(doc: Record<string, unknown>): HomeHeroSettings {
   const base = defaultHomeHeroSettings();
   const videos = Array.isArray(doc.videos)
-    ? doc.videos.map((item) => normalizeAsset(item, "video")).filter(Boolean)
+    ? (doc.videos.map((item) => normalizeAsset(item, "video")).filter(Boolean) as HomeHeroAsset[])
     : base.videos;
   const audios = Array.isArray(doc.audios)
-    ? doc.audios.map((item) => normalizeAsset(item, "audio")).filter(Boolean)
+    ? (doc.audios.map((item) => normalizeAsset(item, "audio")).filter(Boolean) as HomeHeroAsset[])
     : base.audios;
   const videoSrc = String(doc.videoSrc ?? base.videoSrc);
   const audioSrc = String(doc.audioSrc ?? base.audioSrc);
   const posterSrc = String(doc.posterSrc ?? base.posterSrc);
   const safeVideo = isSafeHomeMediaPath(videoSrc) ? videoSrc : base.videoSrc;
   const safeAudio = isSafeHomeMediaPath(audioSrc) ? audioSrc : base.audioSrc;
-  const videoList = videos.length ? (videos as HomeHeroAsset[]) : base.videos;
-  const audioList = audios.length ? (audios as HomeHeroAsset[]) : base.audios;
-  return {
-    videoSrc: videoList.some((v) => v.src === safeVideo) || safeVideo.startsWith("/videos/") ? safeVideo : base.videoSrc,
-    audioSrc: audioList.some((a) => a.src === safeAudio) || safeAudio.startsWith("/audio/") ? safeAudio : base.audioSrc,
+  return toSingleSlots({
+    videoSrc: safeVideo,
+    audioSrc: safeAudio,
     posterSrc: isSafeHomeMediaPath(posterSrc) ? posterSrc : base.posterSrc,
-    videos: videoList,
-    audios: audioList,
+    videos: videos.length ? videos : base.videos,
+    audios: audios.length ? audios : base.audios,
     updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : String(doc.updatedAt ?? base.updatedAt),
-  };
+  });
+}
+
+export async function removeHomeHeroUploadFile(src: string) {
+  if (!src.startsWith("/uploads/home-hero/") && !src.startsWith("/api/uploads/home-hero/")) return;
+  const key = src.replace(/^\/api\//, "").replace(/^\//, "");
+  await deleteUploadObject(key);
 }
 
 async function readLocal(): Promise<HomeHeroSettings | null> {
@@ -135,11 +169,11 @@ export async function getHomeHeroSettings(): Promise<HomeHeroSettings> {
     }
   }
   const local = await readLocal();
-  return local ?? defaultHomeHeroSettings();
+  return toSingleSlots(local ?? defaultHomeHeroSettings());
 }
 
 export async function saveHomeHeroSettings(input: HomeHeroSettings): Promise<HomeHeroSettings> {
-  const settings: HomeHeroSettings = {
+  const settings = toSingleSlots({
     ...input,
     videoSrc: isSafeHomeMediaPath(input.videoSrc) ? input.videoSrc : defaultHomeHeroSettings().videoSrc,
     audioSrc: isSafeHomeMediaPath(input.audioSrc) ? input.audioSrc : defaultHomeHeroSettings().audioSrc,
@@ -147,7 +181,7 @@ export async function saveHomeHeroSettings(input: HomeHeroSettings): Promise<Hom
     videos: input.videos.filter((a) => a.kind === "video" && isSafeHomeMediaPath(a.src)),
     audios: input.audios.filter((a) => a.kind === "audio" && isSafeHomeMediaPath(a.src)),
     updatedAt: new Date().toISOString(),
-  };
+  });
 
   if (hasMongo()) {
     const db = await getDb();
@@ -164,89 +198,37 @@ export async function saveHomeHeroSettings(input: HomeHeroSettings): Promise<Hom
   return settings;
 }
 
-export function appendHomeHeroAsset(
+/** 영상·음악 슬롯을 새 경로로 교체하고, 이전 업로드 파일을 삭제한다. */
+export async function commitHomeHeroSlots(
   settings: HomeHeroSettings,
-  asset: Omit<HomeHeroAsset, "id" | "createdAt"> & { id?: string },
-  options?: { applyPublic?: boolean },
-): HomeHeroSettings {
-  const applyPublic = options?.applyPublic !== false;
-  const entry: HomeHeroAsset = {
-    id: asset.id ?? randomUUID(),
-    kind: asset.kind,
-    src: asset.src,
-    label: asset.label.trim() || (asset.kind === "video" ? "영상" : "음악"),
-    season: asset.season ?? "",
-    memo: asset.memo?.trim() ?? "",
-    createdAt: new Date().toISOString(),
-  };
-  if (asset.kind === "video") {
-    const exists = settings.videos.some((v) => v.src === entry.src);
-    const videos = exists ? settings.videos : [entry, ...settings.videos];
-    return { ...settings, videos, videoSrc: applyPublic ? entry.src : settings.videoSrc };
+  next: { videoSrc?: string; audioSrc?: string; videoLabel?: string; audioLabel?: string },
+): Promise<HomeHeroSettings> {
+  if (!next.videoSrc && !next.audioSrc) {
+    throw new Error("영상 또는 음악 파일이 필요합니다.");
   }
-  const exists = settings.audios.some((v) => v.src === entry.src);
-  const audios = exists ? settings.audios : [entry, ...settings.audios];
-  return { ...settings, audios, audioSrc: applyPublic ? entry.src : settings.audioSrc };
-}
 
-export function updateHomeHeroAsset(
-  settings: HomeHeroSettings,
-  kind: HomeHeroAsset["kind"],
-  id: string,
-  patch: { label?: string; season?: HomeHeroSeasonTag; memo?: string },
-): HomeHeroSettings | { error: string } {
-  const listKey = kind === "video" ? "videos" : "audios";
-  const list = settings[listKey];
-  const idx = list.findIndex((a) => a.id === id);
-  if (idx < 0) return { error: "항목을 찾을 수 없습니다." };
-  const next = [...list];
-  next[idx] = {
-    ...next[idx],
-    label: patch.label !== undefined ? patch.label.trim() || next[idx].label : next[idx].label,
-    season: patch.season !== undefined ? parseSeason(patch.season) : next[idx].season,
-    memo: patch.memo !== undefined ? patch.memo.trim() : next[idx].memo,
-  };
-  return { ...settings, [listKey]: next };
-}
+  const keepVideoSrc = next.videoSrc || settings.videoSrc;
+  const keepAudioSrc = next.audioSrc || settings.audioSrc;
+  const oldVideos = settings.videos;
+  const oldAudios = settings.audios;
 
-export function replaceHomeHeroAssetFile(
-  settings: HomeHeroSettings,
-  kind: HomeHeroAsset["kind"],
-  id: string,
-  newSrc: string,
-): HomeHeroSettings | { error: string } {
-  const listKey = kind === "video" ? "videos" : "audios";
-  const list = settings[listKey];
-  const idx = list.findIndex((a) => a.id === id);
-  if (idx < 0) return { error: "항목을 찾을 수 없습니다." };
-  if (isBuiltinHomeHeroAsset(id)) return { error: "기본 배포 파일은 교체할 수 없습니다. 새로 올려 주세요." };
-  const oldSrc = list[idx].src;
-  const next = [...list];
-  next[idx] = { ...next[idx], src: newSrc };
-  const activeKey = kind === "video" ? "videoSrc" : "audioSrc";
-  const activeSrc = settings[activeKey] === oldSrc ? newSrc : settings[activeKey];
-  return { ...settings, [listKey]: next, [activeKey]: activeSrc };
-}
-
-export async function deleteHomeHeroAsset(
-  settings: HomeHeroSettings,
-  kind: HomeHeroAsset["kind"],
-  id: string,
-): Promise<HomeHeroSettings | { error: string }> {
-  if (isBuiltinHomeHeroAsset(id)) {
-    return { error: "기본 배포 항목은 삭제할 수 없습니다." };
+  for (const asset of oldVideos) {
+    if (asset.src !== keepVideoSrc) await removeHomeHeroUploadFile(asset.src);
   }
-  const listKey = kind === "video" ? "videos" : "audios";
-  const list = settings[listKey];
-  const target = list.find((a) => a.id === id);
-  if (!target) return { error: "항목을 찾을 수 없습니다." };
-  const nextList = list.filter((a) => a.id !== id);
-  if (!nextList.length) return { error: "마지막 항목은 삭제할 수 없습니다." };
-  const activeKey = kind === "video" ? "videoSrc" : "audioSrc";
-  const nextActive = settings[activeKey] === target.src ? pickFallbackSrc(nextList, kind) : settings[activeKey];
-  if (target.src.startsWith("/uploads/home-hero/")) {
-    const disk = path.join(process.cwd(), "public", target.src.replace(/^\//, "").replace(/\//g, path.sep));
-    await unlink(disk).catch(() => {});
+  for (const asset of oldAudios) {
+    if (asset.src !== keepAudioSrc) await removeHomeHeroUploadFile(asset.src);
   }
-  return { ...settings, [listKey]: nextList, [activeKey]: nextActive };
+
+  const videoLabel = next.videoLabel || oldVideos.find((v) => v.src === keepVideoSrc)?.label || "영상";
+  const audioLabel = next.audioLabel || oldAudios.find((a) => a.src === keepAudioSrc)?.label || "음악";
+  const videoExisting = oldVideos.find((v) => v.src === keepVideoSrc) ?? null;
+  const audioExisting = oldAudios.find((a) => a.src === keepAudioSrc) ?? null;
+
+  return saveHomeHeroSettings({
+    ...settings,
+    videoSrc: keepVideoSrc,
+    audioSrc: keepAudioSrc,
+    videos: [slotAsset("video", keepVideoSrc, videoLabel, videoExisting)],
+    audios: [slotAsset("audio", keepAudioSrc, audioLabel, audioExisting)],
+  });
 }
