@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { commitHomeHeroSlots, getHomeHeroSettings, saveHomeHeroSettings } from "@/lib/home-hero";
+import {
+  addHomeHeroSet,
+  deleteHomeHeroSet,
+  getHomeHeroSettings,
+  publishHomeHeroSet,
+  renameHomeHeroSet,
+  replaceHomeHeroSet,
+  saveHomeHeroSettings,
+} from "@/lib/home-hero";
 import { saveHomeHeroUpload } from "@/lib/manage-media-upload";
 import { requireStaffApi } from "@/lib/manage-guard";
 
@@ -16,10 +24,10 @@ export async function GET() {
 }
 
 /**
- * MongoDB 저장
- * - 영상 필수, 음악 선택
- * - 기존 영상·음악 업로드 삭제 후 새로 저장
- * - 음악 미등록이면 음악 슬롯 공란
+ * 세트 추가·교체 (multipart)
+ * - action=add (기본): 새 세트 추가 (최대 8)
+ * - action=replace + setId: 선택 세트 파일 교체
+ * - 영상 필수, 음악 선택(없으면 공란)
  */
 export async function POST(request: Request) {
   const guard = await requireStaffApi();
@@ -39,6 +47,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const action = String(form.get("action") || "add");
+  const setId = String(form.get("setId") || "");
+  const label = String(form.get("label") || "").trim();
   const videoFile = form.get("video");
   const audioFile = form.get("audio");
   const hasVideo = videoFile instanceof File && videoFile.size > 0;
@@ -63,17 +74,24 @@ export async function POST(request: Request) {
     audioLabel = audioFile.name;
   }
 
+  const payload = {
+    videoSrc: savedVideo.src,
+    audioSrc,
+    label: label || undefined,
+    videoLabel: videoFile.name,
+    audioLabel,
+  };
+
   try {
     const current = await getHomeHeroSettings();
-    const settings = await commitHomeHeroSlots(current, {
-      videoSrc: savedVideo.src,
-      audioSrc,
-      videoLabel: videoFile.name,
-      audioLabel,
-    });
+    const settings =
+      action === "replace"
+        ? await replaceHomeHeroSet(current, setId, payload)
+        : await addHomeHeroSet(current, payload);
     return NextResponse.json({ ok: true, settings });
   } catch (error) {
     console.error("[home-hero] commit failed", error);
+    // 업로드는 됐지만 메타 저장 실패 시 고아 파일 가능 — 메시지로 안내
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "저장에 실패했습니다." },
       { status: 500 },
@@ -81,20 +99,64 @@ export async function POST(request: Request) {
   }
 }
 
-/** 포스터 등 보조 필드만 갱신할 때 */
+/**
+ * 공개·삭제·이름 변경·포스터
+ * body.action: publish | delete | rename | poster
+ */
 export async function PUT(request: Request) {
   const guard = await requireStaffApi();
   if (guard.error) return guard.error;
-  let body: { posterSrc?: string };
+
+  let body: {
+    action?: string;
+    setId?: string;
+    label?: string;
+    posterSrc?: string;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ ok: false, error: "잘못된 요청입니다." }, { status: 400 });
   }
+
   const current = await getHomeHeroSettings();
-  if (body.posterSrc) {
-    const settings = await saveHomeHeroSettings({ ...current, posterSrc: body.posterSrc });
-    return NextResponse.json({ ok: true, settings });
+  const action = String(body.action || (body.posterSrc ? "poster" : ""));
+
+  try {
+    if (action === "publish") {
+      if (!body.setId) {
+        return NextResponse.json({ ok: false, error: "세트를 선택해 주세요." }, { status: 400 });
+      }
+      const settings = await publishHomeHeroSet(current, body.setId);
+      return NextResponse.json({ ok: true, settings });
+    }
+    if (action === "delete") {
+      if (!body.setId) {
+        return NextResponse.json({ ok: false, error: "세트를 선택해 주세요." }, { status: 400 });
+      }
+      const settings = await deleteHomeHeroSet(current, body.setId);
+      return NextResponse.json({ ok: true, settings });
+    }
+    if (action === "rename") {
+      if (!body.setId) {
+        return NextResponse.json({ ok: false, error: "세트를 선택해 주세요." }, { status: 400 });
+      }
+      const settings = await renameHomeHeroSet(current, body.setId, String(body.label || ""));
+      return NextResponse.json({ ok: true, settings });
+    }
+    if (action === "poster" || body.posterSrc) {
+      if (body.posterSrc) {
+        const settings = await saveHomeHeroSettings({ ...current, posterSrc: body.posterSrc });
+        return NextResponse.json({ ok: true, settings });
+      }
+      return NextResponse.json({ ok: true, settings: current });
+    }
+    return NextResponse.json({ ok: false, error: "지원하지 않는 작업입니다." }, { status: 400 });
+  } catch (error) {
+    console.error("[home-hero] put failed", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "처리에 실패했습니다." },
+      { status: 500 },
+    );
   }
-  return NextResponse.json({ ok: true, settings: current });
 }

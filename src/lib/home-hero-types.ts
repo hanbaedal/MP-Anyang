@@ -1,32 +1,26 @@
-export type HomeHeroAssetKind = "video" | "audio";
+/** 홈 메인에 올릴 수 있는 영상·음악 세트 상한 */
+export const HOME_HERO_MAX_SETS = 8;
 
-/** 관리 화면·목록 정렬용 (예: 봄·여름·2026 설) */
-export type HomeHeroSeasonTag = "spring" | "summer" | "autumn" | "winter" | "year_round" | "";
-
-export type HomeHeroAsset = {
+/** 영상(+선택 음악) 한 세트 */
+export type HomeHeroSet = {
   id: string;
-  kind: HomeHeroAssetKind;
-  src: string;
+  /** 카드에 보이는 짧은 이름 */
   label: string;
-  /** 계절·메모 (DB에 함께 저장) */
-  season: HomeHeroSeasonTag;
-  memo: string;
+  videoSrc: string;
+  /** 공란이면 홈에서 영상 트랙 소리 사용 */
+  audioSrc: string;
+  videoLabel: string;
+  audioLabel: string;
   createdAt: string;
 };
 
-export const HOME_HERO_SEASON_LABELS: Record<Exclude<HomeHeroSeasonTag, "">, string> = {
-  spring: "봄",
-  summer: "여름",
-  autumn: "가을",
-  winter: "겨울",
-  year_round: "사계절·상시",
-};
-
 export type HomeHeroSettings = {
+  sets: HomeHeroSet[];
+  /** 홈에 공개 중인 세트 */
+  activeSetId: string;
+  posterSrc: string;
+  updatedAt: string;
+  /** active 세트에서 파생(홈·호환용) */
   videoSrc: string;
   audioSrc: string;
-  posterSrc: string;
-  videos: HomeHeroAsset[];
-  audios: HomeHeroAsset[];
-  updatedAt: string;
 };
