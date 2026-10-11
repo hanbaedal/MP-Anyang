@@ -24,15 +24,7 @@ export default async function InquiryPage() {
               {SITE.phone}
             </a>
           </p>
-          <p>
-            {t(locale, "footer.visit")}: {SITE.address} ({SITE.visitName})
-          </p>
-          <p>{SITE.addressAlt}</p>
-          <p className="text-sm text-muted-foreground">
-            {t(locale, "hoursNote")}
-            <br />
-            {t(locale, "hoursWeekday")} · {t(locale, "hoursWeekend")} · {t(locale, "hoursHoliday")}
-          </p>
+          <p>{t(locale, "site.address")}</p>
         </Prose>
         <InquiryForm />
       </div>
