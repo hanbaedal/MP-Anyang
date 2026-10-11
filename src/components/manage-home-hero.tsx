@@ -10,12 +10,37 @@ function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** 서버·클라이언트 타임존이 달라도 hydration 어긋나지 않게, 마운트 후에만 포맷 */
+function useSeoulDateLabel(iso: string | undefined) {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    if (!iso) {
+      setLabel("");
+      return;
+    }
+    setLabel(
+      new Date(iso).toLocaleString("ko-KR", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }),
+    );
+  }, [iso]);
+  return label;
+}
+
 export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   const [settings, setSettings] = useState(initial);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
   const [pendingAudio, setPendingAudio] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "busy" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
+  const savedAtLabel = useSeoulDateLabel(settings.updatedAt);
 
   const pendingVideoUrl = useMemo(
     () => (pendingVideo ? URL.createObjectURL(pendingVideo) : null),
