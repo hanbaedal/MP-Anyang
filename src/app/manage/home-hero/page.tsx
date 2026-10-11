@@ -9,7 +9,7 @@ export default async function ManageHomeHeroPage() {
       <PageHero
         kicker="관리"
         title="메인 영상·음악"
-        lead="영상(필수)·음악(선택)을 등록한 뒤 MongoDB에 저장합니다. 저장 시 이전 영상·음악은 삭제되고, 음악을 안 올리면 음악은 공란입니다. 메인은 무음 영상 자동 재생이며, 별도 음악이 있을 때만 BGM 버튼이 나옵니다."
+        lead="영상(필수)·음악(선택)을 등록한 뒤 MongoDB에 저장합니다. 저장 시 이전 파일은 삭제되고, 음악을 안 올리면 공란입니다. 음악 공란이면 홈에서 「배경음악 재생」으로 영상에 담긴 소리를 켭니다. 별도 음악을 올리면 그 파일이 BGM이 됩니다."
       />
       <ManageHomeHero initial={settings} />
     </>

@@ -6,7 +6,7 @@ import { Photo } from "@/components/page-hero";
 import { useT } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
-const BGM_SESSION_KEY = "anyang-home-hero-bgm";
+const SOUND_SESSION_KEY = "anyang-home-hero-bgm";
 
 type Props = {
   videoSrc: string;
@@ -18,14 +18,15 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const hasAudio = Boolean(audioSrc);
+  /** 별도 음악 파일이 있으면 BGM 트랙, 없으면 영상에 들어 있는 소리 사용 */
+  const hasSeparateBgm = Boolean(audioSrc);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [musicOn, setMusicOn] = useState(false);
-  const [showBgmPrompt, setShowBgmPrompt] = useState(true);
+  const [soundOn, setSoundOn] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(true);
 
-  const startVideo = useCallback(async () => {
+  const startVideoMuted = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
     video.muted = true;
@@ -38,20 +39,31 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
     }
   }, []);
 
-  const startBgm = useCallback(async () => {
-    const audio = audioRef.current;
+  const enableSound = useCallback(async () => {
     const video = videoRef.current;
-    if (!hasAudio || !audio || !video) return;
+    if (!video) return;
     try {
-      if (video.paused) await startVideo();
-      await audio.play();
-      setMusicOn(true);
-      setShowBgmPrompt(false);
-      sessionStorage.setItem(BGM_SESSION_KEY, "1");
+      if (video.paused) {
+        video.muted = true;
+        await video.play();
+      }
+      if (hasSeparateBgm) {
+        const audio = audioRef.current;
+        if (!audio) return;
+        video.muted = true;
+        await audio.play();
+      } else {
+        video.muted = false;
+        await video.play();
+      }
+      setSoundOn(true);
+      setShowSoundPrompt(false);
+      sessionStorage.setItem(SOUND_SESSION_KEY, "1");
     } catch {
-      setShowBgmPrompt(true);
+      setShowSoundPrompt(true);
+      setSoundOn(false);
     }
-  }, [hasAudio, startVideo]);
+  }, [hasSeparateBgm]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -64,26 +76,34 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   useEffect(() => {
     if (reduceMotion) return;
     setVideoReady(false);
-    void startVideo();
-  }, [reduceMotion, videoSrc, startVideo]);
+    setSoundOn(false);
+    setShowSoundPrompt(true);
+    void startVideoMuted();
+  }, [reduceMotion, videoSrc, audioSrc, startVideoMuted]);
 
   useEffect(() => {
-    if (!hasAudio || reduceMotion || sessionStorage.getItem(BGM_SESSION_KEY) !== "1") return;
-    setShowBgmPrompt(false);
-    void startBgm();
-  }, [hasAudio, reduceMotion, audioSrc, startBgm]);
+    if (reduceMotion || sessionStorage.getItem(SOUND_SESSION_KEY) !== "1") return;
+    setShowSoundPrompt(false);
+    void enableSound();
+  }, [reduceMotion, videoSrc, audioSrc, enableSound]);
 
   useEffect(() => {
-    if (!hasAudio) {
-      setMusicOn(false);
-      setShowBgmPrompt(false);
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (hasSeparateBgm) {
+      video.muted = true;
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (soundOn) void audio.play().catch(() => setSoundOn(false));
+      else audio.pause();
       return;
     }
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (musicOn) void audio.play().catch(() => setMusicOn(false));
-    else audio.pause();
-  }, [hasAudio, musicOn, audioSrc]);
+
+    // 별도 음악 없음 → 영상 트랙 소리 on/off
+    video.muted = !soundOn;
+    if (soundOn && video.paused) void video.play().catch(() => setSoundOn(false));
+  }, [hasSeparateBgm, soundOn, audioSrc, videoSrc]);
 
   useEffect(() => {
     return () => {
@@ -122,7 +142,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
         className={cn("absolute inset-0 h-full w-full object-cover", videoReady || videoError ? "opacity-100" : "opacity-0")}
         src={videoSrc}
         poster={posterSrc}
-        muted
+        muted={hasSeparateBgm || !soundOn}
         autoPlay
         playsInline
         loop
@@ -130,12 +150,12 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
         onLoadedData={() => setVideoReady(true)}
         onError={() => setVideoError(true)}
       />
-      {hasAudio ? <audio key={audioSrc} ref={audioRef} src={audioSrc} loop preload="metadata" /> : null}
-      {hasAudio && showBgmPrompt && videoReady && !videoError ? (
+      {hasSeparateBgm ? <audio key={audioSrc} ref={audioRef} src={audioSrc} loop preload="metadata" /> : null}
+      {showSoundPrompt && videoReady && !videoError ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-28 z-[20] flex justify-center px-4 md:bottom-32">
           <button
             type="button"
-            onClick={() => void startBgm()}
+            onClick={() => void enableSound()}
             className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm text-white ring-1 ring-white/30 backdrop-blur-sm hover:bg-black/60"
             aria-label={t("home.bgmPlay")}
           >
@@ -144,10 +164,10 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           </button>
         </div>
       ) : null}
-      {hasAudio && musicOn ? (
+      {soundOn ? (
         <button
           type="button"
-          onClick={() => setMusicOn((on) => !on)}
+          onClick={() => setSoundOn(false)}
           className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
           aria-label={t("home.bgmOff")}
           title={t("home.bgmOff")}
@@ -155,10 +175,10 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
           <Volume2 className="size-5" aria-hidden />
         </button>
       ) : null}
-      {hasAudio && !musicOn && !showBgmPrompt && videoReady ? (
+      {!soundOn && !showSoundPrompt && videoReady ? (
         <button
           type="button"
-          onClick={() => void startBgm()}
+          onClick={() => void enableSound()}
           className="absolute right-3 top-3 z-[20] inline-flex size-10 items-center justify-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm hover:bg-black/55 sm:right-4 sm:top-4"
           aria-label={t("home.bgmOn")}
           title={t("home.bgmOn")}
