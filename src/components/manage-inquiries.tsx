@@ -106,9 +106,6 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
-      <p className="text-sm text-muted-foreground">
-        답변을 저장하면 문의할 때 남긴 스마트폰 번호로 솔라피 문자가 갑니다(발신 010-5149-2949).
-      </p>
       {solapi ? (
         <p
           className={
