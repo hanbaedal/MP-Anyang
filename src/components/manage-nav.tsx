@@ -10,7 +10,6 @@ const LABELS: Record<string, string> = {
   "manage.gallery": "갤러리",
   "manage.notices": "공지",
   "manage.inquiries": "문의",
-  "manage.faq": "묻고답하기",
   "manage.admins": "관리자 계정",
   "work.dbUpdate": "DB 업데이트",
   "supervisor.stats": "방문 통계",

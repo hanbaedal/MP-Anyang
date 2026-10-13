@@ -27,10 +27,6 @@ const CARD_COPY: Record<string, { title: string; lead: string }> = {
     title: "문의 목록",
     lead: "답변은 관리 메모이며 메일로 보내지 않습니다.",
   },
-  "manage.faq": {
-    title: "묻고답하기",
-    lead: "공개 목록용 질문·답을 직접 올립니다.",
-  },
 };
 
 export default async function ManageHomePage() {
