@@ -41,6 +41,7 @@ type SolapiStatus = {
   authOk?: boolean;
   from?: string | null;
   error?: string;
+  balance?: { balance?: number; point?: number };
 };
 
 export function ManageInquiries({ initial }: { initial: Inquiry[] }) {

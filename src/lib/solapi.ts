@@ -118,13 +118,35 @@ export async function sendInquiryAnswerSms(input: {
         : undefined;
     return { ok: true, to, groupId: groupId || undefined };
   } catch (error) {
-    const message =
-      error && typeof error === "object" && "message" in error
-        ? String((error as { message: unknown }).message)
-        : error instanceof Error
-          ? error.message
-          : "문자 발송에 실패했습니다.";
-    console.error("[solapi] send failed", message);
-    return { ok: false, error: message || "문자 발송에 실패했습니다." };
+    const detail = formatSolapiError(error);
+    console.error("[solapi] send failed", detail);
+    return { ok: false, error: detail };
   }
+}
+
+function formatSolapiError(error: unknown): string {
+  if (error && typeof error === "object") {
+    const failedList = (error as { failedMessageList?: unknown }).failedMessageList;
+    if (Array.isArray(failedList) && failedList.length > 0) {
+      const parts = failedList.map((item) => {
+        if (!item || typeof item !== "object") return String(item);
+        const row = item as {
+          statusCode?: unknown;
+          statusMessage?: unknown;
+          errorMessage?: unknown;
+          to?: unknown;
+        };
+        const code = row.statusCode != null ? String(row.statusCode) : "";
+        const msg = String(row.statusMessage || row.errorMessage || "").trim();
+        const to = row.to != null ? String(row.to) : "";
+        return [code, msg, to ? `to=${to}` : ""].filter(Boolean).join(" ");
+      });
+      return parts.join(" / ") || "문자 발송에 실패했습니다.";
+    }
+    if ("message" in error && (error as { message: unknown }).message) {
+      return String((error as { message: unknown }).message);
+    }
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return "문자 발송에 실패했습니다.";
 }
