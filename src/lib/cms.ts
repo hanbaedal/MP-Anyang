@@ -3,7 +3,7 @@ import { BURIAL, COLUMBARIUM, LAWN, REMODEL_TYPES } from "./content";
 import { MESSAGES, type Locale } from "./i18n";
 import { dataFile, readJsonFile, writeJsonFile } from "./local-json";
 import { getDb, hasMongo } from "./mongo";
-import { FEATURES } from "./site";
+import { FEATURES, SALE_STEPS, SITE } from "./site";
 import { PRICES, REMAINING } from "./facts";
 import { type CmsItem, type CmsLocaleFields, type CmsPage, type CmsSlug } from "./cms-types";
 import { CONTENT_LOCALES, stillHasHangul, translateText, type ContentLocale } from "./translate-content";
@@ -41,6 +41,21 @@ export function defaultCmsPage(slug: CmsSlug): CmsPage {
         title: ko[feature.titleKey],
         text: ko[feature.bodyKey],
       })),
+      updatedAt: now,
+    };
+  }
+  if (slug === "directions") {
+    return {
+      slug,
+      title: ko["dir.title"],
+      lead: ko["dir.lead"],
+      body: "",
+      items: [
+        { id: nid(), title: ko["dir.car"], text: ko["dir.carBody"] },
+        { id: nid(), title: ko["dir.bus"], text: ko["dir.busBody"] },
+        { id: nid(), title: ko["dir.taxi"], text: ko["dir.taxiBody"] },
+        { id: nid(), title: ko["dir.alt"], text: `${ko["site.address"]}\n${SITE.phone}` },
+      ],
       updatedAt: now,
     };
   }
@@ -84,14 +99,56 @@ export function defaultCmsPage(slug: CmsSlug): CmsPage {
       updatedAt: now,
     };
   }
+  if (slug === "prices") {
+    return {
+      slug,
+      title: ko["prices.title"],
+      lead: ko["prices.lead"],
+      body: ko["prices.deposit"],
+      items: [
+        ...PRICES.map((row) => ({ id: nid(), title: ko[row.nameKey], won: "" })),
+        ...REMAINING.map((row) => ({ id: nid(), title: ko[row.nameKey], remaining: "" })),
+      ],
+      updatedAt: now,
+    };
+  }
+  if (slug === "procedure") {
+    return {
+      slug,
+      title: ko["proc.title"],
+      lead: ko["proc.lead"],
+      body: [ko["proc.consult"].replace("{phone}", SITE.phone) + " " + ko["proc.form"] + ko["proc.after"], ko["proc.twoDays"]].join(
+        "\n\n",
+      ),
+      items: SALE_STEPS.map((step) => ({
+        id: nid(),
+        title: ko[step.titleKey],
+        text: ko[step.textKey],
+      })),
+      updatedAt: now,
+    };
+  }
+  if (slug === "fees") {
+    return {
+      slug,
+      title: ko["fees.title"],
+      lead: ko["fees.lead"],
+      body: [ko["fees.p1"], ko["fees.p2"], ko["fees.p3"], ko["fees.p4"]].join("\n\n"),
+      items: [],
+      updatedAt: now,
+    };
+  }
   return {
-    slug: "prices",
-    title: ko["prices.title"],
-    lead: ko["prices.lead"],
-    body: ko["prices.deposit"],
+    slug: "services",
+    title: ko["svc.title"],
+    lead: ko["svc.lead"],
+    body: "",
     items: [
-      ...PRICES.map((row) => ({ id: nid(), title: ko[row.nameKey], won: "" })),
-      ...REMAINING.map((row) => ({ id: nid(), title: ko[row.nameKey], remaining: "" })),
+      { id: nid(), title: ko["svc.reloc.title"], text: [ko["svc.reloc.p1"], ko["svc.reloc.p2"]].join("\n\n") },
+      { id: nid(), title: ko["svc.stone.title"], text: ko["svc.stone.p1"] },
+      { id: nid(), title: ko["svc.turf.title"], text: ko["svc.turf.p1"] },
+      { id: nid(), title: ko["svc.weed.title"], text: ko["svc.weed.p1"] },
+      { id: nid(), title: ko["svc.design.title"], text: ko["svc.design.p1"] },
     ],
     updatedAt: now,
   };

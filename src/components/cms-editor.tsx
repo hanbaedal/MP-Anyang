@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CmsPhotoItems } from "@/components/cms-photo-items";
-import type { CmsItem, CmsPage, CmsSlug } from "@/lib/cms-types";
+import { CMS_TEXT_ITEM_SLUGS, type CmsItem, type CmsPage, type CmsSlug } from "@/lib/cms-types";
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -11,11 +11,12 @@ const area =
   "min-h-32 w-full rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const PHOTO_SLUGS: CmsSlug[] = ["burial", "lawn", "columbarium", "remodeling"];
+const BODY_ONLY_SLUGS: CmsSlug[] = ["greeting", "fees"];
 
 function emptyItem(slug: CmsSlug): CmsItem {
   const id = crypto.randomUUID();
   if (slug === "prices") return { id, title: "", won: "", remaining: "" };
-  if (slug === "features") return { id, title: "", text: "" };
+  if (CMS_TEXT_ITEM_SLUGS.includes(slug)) return { id, title: "", text: "" };
   return { id, title: "", text: "", image: "" };
 }
 
@@ -24,7 +25,7 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
   const [status, setStatus] = useState<"idle" | "saving" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
   const pageRef = useRef(page);
-  const showItems = page.slug !== "greeting";
+  const showItems = !BODY_ONLY_SLUGS.includes(page.slug);
   const photoGrid = PHOTO_SLUGS.includes(page.slug);
   const showPrices = page.slug === "prices";
 
@@ -79,7 +80,7 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
     try {
       // Use render-state `page`, not a setState snapshot side-effect (that sent empty bodies).
       const ok = await putPage(page);
-      if (ok) setMessage("저장했습니다. 공개 페이지에 바로 반영됩니다.");
+      if (ok) setMessage("저장했습니다. 공개 페이지에 바로 반영되며, 영어·중국어는 한글 기준으로 자동 번역됩니다.");
     } catch {
       setStatus("error");
       setMessage("네트워크 오류입니다.");

@@ -11,7 +11,7 @@ function cmsPage(slug: (typeof CMS_SLUGS)[number]["slug"]): ManageNavItem {
 
 /**
  * 홈페이지 관리 서브메뉴.
- * 공개 NAV 순서에 맞춤: 메인 전용 → 공원소개 → 분양안내 → 이용안내 → 둘러보기 → 고객센터.
+ * 공개 NAV 순서: 메인 전용 → 공원소개 → 분양안내 → 이용안내 → 둘러보기 → 고객센터.
  */
 export function manageNavItems(): ManageNavItem[] {
   return [
@@ -19,11 +19,15 @@ export function manageNavItems(): ManageNavItem[] {
     { href: "/manage/announcements", i18n: "manage.announcements" },
     cmsPage("greeting"),
     cmsPage("features"),
+    cmsPage("directions"),
     cmsPage("burial"),
     cmsPage("lawn"),
     cmsPage("columbarium"),
     cmsPage("remodeling"),
     cmsPage("prices"),
+    cmsPage("procedure"),
+    cmsPage("fees"),
+    cmsPage("services"),
     { href: "/manage/funeral", i18n: "manage.funeral" },
     { href: "/manage/gallery", i18n: "manage.gallery" },
     { href: "/manage/notices", i18n: "manage.notices" },

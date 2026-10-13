@@ -1,11 +1,15 @@
 export const CMS_SLUGS = [
   { slug: "greeting", label: "인사말", i18n: "nav.greeting" },
   { slug: "features", label: "공원 특징", i18n: "nav.features" },
+  { slug: "directions", label: "오시는 길", i18n: "nav.directions" },
   { slug: "burial", label: "매장묘", i18n: "nav.burial" },
   { slug: "lawn", label: "평장묘", i18n: "nav.lawn" },
   { slug: "columbarium", label: "봉안묘", i18n: "nav.columbarium" },
   { slug: "remodeling", label: "리모델링", i18n: "nav.remodel" },
   { slug: "prices", label: "분양가·잔여", i18n: "nav.prices" },
+  { slug: "procedure", label: "분양 절차", i18n: "nav.procedure" },
+  { slug: "fees", label: "관리비", i18n: "nav.fees" },
+  { slug: "services", label: "서비스", i18n: "nav.services" },
 ] as const;
 
 export type CmsSlug = (typeof CMS_SLUGS)[number]["slug"];
@@ -40,3 +44,6 @@ export type CmsPage = {
 export function isCmsSlug(value: string): value is CmsSlug {
   return CMS_SLUGS.some((item) => item.slug === value);
 }
+
+/** 제목·설명 항목만 (사진·분양가 없음) */
+export const CMS_TEXT_ITEM_SLUGS: CmsSlug[] = ["features", "directions", "procedure", "services"];
