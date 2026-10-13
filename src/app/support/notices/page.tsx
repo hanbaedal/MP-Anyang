@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
-import { listNotices } from "@/lib/notices";
+import { listNoticesLocalized } from "@/lib/notices";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -21,7 +21,7 @@ function formatDate(value: string, locale: string) {
 
 export default async function NoticesPage() {
   const locale = await readLocale();
-  const notices = await listNotices();
+  const notices = await listNoticesLocalized(locale);
 
   return (
     <>

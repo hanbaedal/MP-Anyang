@@ -20,12 +20,27 @@ function cdnPatterns() {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
+  experimental: {
+    // 홈 히어로 영상(25MB) 등 관리 업로드
+    serverActions: { bodySizeLimit: "30mb" },
+    proxyClientMaxBodySize: "30mb",
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: cdnPatterns(),
   },
+  async rewrites() {
+    return [{ source: "/uploads/:path*", destination: "/api/uploads/:path*" }];
+  },
   async redirects() {
-    return [{ source: "/support/contact", destination: "/support/inquiry", permanent: false }];
+    return [
+      { source: "/support/contact", destination: "/support/inquiry", permanent: false },
+      { source: "/guide/weeding", destination: "/guide/services", permanent: false },
+      { source: "/pay", destination: "/guide/procedure", permanent: false },
+      { source: "/support/kakao", destination: "/support/inquiry", permanent: false },
+      { source: "/account/register", destination: "/", permanent: false },
+      { source: "/account/complete", destination: "/", permanent: false },
+    ];
   },
 };
 
