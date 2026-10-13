@@ -66,13 +66,31 @@ async function persist(items: FuneralDocFile[]) {
   await writeJsonFile(localFile, items);
 }
 
+/** 저장소에 없을 때 쓰는 기본 PDF (첨부 스캔으로 만든 신청서) */
+const BUNDLED_FUNERAL_DOCS: Partial<Record<FuneralDocId, FuneralDocFile>> = {
+  family: {
+    docId: "family",
+    filePath: "/docs/funeral/family-relation-certificate-application.pdf",
+    fileName: "고인포함_가족관계증명서_교부신청서.pdf",
+    updatedAt: "2026-10-13T00:00:00.000Z",
+  },
+};
+
+function withBundledDefaults(stored: FuneralDocFile[]): FuneralDocFile[] {
+  const byId = new Map(stored.map((item) => [item.docId, item]));
+  for (const [docId, bundled] of Object.entries(BUNDLED_FUNERAL_DOCS) as [FuneralDocId, FuneralDocFile][]) {
+    if (!byId.has(docId)) byId.set(docId, bundled);
+  }
+  return FUNERAL_DOC_IDS.map((docId) => byId.get(docId)).filter(Boolean) as FuneralDocFile[];
+}
+
 export async function listFuneralDocs(): Promise<FuneralDocFile[]> {
-  return readStored();
+  return withBundledDefaults(await readStored());
 }
 
 export async function funeralDocsById(): Promise<Partial<Record<FuneralDocId, FuneralDocFile>>> {
   const map: Partial<Record<FuneralDocId, FuneralDocFile>> = {};
-  for (const item of await readStored()) {
+  for (const item of await listFuneralDocs()) {
     map[item.docId] = item;
   }
   return map;
