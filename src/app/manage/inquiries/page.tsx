@@ -9,7 +9,7 @@ export default async function ManageInquiriesPage() {
       <PageHero
         kicker="관리"
         title="문의"
-        lead="답변을 저장하면 문의 스마트폰으로 솔라피 문자가 갑니다. 발신번호는 010-5149-2949입니다."
+        lead="답변은 홈페이지 문의 목록에 항상 표시됩니다. 문자는 답변 시 선택한 경우에만 보냅니다(발신 010-5149-2949)."
       />
       <ManageInquiries initial={items} />
     </>

@@ -19,12 +19,16 @@ export async function PATCH(request: Request) {
   const result = await answerInquiry(body.id, body.answer ?? "", guard.session.name || guard.session.username);
   if (!result.ok) return NextResponse.json(result, { status: 400 });
 
-  const sendSms = body.sendSms !== false;
+  // 문자는 명시적으로 선택한 경우에만 발송. 답변 자체는 항상 홈페이지 목록에 반영됨.
+  const sendSms = body.sendSms === true;
   if (!sendSms) {
-    await setInquirySmsResult(body.id, { smsStatus: "skipped", smsError: "문자 발송을 건너뛰었습니다." });
+    await setInquirySmsResult(body.id, {
+      smsStatus: "skipped",
+      smsError: "홈페이지 답변만 저장 (문자 미발송)",
+    });
     return NextResponse.json({
       ok: true,
-      sms: { ok: false, skipped: true, error: "문자 발송을 건너뛰었습니다." },
+      sms: { ok: false, skipped: true, error: "홈페이지 답변만 저장했습니다." },
     });
   }
 
