@@ -16,9 +16,17 @@ export const FUNERAL_DOC_META: Record<
 > = {
   death: { i18n: "fun.docDeath", manageLabel: "사망진단서 1부" },
   family: { i18n: "fun.docFamily", manageLabel: "고인 포함 가족관계증명서 또는 제적등본 1부" },
-  police: { i18n: "fun.docPolice", manageLabel: "검사지위서 1부(사고사인 경우)" },
+  police: { i18n: "fun.docPolice", manageLabel: "검사지휘서 1부(사고사인 경우)" },
   cremation: { i18n: "fun.docCremation", manageLabel: "화장증명서 1부" },
 };
+
+/** 홈페이지관리 등록 순서 (공개 매장/화장 목록과 별개 — 서류 4종만) */
+export const FUNERAL_MANAGE_DOC_IDS: FuneralDocId[] = [
+  "death",
+  "cremation",
+  "family",
+  "police",
+];
 
 export type FuneralDocRow =
   | { type: "download"; docId: FuneralDocId }
