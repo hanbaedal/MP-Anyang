@@ -15,8 +15,8 @@ export default async function ManageCmsPage({ params }: { params: Promise<{ slug
         title={meta.label}
         lead={
           ["burial", "lawn", "columbarium", "remodeling"].includes(slug)
-            ? "갤러리와 같이 사진을 올리고, 3열 격자에서 제목·설명을 수정합니다. Enter 줄바꿈이 공개 페이지에 반영되며, 한글 저장 시 영어·중국어가 자동 번역됩니다."
-            : "한글 제목·본문·항목을 저장하면 Enter 줄바꿈이 공개 페이지에 반영되고, 영어·중국어가 자동 번역됩니다. 분양가 원을 비우면 ‘확인 필요’로 보입니다."
+            ? "갤러리와 같이 사진을 올리고, 3열 격자에서 제목·설명을 수정합니다. Enter는 줄바꿈, 빈 줄은 문단입니다. 한글 저장 시 영어·중국어가 자동 번역됩니다."
+            : "한글 제목·본문·항목을 저장하면 Enter는 줄바꿈, 빈 줄은 문단으로 공개됩니다. 영어·중국어는 자동 번역됩니다. 분양가 원을 비우면 ‘확인 필요’로 보입니다."
         }
       />
       <CmsEditor initial={page} />

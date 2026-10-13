@@ -1,6 +1,11 @@
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 
-/** CMS·관리 화면에서 Enter로 넣은 줄바꿈을 공개 페이지 `<p>`로 그대로 보여 줍니다. */
+/**
+ * CMS 텍스트 표시:
+ * - Enter 한 번 → 줄바꿈(br)
+ * - Enter 두 번(빈 줄) → 새 문단(p)
+ */
 export function Paragraphs({
   text,
   className,
@@ -9,17 +14,27 @@ export function Paragraphs({
   /** 각 문단 `<p>`에 적용 */
   className?: string;
 }) {
+  const blocks = text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((block) => block.replace(/^\n+|\n+$/g, ""))
+    .filter((block) => block.trim().length > 0);
+
   return (
     <>
-      {text
-        .split(/\n+/)
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .map((part, index) => (
-          <p key={`${index}-${part.slice(0, 24)}`} className={cn(className)}>
-            {part}
+      {blocks.map((block, index) => {
+        const lines = block.split("\n");
+        return (
+          <p key={`${index}-${block.slice(0, 24)}`} className={cn(className)}>
+            {lines.map((line, lineIndex) => (
+              <Fragment key={`${lineIndex}-${line.slice(0, 16)}`}>
+                {lineIndex > 0 ? <br /> : null}
+                {line}
+              </Fragment>
+            ))}
           </p>
-        ))}
+        );
+      })}
     </>
   );
 }
