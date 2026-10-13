@@ -1,5 +1,6 @@
-import { InquiryForm } from "@/components/inquiry-form";
+import { InquiryBoard } from "@/components/inquiry-board";
 import { PageHero } from "@/components/page-hero";
+import { listPublicInquiries } from "@/lib/inquiries";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -12,11 +13,12 @@ export async function generateMetadata() {
 
 export default async function InquiryPage() {
   const locale = await readLocale();
+  const items = await listPublicInquiries();
   return (
     <>
       <PageHero kicker={t(locale, "inquiry.kicker")} title={t(locale, "inquiry.title")} lead={t(locale, "inquiry.lead")} />
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <InquiryForm />
+        <InquiryBoard initial={items} locale={locale} />
       </div>
     </>
   );

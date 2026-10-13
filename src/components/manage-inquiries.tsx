@@ -14,6 +14,7 @@ type Inquiry = {
   answer: string;
   answeredAt?: string;
   answeredBy?: string;
+  visibility?: "public" | "secret";
   smsStatus?: "sent" | "failed" | "skipped";
   smsError?: string;
   smsSentAt?: string;
@@ -133,6 +134,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
                   <p className="font-medium">
                     {item.name} · {item.phone}
                     <span className="ml-2 text-xs text-muted-foreground">
+                      {item.visibility === "secret" ? "비밀" : "일반"} ·{" "}
                       {item.status === "answered" ? "답변됨" : "미답변"}
                     </span>
                   </p>
@@ -161,7 +163,9 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
         <DialogContent>
           <DialogTitle>문의 답변 · 문자 발송</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {open?.name} · {open?.phone}. 저장 시 이 번호로 답변 내용이 문자로 갑니다.
+            {open?.name} · {open?.phone}
+            {open?.visibility === "secret" ? " · 비밀글" : " · 일반"}
+            . 저장 시 이 번호로 답변 내용이 문자로 갑니다.
           </p>
           <p className="text-sm whitespace-pre-wrap">{open?.message}</p>
           <textarea
