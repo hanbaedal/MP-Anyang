@@ -216,6 +216,30 @@ export async function getInquiry(id: string): Promise<Inquiry | null> {
   return { ...rest, passwordHash: undefined };
 }
 
+export async function deleteInquiry(id: string) {
+  if (!id.trim()) return { ok: false as const, error: "문의가 없습니다." };
+
+  if (hasMongo()) {
+    const db = await getDb();
+    if (!db) throw new Error("데이터베이스에 연결하지 못했습니다.");
+    const byId = await db.collection("inquiries").deleteOne({ id });
+    if (byId.deletedCount) return { ok: true as const };
+    try {
+      const byOid = await db.collection("inquiries").deleteOne({ _id: id as never });
+      if (byOid.deletedCount) return { ok: true as const };
+    } catch {
+      /* ignore invalid ObjectId */
+    }
+    return { ok: false as const, error: "문의를 찾지 못했습니다." };
+  }
+
+  const all = await readLocal();
+  const next = all.filter((item) => item.id !== id);
+  if (next.length === all.length) return { ok: false as const, error: "문의를 찾지 못했습니다." };
+  await writeJsonFile(localFile, next);
+  return { ok: true as const };
+}
+
 export async function unlockSecretInquiry(id: string, password: string) {
   const item = await getInquiryRaw(id);
   if (!item) return { ok: false as const, error: "문의를 찾지 못했습니다." };

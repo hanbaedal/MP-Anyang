@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { answerInquiry, listInquiries, setInquirySmsResult } from "@/lib/inquiries";
+import { answerInquiry, deleteInquiry, listInquiries, setInquirySmsResult } from "@/lib/inquiries";
 import { requireStaffApi } from "@/lib/manage-guard";
 import { sendInquiryAnswerSms, verifySolapiConnection } from "@/lib/solapi";
 
@@ -8,6 +8,21 @@ export async function GET() {
   if (guard.error) return guard.error;
   const solapi = await verifySolapiConnection();
   return NextResponse.json({ ok: true, items: await listInquiries(), solapi });
+}
+
+export async function DELETE(request: Request) {
+  const guard = await requireStaffApi();
+  if (guard.error) return guard.error;
+  const id = new URL(request.url).searchParams.get("id")?.trim() ?? "";
+  if (!id) return NextResponse.json({ ok: false, error: "문의가 없습니다." }, { status: 400 });
+  try {
+    const result = await deleteInquiry(id);
+    if (!result.ok) return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[manage/inquiries] delete", err);
+    return NextResponse.json({ ok: false, error: "삭제에 실패했습니다." }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: Request) {

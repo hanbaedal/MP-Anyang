@@ -157,17 +157,22 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
                   {item.answer ? <p className="mt-2 text-sm text-muted-foreground">답변: {item.answer}</p> : null}
                   {sms ? <p className="mt-1 text-xs text-muted-foreground">{sms}</p> : null}
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setOpen(item);
-                    setAnswer(item.answer || "");
-                  }}
-                >
-                  답변
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setOpen(item);
+                      setAnswer(item.answer || "");
+                    }}
+                  >
+                    답변
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void onDelete(item)}>
+                    삭제
+                  </Button>
+                </div>
               </div>
             </li>
           );
