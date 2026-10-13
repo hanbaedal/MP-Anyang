@@ -127,8 +127,17 @@ export function ManageAnnouncements({ initial }: { initial: SiteAnnouncement[] }
             <textarea className={area} value={draft.body ?? ""} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
           </label>
           <div className="md:col-span-2">
-            <p className="mb-1 text-xs text-muted-foreground">포스터</p>
-            <ManageImagePicker src={draft.imageSrc ?? ""} disabled={busy} onFile={uploadPoster} />
+            <p className="mb-1 text-xs text-muted-foreground">포스터 (파일 업로드 또는 갤러리 일반 사진)</p>
+            <ManageImagePicker
+              src={draft.imageSrc ?? ""}
+              disabled={busy}
+              enableLibrary
+              onFile={uploadPoster}
+              onPickSrc={(src) => {
+                setDraft((d) => ({ ...d, imageSrc: src }));
+                setMessage("갤러리 사진을 골랐습니다. 「저장」을 눌러야 목록·메인에 반영됩니다.");
+              }}
+            />
           </div>
           <label className="block space-y-0.5 text-xs">
             <span className="text-muted-foreground">링크 URL</span>

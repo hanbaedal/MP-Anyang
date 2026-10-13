@@ -86,7 +86,7 @@ export async function addGalleryPhoto(input: { src: string; alt: string; tags: G
     id: randomUUID(),
     src: input.src,
     alt: input.alt.trim() || "공원 사진",
-    tags: input.tags.length ? input.tags : ["전경"],
+    tags: input.tags.length ? input.tags : ["일반"],
   };
   items.push(photo);
   await persist(items);

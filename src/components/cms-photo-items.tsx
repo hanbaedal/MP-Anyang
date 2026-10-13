@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ManageGalleryLibrary } from "@/components/manage-gallery-library";
 import type { CmsItem, CmsSlug } from "@/lib/cms-types";
-import { mediaUrl } from "@/lib/media";
+import { mediaUrl, thumbUrl } from "@/lib/media";
 
 const field =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -17,26 +18,55 @@ type Props = {
   onPersist: (items: CmsItem[]) => Promise<boolean>;
 };
 
-function newItem(): CmsItem {
-  return { id: crypto.randomUUID(), title: "", text: "", image: "" };
-}
-
 export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [pickedSrc, setPickedSrc] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
+
+  function clearFile() {
+    setFile(null);
+    setFilePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }
 
   const showText = slug === "remodeling" || slug === "burial";
   const textLabel = slug === "burial" ? "설명 (캡션)" : "설명";
 
+  async function persistNew(image: string) {
+    if (!title.trim()) {
+      setMessage("제목을 입력해 주세요.");
+      return false;
+    }
+    const next = [...items, { id: crypto.randomUUID(), title: title.trim(), text: text.trim(), image }];
+    onItemsChange(next);
+    const saved = await onPersist(next);
+    if (!saved) {
+      setMessage("사진은 연결했지만 저장에 실패했습니다. 아래 ‘저장’을 다시 눌러 주세요.");
+      return false;
+    }
+    setTitle("");
+    setText("");
+    clearFile();
+    setPickedSrc("");
+    setMessage("올리고 저장했습니다.");
+    return true;
+  }
+
   async function onUpload(event: React.FormEvent) {
     event.preventDefault();
-    if (!file) {
-      setMessage("사진 파일을 선택해 주세요.");
-      return;
-    }
     if (!title.trim()) {
       setMessage("제목을 입력해 주세요.");
       return;
@@ -44,6 +74,14 @@ export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) 
     setBusy(true);
     setMessage("");
     try {
+      if (pickedSrc) {
+        await persistNew(pickedSrc);
+        return;
+      }
+      if (!file) {
+        setMessage("사진 파일을 선택하거나 갤러리에서 골라 주세요.");
+        return;
+      }
       const form = new FormData();
       form.set("file", file);
       const res = await fetch("/api/manage/upload-image", { method: "POST", body: form });
@@ -52,17 +90,7 @@ export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) 
         setMessage(json.error || "업로드에 실패했습니다.");
         return;
       }
-      const next = [...items, { id: crypto.randomUUID(), title: title.trim(), text: text.trim(), image: json.src }];
-      onItemsChange(next);
-      const saved = await onPersist(next);
-      if (!saved) {
-        setMessage("사진은 올렸지만 저장에 실패했습니다. 아래 ‘저장’을 다시 눌러 주세요.");
-        return;
-      }
-      setTitle("");
-      setText("");
-      setFile(null);
-      setMessage("올리고 저장했습니다.");
+      await persistNew(json.src);
     } finally {
       setBusy(false);
     }
@@ -87,16 +115,57 @@ export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) 
     setBusy(false);
   }
 
+  const preview = pickedSrc ? thumbUrl(pickedSrc) : filePreview || "";
+
   return (
     <div className="space-y-6">
       <form onSubmit={onUpload} className="space-y-3 rounded-xl border bg-card p-5">
         <h2 className="font-medium">사진 올리기</h2>
-        <p className="text-sm text-muted-foreground">갤러리와 같이 파일을 선택합니다. 가로 1600px 전후 JPG를 권장합니다.</p>
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
+        <p className="text-sm text-muted-foreground">
+          파일을 직접 올리거나, 갤러리에 「일반」으로 올린 사진을 고릅니다.
+        </p>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-md border bg-muted">
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full items-center justify-center px-2 text-center text-[11px] leading-tight text-muted-foreground">
+                선택한 이미지
+                <br />
+                미리보기
+              </span>
+            )}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              <Button type="button" variant="outline" size="sm" className="w-fit" asChild>
+                <label className="cursor-pointer">
+                  {file || pickedSrc ? "다른 파일" : "파일 선택"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const next = e.target.files?.[0] ?? null;
+                      setPickedSrc("");
+                      setFile(next);
+                      setFilePreview((prev) => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return next ? URL.createObjectURL(next) : null;
+                      });
+                    }}
+                  />
+                </label>
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
+                갤러리에서 고르기
+              </Button>
+            </div>
+            {file ? <p className="truncate text-xs text-muted-foreground">{file.name}</p> : null}
+            {pickedSrc ? <p className="truncate text-xs text-muted-foreground">{pickedSrc}</p> : null}
+          </div>
+        </div>
         <input className={field} placeholder="제목 (카드 제목)" value={title} onChange={(e) => setTitle(e.target.value)} />
         {showText ? (
           <textarea className={area} placeholder={textLabel} value={text} onChange={(e) => setText(e.target.value)} />
@@ -106,6 +175,17 @@ export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) 
         </Button>
         {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       </form>
+
+      <ManageGalleryLibrary
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        onPick={(photo) => {
+          setPickedSrc(photo.src);
+          clearFile();
+          if (!title.trim()) setTitle(photo.alt);
+          setMessage("갤러리 사진을 골랐습니다. 제목을 확인한 뒤 「올리기」를 누르세요.");
+        }}
+      />
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
@@ -132,11 +212,7 @@ export function CmsPhotoItems({ slug, items, onItemsChange, onPersist }: Props) 
                 onChange={(e) => onItemsChange(items.map((row) => (row.id === item.id ? { ...row, text: e.target.value } : row)))}
               />
             ) : null}
-            {item.image?.startsWith("/uploads/") ? (
-              <p className="truncate text-xs text-muted-foreground">{item.image}</p>
-            ) : item.image ? (
-              <p className="truncate text-xs text-muted-foreground">{item.image}</p>
-            ) : null}
+            {item.image ? <p className="truncate text-xs text-muted-foreground">{item.image}</p> : null}
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" disabled={busy} onClick={() => onSaveItem(item)}>
                 저장

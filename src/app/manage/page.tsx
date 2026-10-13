@@ -36,7 +36,9 @@ export default async function ManageHomePage() {
           </Link>
           <Link href="/manage/gallery" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
             <h2 className="font-medium">갤러리 사진</h2>
-            <p className="mt-1 text-sm text-muted-foreground">올리고 고치고 지웁니다. Render 재배포 시 업로드 파일은 사라질 수 있습니다.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              일반·종류별 사진을 올립니다. 「일반」은 공개 갤러리와 메인 팝업 등 홈페이지 관리에서 고를 수 있습니다.
+            </p>
           </Link>
           <Link href="/manage/funeral" className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
             <h2 className="font-medium">장례·안치</h2>

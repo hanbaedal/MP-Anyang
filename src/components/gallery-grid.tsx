@@ -10,6 +10,7 @@ import { useT } from "@/components/locale-provider";
 
 const TAGS: Array<{ value: "전체" | GalleryTag; key: string }> = [
   { value: "전체", key: "gallery.all" },
+  { value: "일반", key: "gallery.tag.general" },
   { value: "전경", key: "gallery.tag.view" },
   { value: "매장묘", key: "gallery.tag.burial" },
   { value: "평장묘", key: "gallery.tag.lawn" },

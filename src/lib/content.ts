@@ -91,7 +91,7 @@ export const REMODEL_TYPES = [
   },
 ];
 
-export type GalleryTag = "전경" | "매장묘" | "평장묘" | "봉안묘" | "리모델링";
+export type GalleryTag = "일반" | "전경" | "매장묘" | "평장묘" | "봉안묘" | "리모델링";
 
 export type GalleryItem = {
   src: string;
