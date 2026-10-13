@@ -4,19 +4,30 @@ export const MANAGE_HOME = "/manage";
 
 export type ManageNavItem = { href: string; i18n: string };
 
-/** 홈페이지 콘텐츠 편집만 (관리 홈·슈퍼바이저 항목 제외) */
+function cmsPage(slug: (typeof CMS_SLUGS)[number]["slug"]): ManageNavItem {
+  const item = CMS_SLUGS.find((row) => row.slug === slug)!;
+  return { href: `/manage/pages/${item.slug}`, i18n: item.i18n };
+}
+
+/**
+ * 홈페이지 관리 서브메뉴.
+ * 공개 NAV 순서에 맞춤: 메인 전용 → 공원소개 → 분양안내 → 이용안내 → 둘러보기 → 고객센터.
+ */
 export function manageNavItems(): ManageNavItem[] {
   return [
     { href: "/manage/home-hero", i18n: "manage.homeHero" },
     { href: "/manage/announcements", i18n: "manage.announcements" },
-    { href: "/manage/gallery", i18n: "manage.gallery" },
+    cmsPage("greeting"),
+    cmsPage("features"),
+    cmsPage("burial"),
+    cmsPage("lawn"),
+    cmsPage("columbarium"),
+    cmsPage("remodeling"),
+    cmsPage("prices"),
     { href: "/manage/funeral", i18n: "manage.funeral" },
+    { href: "/manage/gallery", i18n: "manage.gallery" },
     { href: "/manage/notices", i18n: "manage.notices" },
     { href: "/manage/inquiries", i18n: "manage.inquiries" },
     { href: "/manage/faq", i18n: "manage.faq" },
-    ...CMS_SLUGS.map((item) => ({
-      href: `/manage/pages/${item.slug}`,
-      i18n: item.i18n,
-    })),
   ];
 }

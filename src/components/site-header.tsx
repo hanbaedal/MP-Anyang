@@ -64,7 +64,13 @@ export function SiteHeader({ signedIn, role }: { signedIn: boolean; role?: Role 
           </p>
         </Link>
 
-        <div className="ml-auto flex shrink-0 items-center gap-0">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <Link
+            href="/sitemap"
+            className="whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] text-primary underline-offset-4 hover:bg-accent hover:underline sm:px-2 sm:text-sm"
+          >
+            {chrome("nav.sitemap")}
+          </Link>
           {guestPath ? <FlagSwitcher /> : null}
           {signedIn ? (
             <Link
