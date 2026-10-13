@@ -186,7 +186,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
           {sendSms && solapiBlocked ? (
             <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600" role="alert">
               {!solapi?.authOk
-                ? `경고: 솔라피가 연결되지 않아 문자를 보낼 수 없습니다. ${solapi?.error || "Render의 SOLAPI_API_KEY·SOLAPI_API_SECRET을 확인해 주세요."}`
+                ? `경고: 솔라피가 연결되지 않아 문자를 보낼 수 없습니다. ${solapi?.error || "문자 발송 설정을 확인해 주세요."}`
                 : `경고: 솔라피 잔액이 부족하여 문자를 보낼 수 없습니다. (현재 ${solapi?.balance?.balance ?? 0}원) 콘솔에서 충전한 뒤 다시 시도해 주세요. 답변 저장은 가능합니다.`}
             </p>
           ) : null}
