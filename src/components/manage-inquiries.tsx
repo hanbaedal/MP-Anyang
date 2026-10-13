@@ -107,10 +107,18 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
         SOLAPI_API_KEY·SOLAPI_API_SECRET이 있어야 합니다.
       </p>
       {solapi ? (
-        <p className={solapi.authOk ? "text-sm text-primary" : "text-sm text-destructive"}>
-          {solapi.authOk
-            ? `솔라피 연결됨 · 발신 ${solapi.from ?? "01051492949"}`
-            : `솔라피 미연결 · ${solapi.error || "SOLAPI_API_KEY·SOLAPI_API_SECRET을 Render에 넣고 재배포해 주세요."}`}
+        <p
+          className={
+            solapi.authOk && (solapi.balance?.balance || 0) + (solapi.balance?.point || 0) > 0
+              ? "text-sm text-primary"
+              : "text-sm text-destructive"
+          }
+        >
+          {!solapi.authOk
+            ? `솔라피 미연결 · ${solapi.error || "SOLAPI_API_KEY·SOLAPI_API_SECRET을 Render에 넣고 재배포해 주세요."}`
+            : (solapi.balance?.balance || 0) + (solapi.balance?.point || 0) <= 0
+              ? `솔라피 연결됨(발신 ${solapi.from ?? "01051492949"}) · 잔액 0원 — 콘솔에서 충전해야 문자가 갑니다.`
+              : `솔라피 연결됨 · 발신 ${solapi.from ?? "01051492949"} · 잔액 ${solapi.balance?.balance ?? 0}원`}
         </p>
       ) : null}
       {items.length === 0 ? <p className="text-muted-foreground">접수된 문의가 없습니다.</p> : null}
