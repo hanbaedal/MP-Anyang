@@ -32,6 +32,5 @@ export function manageNavItems(): ManageNavItem[] {
     { href: "/manage/gallery", i18n: "manage.gallery" },
     { href: "/manage/notices", i18n: "manage.notices" },
     { href: "/manage/inquiries", i18n: "manage.inquiries" },
-    { href: "/manage/faq", i18n: "manage.faq" },
   ];
 }

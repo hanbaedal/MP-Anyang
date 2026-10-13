@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/components/locale-provider";
 
 const field =
-  "h-9 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-9 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const row = "flex items-center gap-3";
+const labelClass = "w-24 shrink-0 text-sm font-medium sm:w-28";
 
 export function InquiryForm({
   onSuccess,
@@ -19,6 +22,8 @@ export function InquiryForm({
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
   const [visibility, setVisibility] = useState<"public" | "secret">("public");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,6 +87,8 @@ export function InquiryForm({
       setMessage(t("inquiry.ok"));
       form.reset();
       setVisibility("public");
+      setShowPassword(false);
+      setShowPasswordConfirm(false);
       onSuccess?.();
     } catch {
       setStatus("error");
@@ -90,15 +97,16 @@ export function InquiryForm({
   }
 
   return (
-    <form noValidate onSubmit={onSubmit} className={className ?? "space-y-4"}>
-      <div className="space-y-2">
-        <label htmlFor="inquiry-name" className="text-sm font-medium">
+    <form noValidate onSubmit={onSubmit} className={className ?? "space-y-3"}>
+      <div className={row}>
+        <label htmlFor="inquiry-name" className={labelClass}>
           {t("form.name")}
         </label>
         <input id="inquiry-name" name="name" required maxLength={40} autoComplete="name" className={field} />
       </div>
-      <div className="space-y-2">
-        <label htmlFor="inquiry-phone" className="text-sm font-medium">
+
+      <div className={row}>
+        <label htmlFor="inquiry-phone" className={labelClass}>
           {t("form.phone")}
         </label>
         <input
@@ -111,10 +119,11 @@ export function InquiryForm({
           className={field}
         />
       </div>
-      <div className="space-y-2">
-        <span className="text-sm font-medium">{t("inquiry.visibility")}</span>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <label className="inline-flex items-center gap-2">
+
+      <div className={row}>
+        <span className={labelClass}>{t("inquiry.visibility")}</span>
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 text-sm">
+          <label className="inline-flex items-center gap-1.5">
             <input
               type="radio"
               name="visibility"
@@ -124,7 +133,7 @@ export function InquiryForm({
             />
             {t("inquiry.visibilityPublic")}
           </label>
-          <label className="inline-flex items-center gap-2">
+          <label className="inline-flex items-center gap-1.5">
             <input
               type="radio"
               name="visibility"
@@ -135,55 +144,88 @@ export function InquiryForm({
             {t("inquiry.visibilitySecret")}
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {visibility === "secret" ? t("inquiry.visibilitySecretHint") : t("inquiry.visibilityPublicHint")}
-        </p>
       </div>
+      <p className="pl-[calc(6rem+0.75rem)] text-xs text-muted-foreground sm:pl-[calc(7rem+0.75rem)]">
+        {visibility === "secret" ? t("inquiry.visibilitySecretHint") : t("inquiry.visibilityPublicHint")}
+      </p>
+
       {visibility === "secret" ? (
         <>
-          <div className="space-y-2">
-            <label htmlFor="inquiry-password" className="text-sm font-medium">
+          <div className={row}>
+            <label htmlFor="inquiry-password" className={labelClass}>
               {t("inquiry.password")}
             </label>
-            <input
-              id="inquiry-password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              minLength={4}
-              maxLength={32}
-              className={field}
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                id="inquiry-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                minLength={4}
+                maxLength={32}
+                className={`${field} w-full pr-10`}
+              />
+              <button
+                type="button"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="inquiry-password-confirm" className="text-sm font-medium">
+          <div className={row}>
+            <label htmlFor="inquiry-password-confirm" className={labelClass}>
               {t("inquiry.passwordConfirm")}
             </label>
-            <input
-              id="inquiry-password-confirm"
-              name="passwordConfirm"
-              type="password"
-              autoComplete="new-password"
-              minLength={4}
-              maxLength={32}
-              className={field}
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                id="inquiry-password-confirm"
+                name="passwordConfirm"
+                type={showPasswordConfirm ? "text" : "password"}
+                autoComplete="new-password"
+                minLength={4}
+                maxLength={32}
+                className={`${field} w-full pr-10`}
+              />
+              <button
+                type="button"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPasswordConfirm((v) => !v)}
+                aria-label={showPasswordConfirm ? "비밀번호 확인 숨기기" : "비밀번호 확인 보기"}
+              >
+                {showPasswordConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </div>
         </>
       ) : null}
-      <div className="space-y-2">
-        <label htmlFor="inquiry-message" className="text-sm font-medium">
+
+      <div className="flex items-start gap-3">
+        <label htmlFor="inquiry-message" className={`${labelClass} pt-2`}>
           {t("form.message")}
         </label>
-        <textarea id="inquiry-message" name="message" required maxLength={2000} rows={6} className={`${field} h-auto py-2`} />
+        <textarea
+          id="inquiry-message"
+          name="message"
+          required
+          maxLength={2000}
+          rows={5}
+          className={`${field} h-auto py-2`}
+        />
       </div>
-      <p className="text-xs text-muted-foreground">
-        {t("form.privacy")}{" "}
-        <a className="underline-offset-4 hover:underline" href="/privacy">
-          {t("footer.privacy")}
-        </a>
-        . {t("form.callHint", { phone: SITE.phone })}
-      </p>
+
+      <div className="space-y-1 text-xs text-muted-foreground">
+        <p>{t("form.privacy")}</p>
+        <p>
+          <a className="underline-offset-4 hover:underline" href="/privacy">
+            {t("footer.privacy")}
+          </a>
+          . {t("form.callHint", { phone: SITE.phone })}
+        </p>
+      </div>
+
       <Button type="submit" disabled={status === "loading"}>
         {status === "loading" ? t("form.sending") : t("cta.inquiry")}
       </Button>

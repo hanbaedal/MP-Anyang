@@ -233,7 +233,6 @@ export const NAV: NavItem[] = [
     children: [
       { href: "/support/notices", label: "공지사항", i18n: "nav.notices" },
       { href: "/support/inquiry", label: "문의·상담", i18n: "nav.inquiry" },
-      { href: "/support/faq", label: "묻고답하기", i18n: "nav.faq" },
     ],
   },
   {
