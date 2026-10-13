@@ -94,6 +94,23 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
     }
   }
 
+  async function onDelete(item: Inquiry) {
+    if (!confirm(`${item.name} 님 문의를 삭제할까요? 홈페이지 목록에서도 사라지며 복구할 수 없습니다.`)) return;
+    setMessage("");
+    const res = await fetch(`/api/manage/inquiries?id=${encodeURIComponent(item.id)}`, { method: "DELETE" });
+    const json = (await res.json()) as { ok?: boolean; error?: string };
+    if (!res.ok || !json.ok) {
+      setMessage(json.error || "삭제에 실패했습니다.");
+      return;
+    }
+    if (open?.id === item.id) {
+      setOpen(null);
+      setAnswer("");
+    }
+    setMessage("문의를 삭제했습니다. 홈페이지 목록에서도 제거되었습니다.");
+    await refresh();
+  }
+
   useEffect(() => {
     void refresh();
   }, []);
