@@ -50,8 +50,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
   const [solapi, setSolapi] = useState<SolapiStatus | null>(null);
   const [open, setOpen] = useState<Inquiry | null>(null);
   const [answer, setAnswer] = useState("");
-  const [sendSms, setSendSms] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"sms" | "save" | null>(null);
   const [message, setMessage] = useState("");
 
   async function refresh() {
@@ -61,9 +60,9 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
     if (json.solapi) setSolapi(json.solapi);
   }
 
-  async function onSave() {
+  async function onSave(sendSms: boolean) {
     if (!open) return;
-    setBusy(true);
+    setBusy(sendSms ? "sms" : "save");
     setMessage("");
     try {
       const res = await fetch("/api/manage/inquiries", {
@@ -82,17 +81,16 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
       }
       setOpen(null);
       setAnswer("");
-      setSendSms(false);
       if (json.sms?.ok) {
-        setMessage(`홈페이지에 답변을 올렸고 ${json.sms.to ?? open.phone}으로 문자도 보냈습니다.`);
+        setMessage(`완료했습니다. 홈페이지에 답변을 올렸고 ${json.sms.to ?? open.phone}으로 문자도 보냈습니다.`);
       } else if (sendSms && json.sms?.error) {
         setMessage(`홈페이지 답변은 저장했지만 문자 발송에 실패했습니다. ${json.sms.error}`);
       } else {
-        setMessage("홈페이지 문의 목록에 답변을 저장했습니다. 문자는 보내지 않았습니다.");
+        setMessage("완료했습니다. 홈페이지 문의 목록에 답변을 저장했습니다.");
       }
       await refresh();
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -103,6 +101,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
   const cash = (solapi?.balance?.balance || 0) + (solapi?.balance?.point || 0);
   const balanceTooLow = Boolean(solapi?.authOk) && cash <= 0;
   const solapiBlocked = Boolean(solapi) && (!solapi?.authOk || balanceTooLow);
+  const canSubmit = Boolean(answer.trim()) && !busy;
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
@@ -148,7 +147,6 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
                   onClick={() => {
                     setOpen(item);
                     setAnswer(item.answer || "");
-                    setSendSms(false);
                   }}
                 >
                   답변
@@ -163,8 +161,8 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
           <DialogTitle>문의 답변</DialogTitle>
           <p className="text-sm text-muted-foreground">
             {open?.name} · {open?.phone}
-            {open?.visibility === "secret" ? " · 비밀글" : " · 일반"}. 답변은 홈페이지 문의 목록에 항상
-            표시됩니다. 문자는 아래에서 선택한 경우에만 보냅니다.
+            {open?.visibility === "secret" ? " · 비밀글" : " · 일반"}. 답변은 홈페이지 문의 목록에 표시됩니다.
+            「문자보내기」는 저장과 함께 휴대폰으로 문자를 보내고, 「완료」는 저장만 합니다.
           </p>
           <p className="text-sm whitespace-pre-wrap">{open?.message}</p>
           <textarea
@@ -172,53 +170,32 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="민원인에게 보낼 답변"
-            disabled={busy}
+            disabled={Boolean(busy)}
           />
-          <fieldset className="space-y-2 rounded-md border p-3">
-            <legend className="px-1 text-sm font-medium">문자 발송</legend>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="radio"
-                name="sendSms"
-                className="mt-1"
-                checked={!sendSms}
-                disabled={busy}
-                onChange={() => setSendSms(false)}
-              />
-              <span>
-                홈페이지에만 답변
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  문의·상담 목록에만 올리고 문자는 보내지 않습니다.
-                </span>
-              </span>
-            </label>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="radio"
-                name="sendSms"
-                className="mt-1"
-                checked={sendSms}
-                disabled={busy}
-                onChange={() => setSendSms(true)}
-              />
-              <span>
-                홈페이지 답변 + 문자(솔라피)
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  목록에 올린 뒤 {open?.phone}으로도 문자를 보냅니다.
-                </span>
-              </span>
-            </label>
-          </fieldset>
-          {sendSms && solapiBlocked ? (
+          {solapiBlocked ? (
             <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600" role="alert">
               {!solapi?.authOk
-                ? `경고: 솔라피가 연결되지 않아 문자를 보낼 수 없습니다. ${solapi?.error || "문자 발송 설정을 확인해 주세요."}`
-                : `경고: 솔라피 잔액이 부족하여 문자를 보낼 수 없습니다. (현재 ${solapi?.balance?.balance ?? 0}원) 콘솔에서 충전한 뒤 다시 시도해 주세요. 홈페이지 답변 저장은 가능합니다.`}
+                ? `경고: 솔라피가 연결되지 않아 「문자보내기」를 쓸 수 없습니다. ${solapi?.error || "문자 발송 설정을 확인해 주세요."}`
+                : `경고: 솔라피 잔액이 부족하여 「문자보내기」를 쓸 수 없습니다. (현재 ${solapi?.balance?.balance ?? 0}원) 「완료」로 홈페이지 답변만 저장할 수 있습니다.`}
             </p>
           ) : null}
-          <Button type="button" onClick={() => void onSave()} disabled={busy || !answer.trim()}>
-            {busy ? "처리 중…" : sendSms ? "저장하고 문자 보내기" : "홈페이지에 답변 저장"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => void onSave(true)}
+              disabled={!canSubmit || solapiBlocked}
+            >
+              {busy === "sms" ? "보내는 중…" : "문자보내기"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void onSave(false)}
+              disabled={!canSubmit}
+            >
+              {busy === "save" ? "저장 중…" : "완료"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
