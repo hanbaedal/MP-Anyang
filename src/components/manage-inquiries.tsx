@@ -100,6 +100,10 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
     void refresh();
   }, []);
 
+  const cash = (solapi?.balance?.balance || 0) + (solapi?.balance?.point || 0);
+  const balanceTooLow = Boolean(solapi?.authOk) && cash <= 0;
+  const solapiBlocked = Boolean(solapi) && (!solapi?.authOk || balanceTooLow);
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
       <p className="text-sm text-muted-foreground">
@@ -180,6 +184,13 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
             />
             스마트폰으로 문자 보내기 (솔라피)
           </label>
+          {sendSms && solapiBlocked ? (
+            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600" role="alert">
+              {!solapi?.authOk
+                ? `경고: 솔라피가 연결되지 않아 문자를 보낼 수 없습니다. ${solapi?.error || "Render의 SOLAPI_API_KEY·SOLAPI_API_SECRET을 확인해 주세요."}`
+                : `경고: 솔라피 잔액이 부족하여 문자를 보낼 수 없습니다. (현재 ${solapi?.balance?.balance ?? 0}원) 콘솔에서 충전한 뒤 다시 시도해 주세요. 답변 저장은 가능합니다.`}
+            </p>
+          ) : null}
           <Button type="button" onClick={() => void onSave()} disabled={busy || !answer.trim()}>
             {busy ? "처리 중…" : sendSms ? "저장하고 문자 보내기" : "저장만 하기"}
           </Button>
