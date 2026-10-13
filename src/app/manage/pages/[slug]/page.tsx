@@ -25,9 +25,9 @@ export default async function ManageCmsPage({ params }: { params: Promise<{ slug
       <CmsEditor initial={page} />
       {funeralDocs ? (
         <div className="mx-auto max-w-6xl space-y-3 border-t px-4 py-10">
-          <h2 className="text-lg font-medium">공공서류 PDF</h2>
+          <h2 className="text-lg font-medium">매장·화장 서류 PDF</h2>
           <p className="text-sm text-muted-foreground">
-            공개 이용안내 › 장례·안치 페이지에서 내려받을 수 있습니다. 없으면 「준비 중」으로 표시됩니다.
+            공개 이용안내 › 장례·안치와 같이 매장 시 / 화장 시로 구분해 등록합니다. 없으면 「준비 중」으로 표시됩니다.
           </p>
           <ManageFuneralDocs initial={funeralDocs} />
         </div>
