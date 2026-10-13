@@ -1,6 +1,5 @@
 import { InquiryForm } from "@/components/inquiry-form";
-import { PageHero, Prose } from "@/components/page-hero";
-import { SITE } from "@/lib/site";
+import { PageHero } from "@/components/page-hero";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
 
@@ -16,16 +15,7 @@ export default async function InquiryPage() {
   return (
     <>
       <PageHero kicker={t(locale, "inquiry.kicker")} title={t(locale, "inquiry.title")} lead={t(locale, "inquiry.lead")} />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[1fr_1.1fr]">
-        <Prose>
-          <h2 className="text-xl">{t(locale, "inquiry.phoneHeading")}</h2>
-          <p>
-            <a className="text-lg font-medium text-primary" href={SITE.phoneTel}>
-              {SITE.phone}
-            </a>
-          </p>
-          <p>{t(locale, "site.address")}</p>
-        </Prose>
+      <div className="mx-auto max-w-6xl px-4 py-12">
         <InquiryForm />
       </div>
     </>
