@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { answerInquiry, listInquiries, setInquirySmsResult } from "@/lib/inquiries";
 import { requireStaffApi } from "@/lib/manage-guard";
-import { sendInquiryAnswerSms } from "@/lib/solapi";
+import { sendInquiryAnswerSms, verifySolapiConnection } from "@/lib/solapi";
 
 export async function GET() {
   const guard = await requireStaffApi();
   if (guard.error) return guard.error;
-  return NextResponse.json({ ok: true, items: await listInquiries() });
+  const solapi = await verifySolapiConnection();
+  return NextResponse.json({ ok: true, items: await listInquiries(), solapi });
 }
 
 export async function PATCH(request: Request) {

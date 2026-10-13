@@ -30,6 +30,48 @@ export function solapiConfigured() {
   return Boolean(process.env.SOLAPI_API_KEY?.trim() && process.env.SOLAPI_API_SECRET?.trim() && solapiFromNumber());
 }
 
+/** 키·시크릿이 실제로 먹히는지 잔액 조회로 확인 (비밀값은 반환하지 않음) */
+export async function verifySolapiConnection(): Promise<{
+  configured: boolean;
+  from: string | null;
+  authOk: boolean;
+  error?: string;
+  balance?: { balance?: number; point?: number };
+}> {
+  const from = solapiFromNumber();
+  const apiKey = process.env.SOLAPI_API_KEY?.trim() ?? "";
+  const apiSecret = process.env.SOLAPI_API_SECRET?.trim() ?? "";
+  if (!apiKey || !apiSecret || !from) {
+    return {
+      configured: false,
+      from,
+      authOk: false,
+      error: "SOLAPI_API_KEY 또는 SOLAPI_API_SECRET이 없습니다.",
+    };
+  }
+  try {
+    const service = new SolapiMessageService(apiKey, apiSecret);
+    const balance = await service.getBalance();
+    return {
+      configured: true,
+      from,
+      authOk: true,
+      balance: {
+        balance: typeof balance?.balance === "number" ? balance.balance : undefined,
+        point: typeof balance?.point === "number" ? balance.point : undefined,
+      },
+    };
+  } catch (error) {
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String((error as { message: unknown }).message)
+        : error instanceof Error
+          ? error.message
+          : "솔라피 인증에 실패했습니다.";
+    return { configured: true, from, authOk: false, error: message };
+  }
+}
+
 export function buildInquiryAnswerSms(answer: string, name?: string) {
   const who = name?.trim() ? `${name.trim()}님, ` : "";
   const body = answer.trim();

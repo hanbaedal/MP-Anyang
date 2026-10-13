@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -36,8 +36,16 @@ function smsLabel(item: Inquiry) {
   return null;
 }
 
+type SolapiStatus = {
+  configured?: boolean;
+  authOk?: boolean;
+  from?: string | null;
+  error?: string;
+};
+
 export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
   const [items, setItems] = useState(initial);
+  const [solapi, setSolapi] = useState<SolapiStatus | null>(null);
   const [open, setOpen] = useState<Inquiry | null>(null);
   const [answer, setAnswer] = useState("");
   const [sendSms, setSendSms] = useState(true);
@@ -46,8 +54,9 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
 
   async function refresh() {
     const res = await fetch("/api/manage/inquiries");
-    const json = (await res.json()) as { items?: Inquiry[] };
+    const json = (await res.json()) as { items?: Inquiry[]; solapi?: SolapiStatus };
     if (json.items) setItems(json.items);
+    if (json.solapi) setSolapi(json.solapi);
   }
 
   async function onSave() {
@@ -86,12 +95,23 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
     }
   }
 
+  useEffect(() => {
+    void refresh();
+  }, []);
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
       <p className="text-sm text-muted-foreground">
         답변을 저장하면 문의할 때 남긴 스마트폰 번호로 솔라피 문자가 갑니다(발신 010-5149-2949). Render에
         SOLAPI_API_KEY·SOLAPI_API_SECRET이 있어야 합니다.
       </p>
+      {solapi ? (
+        <p className={solapi.authOk ? "text-sm text-primary" : "text-sm text-destructive"}>
+          {solapi.authOk
+            ? `솔라피 연결됨 · 발신 ${solapi.from ?? "01051492949"}`
+            : `솔라피 미연결 · ${solapi.error || "SOLAPI_API_KEY·SOLAPI_API_SECRET을 Render에 넣고 재배포해 주세요."}`}
+        </p>
+      ) : null}
       {items.length === 0 ? <p className="text-muted-foreground">접수된 문의가 없습니다.</p> : null}
       {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       <ul className="space-y-3">
