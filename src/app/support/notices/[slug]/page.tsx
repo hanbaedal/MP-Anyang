@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { getNoticeLocalized } from "@/lib/notices";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -25,9 +26,7 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ s
       <PageHero kicker={t(locale, "notices.kicker")} title={notice.title} />
       <article className="mx-auto max-w-6xl px-4 py-12">
         <Prose>
-          {notice.body.split("\n\n").map((p) => (
-            <p key={p}>{p}</p>
-          ))}
+          <Paragraphs text={notice.body} />
         </Prose>
         <p className="mt-8 text-sm">
           <Link href="/support/notices" className="text-primary underline-offset-4 hover:underline">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { listPublicFaqLocalized } from "@/lib/faq";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -25,7 +26,9 @@ export default async function FaqPage() {
             {items.map((item) => (
               <li key={item.id} className="rounded-xl border bg-card p-5">
                 <p className="font-medium">{item.question}</p>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.answer || t(locale, "faq.pending")}</p>
+                <div className="mt-2 space-y-2 text-sm leading-7 text-muted-foreground">
+                  <Paragraphs text={item.answer || t(locale, "faq.pending")} />
+                </div>
               </li>
             ))}
           </ul>

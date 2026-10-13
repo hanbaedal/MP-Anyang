@@ -100,7 +100,7 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
         </label>
       </div>
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">본문 (빈 줄로 문단)</span>
+        <span className="font-medium">본문 (Enter 줄바꿈이 공개 페이지에 그대로 반영됩니다)</span>
         <textarea className={area} value={page.body} onChange={(e) => setPage({ ...page, body: e.target.value })} />
       </label>
       {showItems && photoGrid ? (
@@ -151,7 +151,7 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
                 ) : (
                   <textarea
                     className={area}
-                    placeholder="설명"
+                    placeholder="설명 (Enter 줄바꿈 반영)"
                     value={item.text ?? ""}
                     onChange={(e) => patchItem(item.id, { text: e.target.value })}
                   />

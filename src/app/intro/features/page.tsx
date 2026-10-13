@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { FEATURES, pastelCardClass } from "@/lib/site";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { t } from "@/lib/i18n";
@@ -31,7 +32,11 @@ export default async function FeaturesPage() {
             className={cn("rounded-xl border p-6 shadow-sm", pastelCardClass(index))}
           >
             <h2 className="text-xl">{item.title}</h2>
-            <p className="mt-3 text-[15px] leading-7 text-muted-foreground">{item.text}</p>
+            {item.text ? (
+              <div className="mt-3 space-y-3 text-[15px] leading-7 text-muted-foreground">
+                <Paragraphs text={item.text} />
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

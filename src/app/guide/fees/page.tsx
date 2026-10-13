@@ -1,4 +1,5 @@
 import { PageHero, Prose } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { t } from "@/lib/i18n";
 import { readLocale } from "@/lib/i18n-server";
@@ -11,8 +12,9 @@ export async function generateMetadata() {
 export default async function FeesPage() {
   const locale = await readLocale();
   const cms = await getCmsPageLocalized("fees", locale);
-  const paragraphs = (cms.body || "").split(/\n\n+/).filter(Boolean);
-  const fallback = [t(locale, "fees.p1"), t(locale, "fees.p2"), t(locale, "fees.p3"), t(locale, "fees.p4")];
+  const body =
+    cms.body?.trim() ||
+    [t(locale, "fees.p1"), t(locale, "fees.p2"), t(locale, "fees.p3"), t(locale, "fees.p4")].join("\n");
 
   return (
     <>
@@ -23,9 +25,7 @@ export default async function FeesPage() {
       />
       <div className="mx-auto max-w-6xl px-4 py-12">
         <Prose>
-          {(paragraphs.length ? paragraphs : fallback).map((para) => (
-            <p key={para.slice(0, 40)}>{para}</p>
-          ))}
+          <Paragraphs text={body} />
         </Prose>
       </div>
     </>

@@ -1,4 +1,5 @@
 import { PageHero } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { pastelCardClass } from "@/lib/site";
 import { t } from "@/lib/i18n";
@@ -25,12 +26,12 @@ export default async function ServicesPage() {
     ? cms.items.map((item) => ({
         id: item.id,
         title: item.title,
-        bodies: (item.text || "").split(/\n\n+/).filter(Boolean),
+        text: item.text || "",
       }))
     : SERVICE_FALLBACK.map((service) => ({
         id: service.title,
         title: t(locale, service.title),
-        bodies: service.bodies.map((key) => t(locale, key)),
+        text: service.bodies.map((key) => t(locale, key)).join("\n"),
       }));
 
   return (
@@ -45,11 +46,11 @@ export default async function ServicesPage() {
         {items.map((service, index) => (
           <article key={service.id || service.title} className={cn("rounded-xl border p-6 shadow-sm", pastelCardClass(index))}>
             <h2 className="text-xl">{service.title}</h2>
-            {service.bodies.map((body) => (
-              <p key={body.slice(0, 32)} className="mt-3 text-[15px] leading-7 text-muted-foreground">
-                {body}
-              </p>
-            ))}
+            {service.text ? (
+              <div className="mt-3 space-y-3 text-[15px] leading-7 text-muted-foreground">
+                <Paragraphs text={service.text} />
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

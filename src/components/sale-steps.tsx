@@ -1,5 +1,6 @@
 "use client";
 
+import { Paragraphs } from "@/components/paragraphs";
 import { SALE_STEPS, pastelCardClass } from "@/lib/site";
 import { useT } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,11 @@ export function SaleSteps({
         <li key={`${step.n}-${step.title}`} className={cn("rounded-xl border p-4 shadow-sm", pastelCardClass(index))}>
           <p className="font-serif text-sm text-primary">{t("step.n", { n: step.n })}</p>
           <h3 className="mt-1 text-base font-semibold text-primary">{step.title}</h3>
-          {compact ? null : <p className="mt-2 text-sm text-muted-foreground">{step.text}</p>}
+          {compact || !step.text ? null : (
+            <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+              <Paragraphs text={step.text} />
+            </div>
+          )}
         </li>
       ))}
     </ol>

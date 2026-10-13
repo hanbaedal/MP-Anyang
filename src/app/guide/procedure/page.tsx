@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHero, Prose } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { SaleSteps } from "@/components/sale-steps";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { SITE } from "@/lib/site";
@@ -31,10 +32,7 @@ export default async function ProcedurePage() {
         <SaleSteps steps={steps.length ? steps : undefined} />
         <Prose>
           {cms.body?.trim() ? (
-            cms.body
-              .split(/\n\n+/)
-              .filter(Boolean)
-              .map((para) => <p key={para.slice(0, 40)}>{para}</p>)
+            <Paragraphs text={cms.body} />
           ) : (
             <>
               <p>

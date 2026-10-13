@@ -40,7 +40,11 @@ export default async function BurialPage() {
               ) : null}
               <div className="p-4">
                 <h2 className="text-lg">{item.title}</h2>
-                {item.text ? <p className="mt-1 text-sm text-muted-foreground">{item.text}</p> : null}
+                {item.text ? (
+                  <div className="mt-1 space-y-1 text-sm text-muted-foreground">
+                    <Paragraphs text={item.text} />
+                  </div>
+                ) : null}
               </div>
             </li>
           ))}

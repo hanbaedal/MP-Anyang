@@ -1,5 +1,6 @@
 import { DirectionsMap } from "@/components/directions-map";
 import { PageHero, Prose } from "@/components/page-hero";
+import { Paragraphs } from "@/components/paragraphs";
 import { getCmsPageLocalized } from "@/lib/cms";
 import { SITE } from "@/lib/site";
 import { t } from "@/lib/i18n";
@@ -22,6 +23,9 @@ export default async function DirectionsPage() {
         { id: "alt", title: t(locale, "dir.alt"), text: `${t(locale, "site.address")}\n${SITE.phone}` },
       ];
 
+  const transport = items.slice(0, 3);
+  const rest = items.slice(3);
+
   return (
     <>
       <PageHero
@@ -32,44 +36,29 @@ export default async function DirectionsPage() {
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-12">
         <DirectionsMap />
         <div className="grid gap-8 md:grid-cols-3">
-          {items.slice(0, 3).map((item) => (
+          {transport.map((item) => (
             <Prose key={item.id || item.title}>
               <h2 className="text-xl">{item.title}</h2>
-              {(item.text || "").split(/\n\n+/).map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
+              {item.text ? <Paragraphs text={item.text} /> : null}
             </Prose>
           ))}
         </div>
-        {items.slice(3).map((item) => (
+        {rest.map((item) => (
           <Prose key={item.id || item.title}>
             <h2 className="text-xl">{item.title}</h2>
-            {(item.text || "").split(/\n+/).map((line) => {
-              const trimmed = line.trim();
-              if (!trimmed) return null;
-              if (/^\d[\d\-\u2011]+\d$/.test(trimmed.replace(/\s/g, "")) || trimmed.includes("031")) {
-                return (
-                  <p key={trimmed}>
-                    <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
-                      {trimmed}
-                    </a>
-                  </p>
-                );
-              }
-              return <p key={trimmed}>{trimmed}</p>;
-            })}
+            {item.text ? <Paragraphs text={item.text} /> : null}
+            <p>
+              <a className="text-primary underline-offset-4 hover:underline" href={SITE.phoneTel}>
+                {SITE.phone}
+              </a>
+            </p>
           </Prose>
         ))}
-        {cms.body?.trim()
-          ? cms.body
-              .split(/\n\n+/)
-              .filter(Boolean)
-              .map((para) => (
-                <Prose key={para.slice(0, 32)}>
-                  <p>{para}</p>
-                </Prose>
-              ))
-          : null}
+        {cms.body?.trim() ? (
+          <Prose>
+            <Paragraphs text={cms.body} />
+          </Prose>
+        ) : null}
       </div>
     </>
   );
