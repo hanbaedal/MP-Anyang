@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CmsPhotoItems } from "@/components/cms-photo-items";
 import type { CmsItem, CmsPage, CmsSlug } from "@/lib/cms-types";
@@ -23,24 +23,30 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
   const [page, setPage] = useState(initial);
   const [status, setStatus] = useState<"idle" | "saving" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
+  const pageRef = useRef(page);
   const showItems = page.slug !== "greeting";
   const photoGrid = PHOTO_SLUGS.includes(page.slug);
   const showPrices = page.slug === "prices";
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   function patchItem(id: string, patch: Partial<CmsItem>) {
     setPage((prev) => ({ ...prev, items: prev.items.map((item) => (item.id === id ? { ...item, ...patch } : item)) }));
   }
 
-  const persistPage = useCallback(async (items: CmsItem[]) => {
-    let snapshot!: CmsPage;
-    setPage((prev) => {
-      snapshot = { ...prev, items };
-      return snapshot;
-    });
+  const putPage = useCallback(async (snapshot: CmsPage) => {
     const res = await fetch("/api/manage/pages", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(snapshot),
+      body: JSON.stringify({
+        slug: snapshot.slug,
+        title: snapshot.title,
+        lead: snapshot.lead,
+        body: snapshot.body,
+        items: snapshot.items ?? [],
+      }),
     });
     const json = (await res.json()) as { ok?: boolean; error?: string; page?: CmsPage };
     if (!res.ok || !json.ok) {
@@ -48,45 +54,35 @@ export function CmsEditor({ initial }: { initial: CmsPage }) {
       setMessage(json.error || "저장에 실패했습니다.");
       return false;
     }
-    if (json.page) setPage(json.page);
+    if (json.page) {
+      setPage(json.page);
+      pageRef.current = json.page;
+    }
     setStatus("ok");
     return true;
   }, []);
 
-  const persistFullPage = useCallback(async () => {
-    let snapshot!: CmsPage;
-    setPage((prev) => {
-      snapshot = prev;
-      return prev;
-    });
-    const res = await fetch("/api/manage/pages", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(snapshot),
-    });
-    const json = (await res.json()) as { ok?: boolean; error?: string; page?: CmsPage };
-    if (!res.ok || !json.ok) {
-      setStatus("error");
-      setMessage(json.error || "저장에 실패했습니다.");
-      return false;
-    }
-    if (json.page) setPage(json.page);
-    setStatus("ok");
-    return true;
-  }, []);
+  const persistPage = useCallback(
+    async (items: CmsItem[]) => {
+      const snapshot = { ...pageRef.current, items };
+      setPage(snapshot);
+      pageRef.current = snapshot;
+      return putPage(snapshot);
+    },
+    [putPage],
+  );
 
   async function onSave(event: React.FormEvent) {
     event.preventDefault();
     setStatus("saving");
     setMessage("");
     try {
-      const ok = await persistFullPage();
+      // Use render-state `page`, not a setState snapshot side-effect (that sent empty bodies).
+      const ok = await putPage(page);
       if (ok) setMessage("저장했습니다. 공개 페이지에 바로 반영됩니다.");
     } catch {
       setStatus("error");
       setMessage("네트워크 오류입니다.");
-    } finally {
-      setStatus("idle");
     }
   }
 
