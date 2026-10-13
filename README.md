@@ -39,7 +39,9 @@ npm run dev
 | `MONGODB_URI` | Atlas 연결 문자열. 있으면 업무 복사본을 Mongo에 넣습니다. 없으면 로컬 JSON 폴백 |
 | `MONGODB_DB` | 기본값 `MP-Anyang` |
 | `SITE_URL` | 커스텀 도메인 전 기본값 `https://mp-anyang.onrender.com` |
-| `INQUIRY_INBOX` | 문의 수신 메일(선택). 관리 답변 메모는 메일 발송이 아닙니다 |
+| `INQUIRY_INBOX` | 문의 수신 메일(선택) |
+| `SOLAPI_API_KEY` / `SOLAPI_API_SECRET` | 솔라피 문자. 관리 › 문의 답변 시 문의 스마트폰으로 SMS/LMS. 계정고유번호만으로는 발송되지 않습니다 |
+| `SOLAPI_FROM` | 발신번호. 기본값 `01051492949` (솔라피 콘솔에 동일 번호 사전등록) |
 | `IMAGE_CDN_BASE` / `NEXT_PUBLIC_IMAGE_CDN_BASE` | 선택. 이미지 CDN |
 | `AUTH_SECRET` | 세션 서명. 공개 서비스에서는 꼭 넣으세요 |
 | `SUPERVISOR_ID` / `SUPERVISOR_PASSWORD` | 감독 시드. git에 값을 넣지 마세요 |

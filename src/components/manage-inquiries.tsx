@@ -14,15 +14,34 @@ type Inquiry = {
   answer: string;
   answeredAt?: string;
   answeredBy?: string;
+  smsStatus?: "sent" | "failed" | "skipped";
+  smsError?: string;
+  smsSentAt?: string;
+  smsTo?: string;
 };
 
 const area =
   "min-h-28 w-full rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+function smsLabel(item: Inquiry) {
+  if (item.smsStatus === "sent") {
+    return `문자 발송됨${item.smsTo ? ` → ${item.smsTo}` : ""}`;
+  }
+  if (item.smsStatus === "failed") {
+    return `문자 실패${item.smsError ? `: ${item.smsError}` : ""}`;
+  }
+  if (item.smsStatus === "skipped") {
+    return item.smsError || "문자 미발송";
+  }
+  return null;
+}
+
 export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
   const [items, setItems] = useState(initial);
   const [open, setOpen] = useState<Inquiry | null>(null);
   const [answer, setAnswer] = useState("");
+  const [sendSms, setSendSms] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   async function refresh() {
@@ -33,63 +52,107 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
 
   async function onSave() {
     if (!open) return;
-    const res = await fetch("/api/manage/inquiries", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: open.id, answer }),
-    });
-    const json = (await res.json()) as { ok?: boolean; error?: string };
-    if (!res.ok || !json.ok) {
-      setMessage(json.error || "저장에 실패했습니다.");
-      return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/manage/inquiries", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: open.id, answer, sendSms }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        sms?: { ok?: boolean; skipped?: boolean; error?: string; to?: string };
+      };
+      if (!res.ok || !json.ok) {
+        setMessage(json.error || "저장에 실패했습니다.");
+        return;
+      }
+      setOpen(null);
+      setAnswer("");
+      if (json.sms?.ok) {
+        setMessage(`답변을 저장하고 ${json.sms.to ?? open.phone}으로 문자를 보냈습니다.`);
+      } else if (json.sms?.skipped) {
+        setMessage(`답변은 저장했습니다. 문자는 보내지 않았습니다. (${json.sms.error || "설정 확인"})`);
+      } else if (json.sms?.error) {
+        setMessage(`답변은 저장했지만 문자 발송에 실패했습니다. ${json.sms.error}`);
+      } else {
+        setMessage("답변을 저장했습니다.");
+      }
+      await refresh();
+    } finally {
+      setBusy(false);
     }
-    setOpen(null);
-    setAnswer("");
-    setMessage("관리 메모로 저장했습니다. 민원인에게 메일을 보내지 않습니다.");
-    await refresh();
   }
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
+      <p className="text-sm text-muted-foreground">
+        답변을 저장하면 문의할 때 남긴 스마트폰 번호로 솔라피 문자가 갑니다(발신 010-5149-2949). Render에
+        SOLAPI_API_KEY·SOLAPI_API_SECRET이 있어야 합니다.
+      </p>
       {items.length === 0 ? <p className="text-muted-foreground">접수된 문의가 없습니다.</p> : null}
       {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       <ul className="space-y-3">
-        {items.map((item) => (
-          <li key={item.id} className="rounded-xl border bg-card p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-medium">
-                  {item.name} · {item.phone}
-                  <span className="ml-2 text-xs text-muted-foreground">{item.status === "answered" ? "답변 메모 있음" : "미답변"}</span>
-                </p>
-                <p className="mt-1 text-sm whitespace-pre-wrap">{item.message}</p>
-                {item.answer ? <p className="mt-2 text-sm text-muted-foreground">메모: {item.answer}</p> : null}
+        {items.map((item) => {
+          const sms = smsLabel(item);
+          return (
+            <li key={item.id} className="rounded-xl border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">
+                    {item.name} · {item.phone}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {item.status === "answered" ? "답변됨" : "미답변"}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-sm whitespace-pre-wrap">{item.message}</p>
+                  {item.answer ? <p className="mt-2 text-sm text-muted-foreground">답변: {item.answer}</p> : null}
+                  {sms ? <p className="mt-1 text-xs text-muted-foreground">{sms}</p> : null}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setOpen(item);
+                    setAnswer(item.answer || "");
+                    setSendSms(true);
+                  }}
+                >
+                  답변·문자
+                </Button>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setOpen(item);
-                  setAnswer(item.answer || "");
-                }}
-              >
-                답변 메모
-              </Button>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
-      <Dialog open={Boolean(open)} onOpenChange={(next) => !next && setOpen(null)}>
+      <Dialog open={Boolean(open)} onOpenChange={(next) => !next && !busy && setOpen(null)}>
         <DialogContent>
-          <DialogTitle>문의 답변 메모</DialogTitle>
+          <DialogTitle>문의 답변 · 문자 발송</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {open?.name} · {open?.phone}. 이 내용은 관리용이며 이메일로 발송되지 않습니다.
+            {open?.name} · {open?.phone}. 저장 시 이 번호로 답변 내용이 문자로 갑니다.
           </p>
           <p className="text-sm whitespace-pre-wrap">{open?.message}</p>
-          <textarea className={area} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="사무실 메모" />
-          <Button type="button" onClick={onSave}>
-            저장
+          <textarea
+            className={area}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="민원인에게 보낼 답변"
+            disabled={busy}
+          />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={sendSms}
+              disabled={busy}
+              onChange={(e) => setSendSms(e.target.checked)}
+            />
+            스마트폰으로 문자 보내기 (솔라피)
+          </label>
+          <Button type="button" onClick={() => void onSave()} disabled={busy || !answer.trim()}>
+            {busy ? "처리 중…" : sendSms ? "저장하고 문자 보내기" : "저장만 하기"}
           </Button>
         </DialogContent>
       </Dialog>
