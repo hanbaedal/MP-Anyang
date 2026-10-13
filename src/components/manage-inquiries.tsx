@@ -107,8 +107,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-10">
       <p className="text-sm text-muted-foreground">
-        답변을 저장하면 문의할 때 남긴 스마트폰 번호로 솔라피 문자가 갑니다(발신 010-5149-2949). Render에
-        SOLAPI_API_KEY·SOLAPI_API_SECRET이 있어야 합니다.
+        답변을 저장하면 문의할 때 남긴 스마트폰 번호로 솔라피 문자가 갑니다(발신 010-5149-2949).
       </p>
       {solapi ? (
         <p
@@ -119,7 +118,7 @@ export function ManageInquiries({ initial }: { initial: Inquiry[] }) {
           }
         >
           {!solapi.authOk
-            ? `솔라피 미연결 · ${solapi.error || "SOLAPI_API_KEY·SOLAPI_API_SECRET을 Render에 넣고 재배포해 주세요."}`
+            ? `솔라피 미연결 · ${solapi.error || "문자 발송 설정을 확인해 주세요."}`
             : (solapi.balance?.balance || 0) + (solapi.balance?.point || 0) <= 0
               ? `솔라피 연결됨(발신 ${solapi.from ?? "01051492949"}) · 잔액 0원 — 콘솔에서 충전해야 문자가 갑니다.`
               : `솔라피 연결됨 · 발신 ${solapi.from ?? "01051492949"} · 잔액 ${solapi.balance?.balance ?? 0}원`}
