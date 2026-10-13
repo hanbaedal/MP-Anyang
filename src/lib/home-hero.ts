@@ -165,7 +165,10 @@ async function readHomeHeroFromMongo(): Promise<HomeHeroSettings | null> {
   return row ? fromDoc(row as Record<string, unknown>) : null;
 }
 
-/** 홈 히어로 설정. Mongo가 느리면 기본값으로 빨리 내려 502·장시간 대기를 막는다. */
+/**
+ * 홈(공개) 읽기. Mongo가 느리면 기본값으로 빨리 내려 502·장시간 대기를 막는다.
+ * 저장·공개·삭제 등 변경 API에서는 쓰지 말 것 — 타임아웃 시 기본값으로 덮어쓸 위험이 있다.
+ */
 export async function getHomeHeroSettings(): Promise<HomeHeroSettings> {
   if (hasMongo()) {
     try {
@@ -178,6 +181,26 @@ export async function getHomeHeroSettings(): Promise<HomeHeroSettings> {
       if (fromMongo) return fromMongo;
     } catch (error) {
       console.error("[home-hero] mongo read failed", error);
+    }
+  }
+  const local = await readLocal();
+  return local ? fromDoc(local as unknown as Record<string, unknown>) : defaultHomeHeroSettings();
+}
+
+/**
+ * 관리 저장·공개·삭제용. Mongo에 붙을 때까지 기다리고, 실패하면 throw한다.
+ * 타임아웃 기본값으로 기존 세트를 지우는 일을 막는다.
+ */
+export async function getHomeHeroSettingsForWrite(): Promise<HomeHeroSettings> {
+  if (hasMongo()) {
+    try {
+      const fromMongo = await readHomeHeroFromMongo();
+      if (fromMongo) return fromMongo;
+      // 문서가 아직 없으면 기본 세트로 시작(첫 저장)
+      return defaultHomeHeroSettings();
+    } catch (error) {
+      console.error("[home-hero] mongo write-read failed", error);
+      throw new Error("데이터베이스에서 설정을 읽지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   }
   const local = await readLocal();

@@ -74,6 +74,7 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
   const [status, setStatus] = useState<"idle" | "busy" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
   const savedAtLabel = useSeoulDateLabel(settings.updatedAt);
+  const busy = status === "busy";
 
   const pendingVideoUrl = useMemo(
     () => (pendingVideo ? URL.createObjectURL(pendingVideo) : null),
@@ -101,7 +102,6 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
     }
   }, [settings, selectedId]);
 
-  const busy = status === "busy";
   const canSave = Boolean(pendingVideo);
   const atCap = settings.sets.length >= HOME_HERO_MAX_SETS;
   const selected = settings.sets.find((s) => s.id === selectedId) || null;
@@ -160,8 +160,6 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
     } catch {
       setStatus("error");
       setMessage("연결이 끊겼습니다. 파일 용량(영상 25MB 이하)과 네트워크를 확인한 뒤 다시 시도해 주세요.");
-    } finally {
-      setStatus("idle");
     }
   }
 
@@ -188,8 +186,6 @@ export function ManageHomeHero({ initial }: { initial: HomeHeroSettings }) {
     } catch {
       setStatus("error");
       setMessage("연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setStatus("idle");
     }
   }
 

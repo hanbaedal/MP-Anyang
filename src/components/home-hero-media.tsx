@@ -76,6 +76,7 @@ export function HomeHeroMedia({ videoSrc, audioSrc, posterSrc }: Props) {
   useEffect(() => {
     if (reduceMotion) return;
     setVideoReady(false);
+    setVideoError(false);
     setSoundOn(false);
     setShowSoundPrompt(true);
     void startVideoMuted();

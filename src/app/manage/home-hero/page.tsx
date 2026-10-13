@@ -1,9 +1,10 @@
 import { PageHero } from "@/components/page-hero";
 import { ManageHomeHero } from "@/components/manage-home-hero";
-import { getHomeHeroSettings } from "@/lib/home-hero";
+import { getHomeHeroSettingsForWrite } from "@/lib/home-hero";
 
 export default async function ManageHomeHeroPage() {
-  const settings = await getHomeHeroSettings();
+  // 관리 화면은 타임아웃 기본값 대신 DB 실데이터를 쓴다
+  const settings = await getHomeHeroSettingsForWrite();
   return (
     <>
       <PageHero

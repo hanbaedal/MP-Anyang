@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import {
   addHomeHeroSet,
   deleteHomeHeroSet,
-  getHomeHeroSettings,
+  getHomeHeroSettingsForWrite,
+  HOME_HERO_MAX_SETS,
   publishHomeHeroSet,
   renameHomeHeroSet,
   replaceHomeHeroSet,
@@ -19,8 +20,16 @@ export const maxDuration = 120;
 export async function GET() {
   const guard = await requireStaffApi();
   if (guard.error) return guard.error;
-  const settings = await getHomeHeroSettings();
-  return NextResponse.json({ ok: true, settings });
+  try {
+    const settings = await getHomeHeroSettingsForWrite();
+    return NextResponse.json({ ok: true, settings });
+  } catch (error) {
+    console.error("[home-hero] get failed", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "설정을 불러오지 못했습니다." },
+      { status: 503 },
+    );
+  }
 }
 
 /**
@@ -62,13 +71,56 @@ export async function POST(request: Request) {
     );
   }
 
-  const savedVideo = await saveHomeHeroUpload(videoFile, "video");
+  // 업로드 전에 현재 세트를 확실히 읽는다(타임아웃 기본값으로 덮어쓰기 방지)
+  let current;
+  try {
+    current = await getHomeHeroSettingsForWrite();
+  } catch (error) {
+    console.error("[home-hero] pre-upload read failed", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "설정을 읽지 못했습니다." },
+      { status: 503 },
+    );
+  }
+
+  if (action === "replace" && !current.sets.some((s) => s.id === setId)) {
+    return NextResponse.json({ ok: false, error: "선택한 세트를 찾을 수 없습니다." }, { status: 400 });
+  }
+  if (action !== "replace" && current.sets.length >= HOME_HERO_MAX_SETS) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `세트는 최대 ${HOME_HERO_MAX_SETS}개까지 등록할 수 있습니다. 하나를 삭제한 뒤 추가해 주세요.`,
+      },
+      { status: 400 },
+    );
+  }
+
+  let savedVideo;
+  try {
+    savedVideo = await saveHomeHeroUpload(videoFile, "video");
+  } catch (error) {
+    console.error("[home-hero] video upload failed", error);
+    return NextResponse.json(
+      { ok: false, error: "영상 업로드에 실패했습니다. 용량·형식을 확인해 주세요." },
+      { status: 500 },
+    );
+  }
   if (!savedVideo.ok) return NextResponse.json(savedVideo, { status: 400 });
 
   let audioSrc = "";
   let audioLabel: string | undefined;
   if (hasAudio) {
-    const savedAudio = await saveHomeHeroUpload(audioFile, "audio");
+    let savedAudio;
+    try {
+      savedAudio = await saveHomeHeroUpload(audioFile, "audio");
+    } catch (error) {
+      console.error("[home-hero] audio upload failed", error);
+      return NextResponse.json(
+        { ok: false, error: "음악 업로드에 실패했습니다. 용량·형식을 확인해 주세요." },
+        { status: 500 },
+      );
+    }
     if (!savedAudio.ok) return NextResponse.json(savedAudio, { status: 400 });
     audioSrc = savedAudio.src;
     audioLabel = audioFile.name;
@@ -83,7 +135,6 @@ export async function POST(request: Request) {
   };
 
   try {
-    const current = await getHomeHeroSettings();
     const settings =
       action === "replace"
         ? await replaceHomeHeroSet(current, setId, payload)
@@ -119,7 +170,16 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: false, error: "잘못된 요청입니다." }, { status: 400 });
   }
 
-  const current = await getHomeHeroSettings();
+  let current;
+  try {
+    current = await getHomeHeroSettingsForWrite();
+  } catch (error) {
+    console.error("[home-hero] put read failed", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "설정을 읽지 못했습니다." },
+      { status: 503 },
+    );
+  }
   const action = String(body.action || (body.posterSrc ? "poster" : ""));
 
   try {
