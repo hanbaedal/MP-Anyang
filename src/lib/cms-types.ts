@@ -10,6 +10,7 @@ export const CMS_SLUGS = [
   { slug: "procedure", label: "분양 절차", i18n: "nav.procedure" },
   { slug: "fees", label: "관리비", i18n: "nav.fees" },
   { slug: "services", label: "서비스", i18n: "nav.services" },
+  { slug: "funeral", label: "장례·안치", i18n: "nav.funeral" },
 ] as const;
 
 export type CmsSlug = (typeof CMS_SLUGS)[number]["slug"];
@@ -46,4 +47,4 @@ export function isCmsSlug(value: string): value is CmsSlug {
 }
 
 /** 제목·설명 항목만 (사진·분양가 없음) */
-export const CMS_TEXT_ITEM_SLUGS: CmsSlug[] = ["features", "directions", "procedure", "services"];
+export const CMS_TEXT_ITEM_SLUGS: CmsSlug[] = ["features", "directions", "procedure", "services", "funeral"];

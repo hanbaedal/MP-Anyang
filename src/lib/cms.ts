@@ -138,17 +138,32 @@ export function defaultCmsPage(slug: CmsSlug): CmsPage {
       updatedAt: now,
     };
   }
+  if (slug === "services") {
+    return {
+      slug,
+      title: ko["svc.title"],
+      lead: ko["svc.lead"],
+      body: "",
+      items: [
+        { id: nid(), title: ko["svc.reloc.title"], text: [ko["svc.reloc.p1"], ko["svc.reloc.p2"]].join("\n\n") },
+        { id: nid(), title: ko["svc.stone.title"], text: ko["svc.stone.p1"] },
+        { id: nid(), title: ko["svc.turf.title"], text: ko["svc.turf.p1"] },
+        { id: nid(), title: ko["svc.weed.title"], text: ko["svc.weed.p1"] },
+        { id: nid(), title: ko["svc.design.title"], text: ko["svc.design.p1"] },
+      ],
+      updatedAt: now,
+    };
+  }
   return {
-    slug: "services",
-    title: ko["svc.title"],
-    lead: ko["svc.lead"],
-    body: "",
+    slug: "funeral",
+    title: ko["fun.title"],
+    lead: ko["fun.lead"],
+    body: ko["fun.more"],
     items: [
-      { id: nid(), title: ko["svc.reloc.title"], text: [ko["svc.reloc.p1"], ko["svc.reloc.p2"]].join("\n\n") },
-      { id: nid(), title: ko["svc.stone.title"], text: ko["svc.stone.p1"] },
-      { id: nid(), title: ko["svc.turf.title"], text: ko["svc.turf.p1"] },
-      { id: nid(), title: ko["svc.weed.title"], text: ko["svc.weed.p1"] },
-      { id: nid(), title: ko["svc.design.title"], text: ko["svc.design.p1"] },
+      { id: nid(), title: ko["fun.s1t"], text: ko["fun.s1d"].replace("{phone}", SITE.phone) },
+      { id: nid(), title: ko["fun.s2t"], text: ko["fun.s2d"] },
+      { id: nid(), title: ko["fun.s3t"], text: ko["fun.s3d"] },
+      { id: nid(), title: ko["fun.s4t"], text: ko["fun.s4d"] },
     ],
     updatedAt: now,
   };

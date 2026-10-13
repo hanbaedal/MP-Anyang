@@ -19,10 +19,6 @@ const CARD_COPY: Record<string, { title: string; lead: string }> = {
     title: "갤러리 사진",
     lead: "일반·종류별 사진을 올립니다. 「일반」은 공개 갤러리와 메인 팝업 등 홈페이지 관리에서 고를 수 있습니다.",
   },
-  "manage.funeral": {
-    title: "장례·안치",
-    lead: "매장·화장 공공서류 PDF를 등록합니다. 없으면 공개 페이지에 「준비 중」으로 표시됩니다.",
-  },
   "manage.notices": {
     title: "공지사항",
     lead: "글을 등록·수정·삭제합니다.",
@@ -59,9 +55,11 @@ export default async function ManageHomePage() {
             const lead =
               item.i18n === "manage.inquiries"
                 ? `미답변 ${pending}건. ${copy?.lead ?? ""}`
-                : cms
-                  ? "본문·항목을 수정합니다."
-                  : (copy?.lead ?? "");
+                : cms?.slug === "funeral"
+                  ? "절차 카드·안내 문구와 공공서류 PDF를 관리합니다."
+                  : cms
+                    ? "본문·항목을 수정합니다."
+                    : (copy?.lead ?? "");
             return (
               <Link key={item.href} href={item.href} className="rounded-xl border bg-card p-5 shadow-sm hover:bg-accent">
                 <h2 className="font-medium">{title}</h2>

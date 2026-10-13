@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CMS_SLUGS } from "@/lib/cms-types";
 import { manageNavItems } from "@/lib/manage-nav";
 import { SUPERVISOR_NAV } from "@/lib/supervisor-nav";
 import type { SessionUser } from "@/lib/auth-types";
@@ -7,13 +8,13 @@ const LABELS: Record<string, string> = {
   "manage.homeHero": "메인 영상·음악",
   "manage.announcements": "메인 이벤트·팝업",
   "manage.gallery": "갤러리",
-  "manage.funeral": "장례·안치",
   "manage.notices": "공지",
   "manage.inquiries": "문의",
   "manage.faq": "묻고답하기",
   "manage.admins": "관리자 계정",
   "work.dbUpdate": "DB 업데이트",
   "supervisor.stats": "방문 통계",
+  ...Object.fromEntries(CMS_SLUGS.map((item) => [item.i18n, item.label])),
 };
 
 export function ManageNav({ session }: { session: SessionUser }) {
@@ -31,7 +32,7 @@ export function ManageNav({ session }: { session: SessionUser }) {
             className={
               link.i18n === "manage.admins" || link.i18n === "work.dbUpdate"
                 ? "font-medium text-primary underline-offset-4 hover:underline"
-                : link.i18n.startsWith("manage.")
+                : link.i18n.startsWith("manage.") || link.href.startsWith("/manage/pages/")
                   ? "text-primary underline-offset-4 hover:underline"
                   : "text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
             }

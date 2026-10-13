@@ -28,7 +28,7 @@ export function manageNavItems(): ManageNavItem[] {
     cmsPage("procedure"),
     cmsPage("fees"),
     cmsPage("services"),
-    { href: "/manage/funeral", i18n: "manage.funeral" },
+    cmsPage("funeral"),
     { href: "/manage/gallery", i18n: "manage.gallery" },
     { href: "/manage/notices", i18n: "manage.notices" },
     { href: "/manage/inquiries", i18n: "manage.inquiries" },
