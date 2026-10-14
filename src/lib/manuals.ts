@@ -14,7 +14,7 @@ export type ManualItem = {
   revised: string;
 };
 
-export const MANUAL_REVISED = "2026-10-05";
+export const MANUAL_REVISED = "2026-10-14";
 
 export const MANUAL_ITEMS: ManualItem[] = [
   {

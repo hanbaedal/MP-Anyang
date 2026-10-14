@@ -14,7 +14,8 @@
     "thumbs": "node scripts/generate-thumbs.mjs",
     "qr": "node scripts/generate-qr.mjs",
     "qr:unkyung": "QR_PRESET=unkyung node scripts/generate-qr.mjs",
-    "funeral:family-pdf": "node scripts/build-family-cert-pdf.mjs"
+    "funeral:family-pdf": "node scripts/build-family-cert-pdf.mjs",
+    "manuals:docx": "node scripts/build-manuals-docx.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4",

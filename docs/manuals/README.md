@@ -21,7 +21,19 @@
 - `/work/*`와 `/supervisor/*`를 구분합니다.
 - admin은 한국시간 09:00–18:00만 세션이 유지됩니다.
 
+## Word(docx) 파일
+
+홈페이지·홈페이지관리 Word 파일은 `docx/` 폴더에 있습니다.
+
+| 일련번호 | 파일 |
+|----------|------|
+| 01 | [docx/01_홈페이지.docx](./docx/01_홈페이지.docx) |
+| 02 | [docx/02_홈페이지관리.docx](./docx/02_홈페이지관리.docx) |
+
+재생성: `node scripts/build-manuals-docx.mjs`  
+슈퍼바이저 화면 `/supervisor/manuals`에서도 Word·PDF로 받을 수 있습니다.
+
 ## 문서 버전
 
-- 개정일: 2026-10-05
-- 공개 사이트 예: `https://mp-anyang.onrender.com`
+- 개정일: 2026-10-14
+- 공개 사이트: `https://www.anyangmp.com`
